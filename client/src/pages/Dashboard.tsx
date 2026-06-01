@@ -54,8 +54,9 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between gap-2" style={{ height: '68px' }}>
 
           {/* Brand — logo only on mobile, logo+name on sm+ */}
-          <button onClick={() => navigate('/')} className="flex items-center gap-2.5 hover:opacity-80 transition-opacity min-w-0 shrink-0">
-            <LogoMark size={44} />
+          <button onClick={() => navigate('/')} className="flex items-center gap-2 hover:opacity-80 transition-opacity min-w-0 shrink-0">
+            <LogoMark size={32} className="sm:hidden" />
+            <LogoMark size={44} className="hidden sm:block" />
             <span className="font-black text-slate-900 tracking-tight text-base hidden sm:block">KraaFo</span>
             <span className="text-slate-200 hidden sm:block">|</span>
             <span className="text-xs text-slate-400 font-medium hidden sm:block truncate max-w-[160px]">{org.name}</span>

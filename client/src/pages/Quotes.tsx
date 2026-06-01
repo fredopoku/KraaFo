@@ -55,7 +55,8 @@ export default function Quotes() {
               <ArrowLeft className="w-4 h-4" />
             </button>
             <button onClick={() => navigate('/')} className="hover:opacity-80 transition-opacity">
-              <LogoMark size={44} />
+              <LogoMark size={32} className="sm:hidden" />
+              <LogoMark size={44} className="hidden sm:block" />
             </button>
             <h1 className="font-black text-slate-900 tracking-tight">Quotes</h1>
           </div>

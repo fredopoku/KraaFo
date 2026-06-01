@@ -606,8 +606,9 @@ export default function Generator() {
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between gap-2" style={{ height: '68px' }}>
 
           {/* Brand */}
-          <button onClick={() => navigate('/')} className="flex items-center gap-2.5 shrink-0 hover:opacity-80 transition-opacity">
-            <LogoMark size={44} />
+          <button onClick={() => navigate('/')} className="flex items-center gap-2 shrink-0 hover:opacity-80 transition-opacity">
+            <LogoMark size={32} className="sm:hidden" />
+            <LogoMark size={44} className="hidden sm:block" />
             <span className="font-black text-slate-900 tracking-tight text-base leading-none hidden sm:block">KraaFo</span>
           </button>
 

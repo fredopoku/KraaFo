@@ -4,7 +4,8 @@
 
 @layer base {
   * { box-sizing: border-box; }
-  body { @apply antialiased; }
+  html { overflow-x: clip; }
+  body { @apply antialiased; overflow-x: clip; }
   input[type="color"] {
     -webkit-appearance: none;
     border: none;
