@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: krafo
+    runtime: node
+    buildCommand: npm install --prefix server && npm install --prefix client && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DB_PATH
+        value: /data/krafo.db
+      - key: UPLOAD_DIR
+        value: /data/uploads
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: PUPPETEER_EXECUTABLE_PATH
+        value: /usr/bin/google-chrome-stable
+    disk:
+      name: krafo-data
+      mountPath: /data
+      sizeGB: 1
