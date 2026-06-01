@@ -4,7 +4,7 @@ import { Plus, ArrowLeft, FileText, CheckCircle, XCircle, Clock, ArrowRight } fr
 import { useOrg } from '../hooks/useOrg';
 import { api, formatCurrency } from '../utils/api';
 import { Quote } from '../types';
-import { LogoMark } from '../components/Logo';
+import { LogoMark, Logo } from '../components/Logo';
 import { cn } from '../utils/cn';
 
 const STATUS_META: Record<string, { label: string; cls: string }> = {
@@ -55,8 +55,8 @@ export default function Quotes() {
               <ArrowLeft className="w-4 h-4" />
             </button>
             <button onClick={() => navigate('/')} className="hover:opacity-80 transition-opacity">
-              <LogoMark size={32} className="sm:hidden" />
-              <LogoMark size={44} className="hidden sm:block" />
+              <Logo size="sm" className="sm:hidden" />
+              <Logo size="md" className="hidden sm:flex" />
             </button>
             <h1 className="font-black text-slate-900 tracking-tight">Quotes</h1>
           </div>

@@ -6,7 +6,7 @@ import { api, formatCurrency, generateInvoiceNumber, today, addDays } from '../u
 import { InvoiceItem, Invoice, Client } from '../types';
 import { cn } from '../utils/cn';
 import { INDUSTRIES, getClientTypes } from '../utils/industryData';
-import { LogoMark } from '../components/Logo';
+import { LogoMark, Logo } from '../components/Logo';
 import SignaturePad from '../components/SignaturePad';
 
 interface FormState {
@@ -606,10 +606,9 @@ export default function Generator() {
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between gap-2" style={{ height: '68px' }}>
 
           {/* Brand */}
-          <button onClick={() => navigate('/')} className="flex items-center gap-2 shrink-0 hover:opacity-80 transition-opacity">
-            <LogoMark size={32} className="sm:hidden" />
-            <LogoMark size={44} className="hidden sm:block" />
-            <span className="font-black text-slate-900 tracking-tight text-base leading-none hidden sm:block">KraaFo</span>
+          <button onClick={() => navigate('/')} className="shrink-0 hover:opacity-80 transition-opacity">
+            <Logo size="sm" className="sm:hidden" />
+            <Logo size="md" className="hidden sm:flex" />
           </button>
 
           {/* Type toggle — icons only on mobile, icons+labels on desktop */}

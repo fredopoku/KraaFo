@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { TrendingUp, Clock, AlertCircle, FileText, Receipt, Users, Quote, Plus, Settings, ArrowRight, CheckCircle } from 'lucide-react';
 import { useOrg } from '../hooks/useOrg';
 import { api, formatCurrency } from '../utils/api';
-import { LogoMark } from '../components/Logo';
+import { LogoMark, Logo } from '../components/Logo';
 import { cn } from '../utils/cn';
 
 export default function Dashboard() {
@@ -54,10 +54,9 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between gap-2" style={{ height: '68px' }}>
 
           {/* Brand — logo only on mobile, logo+name on sm+ */}
-          <button onClick={() => navigate('/')} className="flex items-center gap-2 hover:opacity-80 transition-opacity min-w-0 shrink-0">
-            <LogoMark size={32} className="sm:hidden" />
-            <LogoMark size={44} className="hidden sm:block" />
-            <span className="font-black text-slate-900 tracking-tight text-base hidden sm:block">KraaFo</span>
+          <button onClick={() => navigate('/')} className="shrink-0 hover:opacity-80 transition-opacity">
+            <Logo size="sm" className="sm:hidden" />
+            <Logo size="md" className="hidden sm:flex" />
             <span className="text-slate-200 hidden sm:block">|</span>
             <span className="text-xs text-slate-400 font-medium hidden sm:block truncate max-w-[160px]">{org.name}</span>
           </button>

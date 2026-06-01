@@ -4,7 +4,7 @@ import { Plus, Search, Trash2, Edit2, Users, ArrowLeft, Mail, Phone, Building2, 
 import { useOrg } from '../hooks/useOrg';
 import { api, formatCurrency } from '../utils/api';
 import { Client, Invoice } from '../types';
-import { LogoMark } from '../components/Logo';
+import { LogoMark, Logo } from '../components/Logo';
 import { cn } from '../utils/cn';
 
 const INPUT = 'w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all placeholder:text-slate-300';
@@ -105,8 +105,8 @@ export default function Clients() {
               <ArrowLeft className="w-4 h-4" />
             </button>
             <button onClick={() => navigate('/')} className="hover:opacity-80 transition-opacity">
-              <LogoMark size={32} className="sm:hidden" />
-              <LogoMark size={44} className="hidden sm:block" />
+              <Logo size="sm" className="sm:hidden" />
+              <Logo size="md" className="hidden sm:flex" />
             </button>
             <h1 className="font-black text-slate-900 tracking-tight">Clients</h1>
           </div>
