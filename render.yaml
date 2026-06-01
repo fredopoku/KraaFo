@@ -2,7 +2,7 @@ services:
   - type: web
     name: krafo
     runtime: node
-    buildCommand: npm install --prefix server && npm install --prefix client && npm run build --prefix server && npm run build --prefix client
+    buildCommand: NODE_ENV=development npm install --prefix server && npm install --prefix client && npm run build --prefix server && npm run build --prefix client
     startCommand: npm start
     envVars:
       - key: NODE_ENV
