@@ -61,8 +61,8 @@ export async function sendInvoiceEmail(
   const logoBase64 = (() => {
     if (!org.logo_url) return undefined;
     const filename = path.basename(org.logo_url);
-    const thumbPath = path.join(process.cwd(), UPLOAD_DIR, `thumb_${filename}`);
-    const origPath = path.join(process.cwd(), UPLOAD_DIR, filename);
+    const thumbPath = path.resolve(UPLOAD_DIR, `thumb_${filename}`);
+    const origPath = path.resolve(UPLOAD_DIR, filename);
     return getLogoBase64(thumbPath) || getLogoBase64(origPath) || undefined;
   })();
 
