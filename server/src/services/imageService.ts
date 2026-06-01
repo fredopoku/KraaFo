@@ -91,10 +91,13 @@ export async function processLogo(inputPath: string, outputDir: string, filename
 
 async function renderPdfWithPuppeteer(pdfBuffer: Buffer): Promise<Buffer | null> {
   try {
-    const puppeteer = (await import('puppeteer')).default;
+    const puppeteer = (await import('puppeteer-core')).default;
+    const chromium = (await import('@sparticuz/chromium')).default;
+    const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || await chromium.executablePath();
     const browser = await puppeteer.launch({
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+      args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+      executablePath,
     });
     try {
       const page = await browser.newPage();
