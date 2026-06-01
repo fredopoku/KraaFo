@@ -25,6 +25,9 @@ if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
+  'https://kraafo.com',
+  'https://www.kraafo.com',
+  'https://kraafo.onrender.com',
   ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
 ];
 app.use(cors({
