@@ -139,7 +139,7 @@ export async function sendInvoiceEmail(
   const resend = new Resend(apiKey);
   const { error } = await resend.emails.send({
     from: `${org.name} <${FROM_ADDRESS}>`,
-    reply_to: org.email || FROM_ADDRESS,
+    replyTo: org.email || FROM_ADDRESS,
     to: [recipientEmail],
     subject: `${docType} ${invoice.number} from ${org.name}`,
     text: customMessage || defaultMsg,
