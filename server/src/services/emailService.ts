@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import path from 'path';
 import db from '../db/schema';
 import { generatePDF } from './pdfService';
@@ -6,51 +6,28 @@ import { getLogoBase64 } from './imageService';
 import QRCode from 'qrcode';
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
-
-interface OrgEmailConfig {
-  smtp_host: string;
-  smtp_port: number;
-  smtp_user: string;
-  smtp_pass: string;
-  smtp_from: string;
-  name: string;
-}
-
-function getTransporter(org: OrgEmailConfig) {
-  const host = org.smtp_host || process.env.SMTP_HOST || '';
-  const port = org.smtp_port || parseInt(process.env.SMTP_PORT || '587');
-  const user = org.smtp_user || process.env.SMTP_USER || '';
-  const pass = org.smtp_pass || process.env.SMTP_PASS || '';
-  return nodemailer.createTransport({
-    host,
-    port,
-    secure: port === 465,
-    auth: { user, pass },
-  });
-}
+const FROM_ADDRESS = process.env.RESEND_FROM || 'invoices@kraafo.com';
 
 export async function sendInvoiceEmail(
   invoiceId: string,
   recipientEmail: string,
   customMessage?: string
 ): Promise<void> {
-  // Try invoices first, then quotes (they live in separate tables)
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) throw new Error('Email not configured — RESEND_API_KEY missing');
+
   let invoice = db.prepare('SELECT * FROM invoices WHERE id = ?').get(invoiceId) as any;
   let isQuote = false;
 
   if (!invoice) {
     const quote = db.prepare('SELECT * FROM quotes WHERE id = ?').get(invoiceId) as any;
     if (!quote) throw new Error('Document not found');
-    // Normalise quote shape to match invoice fields the rest of this function expects
     invoice = { ...quote, type: 'quote', due_date: quote.expiry_date };
     isQuote = true;
   }
 
   const org = db.prepare('SELECT * FROM organizations WHERE id = ?').get(invoice.org_id) as any;
   if (!org) throw new Error('Organization not found');
-  const smtpHost = org.smtp_host || process.env.SMTP_HOST;
-  const smtpUser = org.smtp_user || process.env.SMTP_USER;
-  if (!smtpHost || !smtpUser) throw new Error('Email not configured — set SMTP_HOST and SMTP_USER in server .env');
 
   const items = isQuote
     ? db.prepare('SELECT * FROM quote_items WHERE quote_id = ? ORDER BY sort_order').all(invoiceId) as any[]
@@ -136,8 +113,6 @@ export async function sendInvoiceEmail(
     footer_text: invoice.footer_text,
   } as any);
 
-  const transporter = getTransporter(org);
-
   const defaultMsg = [
     `Dear ${invoice.client_name || 'Valued Client'},`,
     ``,
@@ -161,26 +136,21 @@ export async function sendInvoiceEmail(
     `This ${docType.toLowerCase()} was generated via KraaFo — Professional Invoicing`,
   ].join('\n');
 
-  const mailOptions: any = {
-    from: `"${org.name}" <${org.smtp_from || org.smtp_user || process.env.SMTP_FROM || process.env.SMTP_USER}>`,
-    replyTo: org.email || org.smtp_from || org.smtp_user,
-    to: recipientEmail,
+  const resend = new Resend(apiKey);
+  const { error } = await resend.emails.send({
+    from: `${org.name} <${FROM_ADDRESS}>`,
+    reply_to: org.email || FROM_ADDRESS,
+    to: [recipientEmail],
     subject: `${docType} ${invoice.number} from ${org.name}`,
     text: customMessage || defaultMsg,
     html: buildEmailHtml(invoice, org, customMessage || defaultMsg, docType, sym),
-    attachments: [{ filename: `${invoice.type}-${invoice.number}.pdf`, content: pdfBuffer, contentType: 'application/pdf' }],
-    headers: { 'X-Mailer': 'KraaFo Professional Invoicing' },
-  };
+    attachments: [{
+      filename: `${invoice.type}-${invoice.number}.pdf`,
+      content: pdfBuffer.toString('base64'),
+    }],
+  });
 
-  if (org.dkim_private_key && org.dkim_selector && org.dkim_domain) {
-    mailOptions.dkim = {
-      domainName: org.dkim_domain,
-      keySelector: org.dkim_selector,
-      privateKey: org.dkim_private_key,
-    };
-  }
-
-  await transporter.sendMail(mailOptions);
+  if (error) throw new Error(error.message);
 }
 
 function buildEmailHtml(invoice: any, org: any, message: string, docType: string, sym: string): string {
@@ -217,10 +187,7 @@ function buildEmailHtml(invoice: any, org: any, message: string, docType: string
           <td style="padding:36px 40px">
             <p style="margin:0 0 28px;color:#374151;font-size:15px;line-height:1.7;white-space:pre-line">${message}</p>
 
-            <!-- Invoice summary card — table-based for full email client compatibility -->
             <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f8fafc;border-radius:12px;border:1px solid #e5e7eb;overflow:hidden">
-
-              <!-- Invoice Number -->
               <tr>
                 <td style="padding:14px 20px;border-bottom:1px solid #e5e7eb">
                   <table width="100%" cellpadding="0" cellspacing="0" border="0">
@@ -233,7 +200,6 @@ function buildEmailHtml(invoice: any, org: any, message: string, docType: string
               </tr>
 
               ${invoice.issue_date ? `
-              <!-- Date -->
               <tr>
                 <td style="padding:14px 20px;border-bottom:1px solid #e5e7eb">
                   <table width="100%" cellpadding="0" cellspacing="0" border="0">
@@ -246,7 +212,6 @@ function buildEmailHtml(invoice: any, org: any, message: string, docType: string
               </tr>` : ''}
 
               ${invoice.due_date ? `
-              <!-- Due Date -->
               <tr>
                 <td style="padding:14px 20px;border-bottom:1px solid #e5e7eb">
                   <table width="100%" cellpadding="0" cellspacing="0" border="0">
@@ -258,7 +223,6 @@ function buildEmailHtml(invoice: any, org: any, message: string, docType: string
                 </td>
               </tr>` : ''}
 
-              <!-- Total -->
               <tr>
                 <td style="padding:18px 20px;background:#fafafa">
                   <table width="100%" cellpadding="0" cellspacing="0" border="0">
@@ -269,7 +233,6 @@ function buildEmailHtml(invoice: any, org: any, message: string, docType: string
                   </table>
                 </td>
               </tr>
-
             </table>
 
             <p style="margin:24px 0 0;color:#9ca3af;font-size:12px;text-align:center">
