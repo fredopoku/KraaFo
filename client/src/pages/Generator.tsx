@@ -251,9 +251,10 @@ export default function Generator() {
     }
     setDownloading(true);
     try {
-      form.type === 'quote' ? api.pdf.downloadQuote(invoice.id) : api.pdf.download(invoice.id);
-      setTimeout(() => setDownloading(false), 2000);
+      await (form.type === 'quote' ? api.pdf.downloadQuote(invoice.id) : api.pdf.download(invoice.id));
     } catch {
+      showToast('Download failed', 'error');
+    } finally {
       setDownloading(false);
     }
   };
@@ -886,7 +887,7 @@ export default function Generator() {
                     Edit
                   </button>
                   <button
-                    onClick={() => { setShowList(false); inv.type === 'quote' ? api.pdf.previewQuote(inv.id) : api.pdf.preview(inv.id); }}
+                    onClick={() => { setShowList(false); (inv.type === 'quote' ? api.pdf.previewQuote(inv.id) : api.pdf.preview(inv.id)).catch(() => {}); }}
                     className="flex-1 text-xs py-1.5 rounded-xl text-white font-bold transition-all bg-emerald-600 hover:bg-emerald-700 btn-glow-green"
                   >
                     Preview PDF

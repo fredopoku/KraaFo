@@ -14,6 +14,44 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return res.json();
 }
 
+async function mobilePdfAction(url: string, filename: string): Promise<void> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Failed to fetch PDF');
+  const disposition = res.headers.get('Content-Disposition') ?? '';
+  const match = disposition.match(/filename="?([^"]+)"?/);
+  const name = match?.[1] ?? filename;
+  const blob = await res.blob();
+  // Try the native Web Share API (shows iOS/Android share sheet with Save to Files, WhatsApp, etc.)
+  if (navigator.canShare) {
+    const file = new File([blob], name, { type: 'application/pdf' });
+    if (navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: name });
+        return;
+      } catch (e) {
+        if ((e as Error).name === 'AbortError') return; // user cancelled
+      }
+    }
+  }
+  // Fallback: blob URL + hidden anchor download
+  const objectUrl = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = objectUrl;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+}
+
+function pdfOpen(url: string, filename: string): Promise<void> {
+  if (!/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+    window.open(url, '_blank');
+    return Promise.resolve();
+  }
+  return mobilePdfAction(url, filename);
+}
+
 export const api = {
   organizations: {
     get: (id: string) => request<Organization>(`/organizations/${id}`),
@@ -95,10 +133,10 @@ export const api = {
   },
 
   pdf: {
-    preview: (invoiceId: string) => { window.open(`${BASE}/pdf/${invoiceId}?inline=true`, '_blank'); },
-    download: (invoiceId: string) => { window.open(`${BASE}/pdf/${invoiceId}`, '_blank'); },
-    previewQuote: (quoteId: string) => { window.open(`${BASE}/pdf/quote/${quoteId}?inline=true`, '_blank'); },
-    downloadQuote: (quoteId: string) => { window.open(`${BASE}/pdf/quote/${quoteId}`, '_blank'); },
+    preview: (invoiceId: string) => pdfOpen(`${BASE}/pdf/${invoiceId}?inline=true`, 'invoice.pdf'),
+    download: (invoiceId: string) => pdfOpen(`${BASE}/pdf/${invoiceId}`, 'invoice.pdf'),
+    previewQuote: (quoteId: string) => pdfOpen(`${BASE}/pdf/quote/${quoteId}?inline=true`, 'quote.pdf'),
+    downloadQuote: (quoteId: string) => pdfOpen(`${BASE}/pdf/quote/${quoteId}`, 'quote.pdf'),
   },
 };
 

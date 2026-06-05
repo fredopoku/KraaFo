@@ -306,14 +306,14 @@ export default function Clients() {
                             <Eye className="w-3.5 h-3.5" />
                           </button>
                           <button
-                            onClick={() => api.pdf.download(doc.id)}
+                            onClick={() => api.pdf.download(doc.id).catch(() => {})}
                             className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
                             title="Download PDF"
                           >
                             <Download className="w-3.5 h-3.5" />
                           </button>
                           <button
-                            onClick={() => api.pdf.preview(doc.id)}
+                            onClick={() => api.pdf.preview(doc.id).catch(() => {})}
                             className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
                             title="View PDF"
                           >
