@@ -2,14 +2,20 @@ import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import db from '../db/schema';
 import { adminAuth } from '../middleware/adminAuth';
+import { verifyTurnstile } from '../utils/turnstile';
 
 const router = Router();
 
-router.post('/', (req: Request, res: Response) => {
-  const { name, email, rating, message } = req.body;
+router.post('/', async (req: Request, res: Response) => {
+  const { name, email, rating, message, cf_turnstile_response } = req.body;
   if (!name || !rating) return res.status(400).json({ error: 'Name and rating are required' });
   const r = Math.round(Number(rating));
   if (r < 1 || r > 5) return res.status(400).json({ error: 'Rating must be 1–5' });
+
+  const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() || req.ip;
+  const human = await verifyTurnstile(cf_turnstile_response, ip);
+  if (!human) return res.status(403).json({ error: 'Security check failed. Please try again.' });
+
   const id = uuidv4();
   db.prepare('INSERT INTO feedback (id, name, email, rating, message) VALUES (?, ?, ?, ?, ?)')
     .run(id, name.trim(), email?.trim() || null, r, message?.trim() || null);

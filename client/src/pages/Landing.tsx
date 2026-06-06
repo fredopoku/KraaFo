@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Sparkles, Palette, Download, Shield, CheckCircle, ArrowRight, FileText, Receipt, Send, Globe, Star, TrendingUp, Clock, AlertCircle, Plus, Settings, Users, ScanLine, X, Mail, MessageSquare } from 'lucide-react';
 import { Logo, LogoMark } from '../components/Logo';
 import { api } from '../utils/api';
+import { TurnstileWidget, TURNSTILE_ENABLED } from '../components/Turnstile';
 
 function FeedbackWidget() {
   const [hovered, setHovered] = useState(0);
@@ -11,15 +12,23 @@ function FeedbackWidget() {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState('');
+  const [cfToken, setCfToken] = useState('');
+  const [resetKey, setResetKey] = useState(0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim() || !selected) { setError('Please enter your name and pick a rating.'); return; }
+    if (TURNSTILE_ENABLED && !cfToken) { setError('Please complete the security check below.'); return; }
     setSubmitting(true); setError('');
     try {
-      await api.feedback.submit({ name: form.name, email: form.email || undefined, rating: selected, message: form.message || undefined });
+      const res = await fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: form.name, email: form.email || undefined, rating: selected, message: form.message || undefined, cf_turnstile_response: cfToken }),
+      });
+      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Failed'); }
       setDone(true);
-    } catch { setError('Something went wrong. Please try again.'); }
+    } catch (err: any) { setError(err.message || 'Something went wrong. Please try again.'); setResetKey(k => k + 1); setCfToken(''); }
     finally { setSubmitting(false); }
   };
 
@@ -60,8 +69,9 @@ function FeedbackWidget() {
       <textarea value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
         placeholder="Tell us more… (optional)" rows={3}
         className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white resize-none" />
+      <TurnstileWidget onVerify={setCfToken} onExpire={() => setCfToken('')} resetKey={resetKey} />
       {error && <p className="text-xs text-red-500">{error}</p>}
-      <button type="submit" disabled={submitting}
+      <button type="submit" disabled={submitting || (TURNSTILE_ENABLED && !cfToken)}
         className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm transition-all disabled:opacity-60">
         {submitting ? 'Sending…' : 'Submit Feedback'}
       </button>
@@ -74,15 +84,23 @@ function NewsletterSignup() {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState('');
+  const [cfToken, setCfToken] = useState('');
+  const [resetKey, setResetKey] = useState(0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.email.trim()) { setError('Email is required.'); return; }
+    if (TURNSTILE_ENABLED && !cfToken) { setError('Please complete the security check below.'); return; }
     setSubmitting(true); setError('');
     try {
-      await api.subscribers.subscribe({ email: form.email, name: form.name || undefined });
+      const res = await fetch('/api/subscribers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: form.email, name: form.name || undefined, cf_turnstile_response: cfToken }),
+      });
+      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Failed'); }
       setDone(true);
-    } catch (err: any) { setError(err.message || 'Something went wrong.'); }
+    } catch (err: any) { setError(err.message || 'Something went wrong.'); setResetKey(k => k + 1); setCfToken(''); }
     finally { setSubmitting(false); }
   };
 
@@ -95,18 +113,21 @@ function NewsletterSignup() {
   );
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-lg mx-auto">
-      <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-        placeholder="Your name (optional)"
-        className="flex-1 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-indigo-300 text-sm focus:outline-none focus:ring-2 focus:ring-white/40" />
-      <input required type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-        placeholder="Your email *"
-        className="flex-1 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-indigo-300 text-sm focus:outline-none focus:ring-2 focus:ring-white/40" />
-      <button type="submit" disabled={submitting}
-        className="px-6 py-3 rounded-xl bg-white text-indigo-700 font-bold text-sm hover:bg-indigo-50 transition-all disabled:opacity-60 whitespace-nowrap">
+    <form onSubmit={handleSubmit} className="max-w-lg mx-auto space-y-3">
+      <div className="flex flex-col sm:flex-row gap-3">
+        <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+          placeholder="Your name (optional)"
+          className="flex-1 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-indigo-300 text-sm focus:outline-none focus:ring-2 focus:ring-white/40" />
+        <input required type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+          placeholder="Your email *"
+          className="flex-1 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-indigo-300 text-sm focus:outline-none focus:ring-2 focus:ring-white/40" />
+      </div>
+      <TurnstileWidget onVerify={setCfToken} onExpire={() => setCfToken('')} resetKey={resetKey} />
+      {error && <p className="text-xs text-red-300 text-center">{error}</p>}
+      <button type="submit" disabled={submitting || (TURNSTILE_ENABLED && !cfToken)}
+        className="w-full sm:w-auto px-6 py-3 rounded-xl bg-white text-indigo-700 font-bold text-sm hover:bg-indigo-50 transition-all disabled:opacity-60 whitespace-nowrap mx-auto block">
         {submitting ? 'Joining…' : 'Stay Updated →'}
       </button>
-      {error && <p className="text-xs text-red-300 col-span-full mt-1">{error}</p>}
     </form>
   );
 }
