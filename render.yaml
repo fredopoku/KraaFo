@@ -14,13 +14,25 @@ services:
       - key: UPLOAD_DIR
         value: /data/uploads
 
+      # Frontend URL — used in unsubscribe links inside broadcast emails
+      - key: FRONTEND_URL
+        value: https://kraafo.onrender.com
+
       # AI — Smart Fill & document import (set in Render dashboard)
+      - key: ANTHROPIC_API_KEY
+        sync: false
       - key: GROQ_API_KEY
         sync: false
       - key: GEMINI_API_KEY
         sync: false
 
-      # Platform email — set in Render dashboard
+      # Email via Resend (recommended — invoice delivery, welcome & broadcast emails)
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM
+        value: invoices@kraafo.com
+
+      # Email via custom SMTP (alternative to Resend, set in Render dashboard)
       - key: SMTP_HOST
         value: smtp.gmail.com
       - key: SMTP_PORT
