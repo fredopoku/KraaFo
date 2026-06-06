@@ -9,7 +9,7 @@ type GeoResult = { country: string; country_code: string; region: string; city: 
 const geoCache = new Map<string, GeoResult>();
 const GEO_CACHE_MAX = 10_000;
 
-const BOT_RE = /bot|crawl|spider|slurp|mediapartners|google|bing|yahoo|baidu|yandex|duckduck|facebook|twitter|linkedin|whatsapp|apple|slack|telegram|applebot|semrush|ahrefsbot|mj12bot|dotbot/i;
+const BOT_RE = /googlebot|bingbot|slurp|duckduckbot|baiduspider|yandexbot|applebot|facebookexternalhit|twitterbot|linkedinbot|whatsapp|slackbot|telegrambot|semrushbot|ahrefsbot|mj12bot|dotbot|crawler|spider|mediapartners/i;
 
 const PRIVATE_IP_RE = /^(127\.|10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|::1$|fd[0-9a-f]{2}:|fe80:)/i;
 
