@@ -1086,7 +1086,11 @@ export default function Landing() {
       <footer className="border-t border-slate-100 py-6 px-6 bg-white">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
           <Logo size="lg" />
-          <p className="text-sm text-slate-400">Professional invoices &amp; receipts for every service business.</p>
+          <div className="flex items-center gap-4">
+            <Link to="/changelog" className="text-xs text-slate-400 hover:text-indigo-600 transition-colors font-medium">What's New</Link>
+            <span className="text-slate-200">·</span>
+            <p className="text-sm text-slate-400">Professional invoices &amp; receipts for every service business.</p>
+          </div>
         </div>
       </footer>
     </div>

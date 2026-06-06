@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TrendingUp, Clock, AlertCircle, FileText, Receipt, Users, Quote, Plus, Settings, ArrowRight, CheckCircle } from 'lucide-react';
+import { TrendingUp, Clock, AlertCircle, FileText, Receipt, Users, Quote, Plus, Settings, ArrowRight, CheckCircle, Zap, X } from 'lucide-react';
 import { useOrg } from '../hooks/useOrg';
 import { api, formatCurrency } from '../utils/api';
 import { LogoMark, Logo } from '../components/Logo';
@@ -11,11 +11,30 @@ export default function Dashboard() {
   const { org, loading } = useOrg();
   const [data, setData] = useState<any>(null);
   const [fetching, setFetching] = useState(true);
+  const [changelog, setChangelog] = useState<any[]>([]);
+  const [hasUnread, setHasUnread] = useState(false);
+  const [showWhatsNew, setShowWhatsNew] = useState(false);
 
   useEffect(() => {
     if (!org) return;
     api.analytics.get(org.id).then(d => { setData(d); setFetching(false); }).catch(() => setFetching(false));
+    api.changelog.list().then(d => {
+      const entries = d.entries || [];
+      setChangelog(entries);
+      if (entries.length > 0) {
+        const lastSeen = localStorage.getItem('krafo_changelog_seen') || '';
+        setHasUnread(entries[0].published_at > lastSeen);
+      }
+    }).catch(() => {});
   }, [org]);
+
+  const openWhatsNew = () => {
+    setShowWhatsNew(true);
+    if (changelog.length > 0) {
+      localStorage.setItem('krafo_changelog_seen', changelog[0].published_at);
+      setHasUnread(false);
+    }
+  };
 
   if (loading || fetching) return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -80,6 +99,16 @@ export default function Dashboard() {
               <span className="hidden sm:inline">New Invoice</span>
             </button>
 
+            <button
+              onClick={openWhatsNew}
+              className="relative p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"
+              title="What's New"
+            >
+              <Zap className="w-4 h-4" />
+              {hasUnread && (
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-indigo-500 rounded-full" />
+              )}
+            </button>
             <button onClick={() => navigate('/setup')} className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all">
               <Settings className="w-4 h-4" />
             </button>
@@ -231,6 +260,64 @@ export default function Dashboard() {
         </div>
 
       </main>
+
+      {/* ── What's New drawer ─────────────────────────────────── */}
+      {showWhatsNew && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 sm:p-6">
+          <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={() => setShowWhatsNew(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm max-h-[80vh] flex flex-col z-10 overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4 text-indigo-600" />
+                <h2 className="font-black text-slate-900 text-sm">What's New</h2>
+              </div>
+              <button onClick={() => setShowWhatsNew(false)} className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto flex-1 px-5 py-4 space-y-5">
+              {changelog.length === 0 ? (
+                <p className="text-sm text-slate-400 text-center py-8">No updates yet — check back soon.</p>
+              ) : (
+                changelog.slice(0, 10).map(e => {
+                  const tagCls: Record<string, string> = {
+                    New:      'bg-indigo-100 text-indigo-700',
+                    Improved: 'bg-amber-100  text-amber-700',
+                    Fixed:    'bg-emerald-100 text-emerald-700',
+                  };
+                  return (
+                    <div key={e.id} className="border-l-2 border-slate-100 pl-4">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full', tagCls[e.tag] || 'bg-slate-100 text-slate-500')}>
+                          {e.tag}
+                        </span>
+                        <span className="text-[10px] text-slate-400">
+                          {new Date(e.published_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </span>
+                      </div>
+                      <p className="text-sm font-bold text-slate-800">{e.title}</p>
+                      <p className="text-xs text-slate-500 leading-relaxed mt-0.5">{e.description}</p>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            <div className="px-5 py-3 border-t border-slate-100 flex items-center justify-between">
+              <button
+                onClick={() => { setShowWhatsNew(false); navigate('/changelog'); }}
+                className="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors"
+              >
+                Full changelog →
+              </button>
+              <button onClick={() => setShowWhatsNew(false)} className="text-xs text-slate-400 hover:text-slate-600 transition-colors">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

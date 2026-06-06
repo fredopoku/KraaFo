@@ -7,6 +7,7 @@ import Clients from './pages/Clients';
 import Quotes from './pages/Quotes';
 import Unsubscribe from './pages/Unsubscribe';
 import Admin from './pages/Admin';
+import Changelog from './pages/Changelog';
 
 export default function App() {
   return (
@@ -20,6 +21,7 @@ export default function App() {
         <Route path="/quotes" element={<Quotes />} />
         <Route path="/unsubscribe" element={<Unsubscribe />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/changelog" element={<Changelog />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

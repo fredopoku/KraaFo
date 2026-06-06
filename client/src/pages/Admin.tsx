@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Star, Mail, Send, Megaphone, ChevronDown, ChevronUp, LogOut, Shield, Building2, Users, FileText, Receipt, Quote, TrendingUp, Activity } from 'lucide-react';
+import { Star, Mail, Send, Megaphone, ChevronDown, ChevronUp, LogOut, Shield, Building2, Users, FileText, Receipt, Quote, TrendingUp, Activity, Trash2, Zap, Plus } from 'lucide-react';
 import { LogoMark } from '../components/Logo';
 import { cn } from '../utils/cn';
 
@@ -34,18 +34,24 @@ export default function Admin() {
   const [broadcastResult, setBroadcastResult] = useState('');
   const [usersData, setUsersData] = useState<{ orgs: any[]; summary: any } | null>(null);
   const [showAllOrgs, setShowAllOrgs] = useState(false);
+  const [changelogEntries, setChangelogEntries] = useState<any[]>([]);
+  const [clForm, setClForm] = useState({ title: '', description: '', tag: 'New' });
+  const [postingCl, setPostingCl] = useState(false);
+  const [clResult, setClResult] = useState('');
 
   const loadData = useCallback(async (t: string) => {
-    const [fb, subs, bcs, users] = await Promise.all([
+    const [fb, subs, bcs, users, cl] = await Promise.all([
       adminFetch<any>('/feedback', t),
       adminFetch<any>('/subscribers', t),
       adminFetch<any[]>('/broadcasts', t),
       adminFetch<any>('/admin/users', t),
+      fetch(`${BASE}/changelog`).then(r => r.json()),
     ]);
     setFeedbackData(fb);
     setSubCount(subs.total);
     setBroadcasts(bcs);
     setUsersData(users);
+    setChangelogEntries(cl.entries || []);
   }, []);
 
   // Validate stored token on mount
@@ -90,6 +96,44 @@ export default function Admin() {
     } catch (err: any) {
       setBroadcastResult(err.message || 'Failed to send');
     } finally { setSending(false); }
+  };
+
+  const handleDeleteFeedback = async (id: string) => {
+    if (!confirm('Remove this review? It will also disappear from the landing page.')) return;
+    try {
+      await adminFetch(`/feedback/${id}`, token, { method: 'DELETE' });
+      setFeedbackData(prev => prev ? {
+        ...prev,
+        feedback: prev.feedback.filter(f => f.id !== id),
+        total: prev.total - 1,
+        averageRating: (() => {
+          const remaining = prev.feedback.filter(f => f.id !== id);
+          return remaining.length ? Number((remaining.reduce((s: number, r: any) => s + r.rating, 0) / remaining.length).toFixed(1)) : 0;
+        })(),
+      } : null);
+    } catch {}
+  };
+
+  const handlePostChangelog = async () => {
+    if (!clForm.title.trim() || !clForm.description.trim()) return;
+    setPostingCl(true); setClResult('');
+    try {
+      const r = await adminFetch<any>('/changelog', token, { method: 'POST', body: JSON.stringify(clForm) });
+      setChangelogEntries(prev => [r.entry, ...prev]);
+      setClForm({ title: '', description: '', tag: 'New' });
+      setClResult('Posted!');
+      setTimeout(() => setClResult(''), 3000);
+    } catch (err: any) {
+      setClResult(err.message || 'Failed to post');
+    } finally { setPostingCl(false); }
+  };
+
+  const handleDeleteChangelog = async (id: string) => {
+    if (!confirm('Delete this changelog entry?')) return;
+    try {
+      await adminFetch(`/changelog/${id}`, token, { method: 'DELETE' });
+      setChangelogEntries(prev => prev.filter(e => e.id !== id));
+    } catch {}
   };
 
   /* ── Password gate ────────────────────────────────────────── */
@@ -335,7 +379,7 @@ export default function Admin() {
             ) : (
               <div className="divide-y divide-slate-50">
                 {(showAllFeedback ? feedbackData.feedback : feedbackData.feedback.slice(0, 5)).map((f: any) => (
-                  <div key={f.id} className="px-5 py-3.5">
+                  <div key={f.id} className="px-5 py-3.5 group">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5 mb-0.5">
@@ -344,10 +388,19 @@ export default function Admin() {
                         </div>
                         {f.message && <p className="text-xs text-slate-500 leading-relaxed">{f.message}</p>}
                       </div>
-                      <div className="flex gap-0.5 shrink-0">
-                        {[1, 2, 3, 4, 5].map(n => (
-                          <Star key={n} className={cn('w-3 h-3', n <= f.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-100')} />
-                        ))}
+                      <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex gap-0.5">
+                          {[1, 2, 3, 4, 5].map(n => (
+                            <Star key={n} className={cn('w-3 h-3', n <= f.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-100')} />
+                          ))}
+                        </div>
+                        <button
+                          onClick={() => handleDeleteFeedback(f.id)}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-300 hover:text-red-500 p-0.5 rounded"
+                          title="Delete review"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
                       </div>
                     </div>
                     <p className="text-[10px] text-slate-300 mt-1.5">
@@ -430,6 +483,100 @@ export default function Admin() {
             )}
           </div>
         </div>
+
+        {/* ── Changelog Management ─────────────────────────────── */}
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-50 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Zap className="w-4 h-4 text-indigo-600" />
+              <h2 className="text-sm font-black text-slate-700">Changelog</h2>
+            </div>
+            <span className="text-[10px] text-slate-400">Posts appear on /changelog and the What's New panel</span>
+          </div>
+
+          {/* Post form */}
+          <div className="p-5 border-b border-slate-50 space-y-3">
+            <input
+              value={clForm.title}
+              onChange={e => setClForm(f => ({ ...f, title: e.target.value }))}
+              placeholder="Update title…"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            />
+            <div className="flex gap-3">
+              <select
+                value={clForm.tag}
+                onChange={e => setClForm(f => ({ ...f, tag: e.target.value }))}
+                className="px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white"
+              >
+                <option value="New">🆕 New</option>
+                <option value="Improved">✨ Improved</option>
+                <option value="Fixed">🔧 Fixed</option>
+              </select>
+              <button
+                onClick={handlePostChangelog}
+                disabled={postingCl || !clForm.title.trim() || !clForm.description.trim()}
+                className="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-sm font-bold text-white flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                {postingCl ? 'Posting…' : 'Post Update'}
+              </button>
+            </div>
+            <textarea
+              value={clForm.description}
+              onChange={e => setClForm(f => ({ ...f, description: e.target.value }))}
+              placeholder="Describe what changed…"
+              rows={3}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 resize-none"
+            />
+            {clResult && (
+              <p className={cn('text-xs font-semibold', clResult === 'Posted!' ? 'text-emerald-600' : 'text-red-500')}>
+                {clResult}
+              </p>
+            )}
+          </div>
+
+          {/* Existing entries */}
+          {changelogEntries.length === 0 ? (
+            <div className="py-10 text-center">
+              <Zap className="w-7 h-7 text-slate-200 mx-auto mb-2" />
+              <p className="text-sm text-slate-300">No entries yet — post your first update above</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-50">
+              {changelogEntries.map(e => {
+                const tagCls: Record<string, string> = {
+                  New: 'bg-indigo-100 text-indigo-700',
+                  Improved: 'bg-amber-100 text-amber-700',
+                  Fixed: 'bg-emerald-100 text-emerald-700',
+                };
+                return (
+                  <div key={e.id} className="px-5 py-3.5 flex items-start justify-between gap-3 group">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full', tagCls[e.tag] || 'bg-slate-100 text-slate-600')}>
+                          {e.tag}
+                        </span>
+                        <span className="text-xs font-bold text-slate-800">{e.title}</span>
+                      </div>
+                      <p className="text-xs text-slate-500 leading-relaxed">{e.description}</p>
+                      <p className="text-[10px] text-slate-300 mt-1">
+                        {new Date(e.published_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteChangelog(e.id)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-300 hover:text-red-500 p-1 rounded shrink-0"
+                      title="Delete entry"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
       </main>
     </div>
   );

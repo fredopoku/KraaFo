@@ -17,6 +17,7 @@ import feedbackRouter from './routes/feedback';
 import subscribersRouter from './routes/subscribers';
 import broadcastsRouter from './routes/broadcasts';
 import adminRouter from './routes/admin';
+import changelogRouter from './routes/changelog';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -64,6 +65,7 @@ app.use('/api/feedback', feedbackRouter);
 app.use('/api/subscribers', subscribersRouter);
 app.use('/api/broadcasts', broadcastsRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api/changelog', changelogRouter);
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', version: '1.0.0', timestamp: new Date().toISOString() });

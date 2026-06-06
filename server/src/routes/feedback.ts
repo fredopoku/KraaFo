@@ -29,4 +29,10 @@ router.get('/', adminAuth, (_req: Request, res: Response) => {
   res.json({ feedback: rows, averageRating: Number(avg.toFixed(1)), total: rows.length });
 });
 
+router.delete('/:id', adminAuth, (req: Request, res: Response) => {
+  const result = db.prepare('DELETE FROM feedback WHERE id = ?').run(req.params.id);
+  if (result.changes === 0) return res.status(404).json({ error: 'Review not found' });
+  res.json({ success: true });
+});
+
 export default router;

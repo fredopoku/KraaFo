@@ -153,6 +153,13 @@ export const api = {
     list: () => request<any[]>('/broadcasts'),
   },
 
+  changelog: {
+    list: () => request<{ entries: Array<{ id: string; title: string; description: string; tag: string; published_at: string }> }>('/changelog'),
+    post: (data: { title: string; description: string; tag: string }) =>
+      request<{ success: boolean; entry: any }>('/changelog', { method: 'POST', body: JSON.stringify(data) }),
+    remove: (id: string) => request<{ success: boolean }>(`/changelog/${id}`, { method: 'DELETE' }),
+  },
+
   pdf: {
     preview: (invoiceId: string) => pdfOpen(`${BASE}/pdf/${invoiceId}?inline=true`, 'invoice.pdf'),
     download: (invoiceId: string) => pdfOpen(`${BASE}/pdf/${invoiceId}`, 'invoice.pdf'),

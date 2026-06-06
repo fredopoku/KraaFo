@@ -199,6 +199,14 @@ db.exec(`
     sent_at TEXT DEFAULT (datetime('now')),
     recipient_count INTEGER DEFAULT 0
   );
+
+  CREATE TABLE IF NOT EXISTS changelog (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    tag TEXT NOT NULL DEFAULT 'New',
+    published_at TEXT DEFAULT (datetime('now'))
+  );
 `);
 
 // Safe column additions for existing databases
