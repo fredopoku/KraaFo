@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import db from '../db/schema';
 import { sendSubscriberWelcome } from '../services/emailService';
+import { adminAuth } from '../middleware/adminAuth';
 
 const router = Router();
 
@@ -29,7 +30,7 @@ router.post('/', async (req: Request, res: Response) => {
   res.json({ success: true });
 });
 
-router.get('/', (_req: Request, res: Response) => {
+router.get('/', adminAuth, (_req: Request, res: Response) => {
   const rows = db.prepare("SELECT id, email, name, subscribed_at FROM subscribers WHERE unsubscribed_at IS NULL ORDER BY subscribed_at DESC").all();
   res.json({ subscribers: rows, total: (rows as any[]).length });
 });

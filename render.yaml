@@ -18,6 +18,10 @@ services:
       - key: FRONTEND_URL
         value: https://kraafo.onrender.com
 
+      # Admin panel password — set a strong secret in the Render dashboard
+      - key: ADMIN_TOKEN
+        sync: false
+
       # AI — Smart Fill & document import (set in Render dashboard)
       - key: ANTHROPIC_API_KEY
         sync: false
