@@ -110,4 +110,25 @@ router.get('/analytics', adminAuth, (_req: Request, res: Response) => {
   res.json({ overview, countries, cities, daily, pages, devices, browsers, referrers });
 });
 
+router.get('/analytics/views', adminAuth, (req: Request, res: Response) => {
+  const limit = Math.min(Number(req.query.limit) || 200, 500);
+  const offset = Number(req.query.offset) || 0;
+  const filterPage = req.query.page as string | undefined;
+
+  const where = filterPage ? 'WHERE page = ?' : '';
+  const params: any[] = filterPage ? [filterPage, limit, offset] : [limit, offset];
+  const countParams: any[] = filterPage ? [filterPage] : [];
+
+  const views = db.prepare(
+    `SELECT id, page, referrer, country, country_code, region, city, device, browser, session_id, created_at
+     FROM page_views ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`
+  ).all(...params);
+
+  const { total } = db.prepare(
+    `SELECT COUNT(*) as total FROM page_views ${where}`
+  ).get(...countParams) as any;
+
+  res.json({ views, total, limit, offset });
+});
+
 export default router;

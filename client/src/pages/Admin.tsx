@@ -45,6 +45,9 @@ export default function Admin() {
   const [addReviewHover, setAddReviewHover] = useState(0);
   const [addingReview, setAddingReview] = useState(false);
   const [analyticsData, setAnalyticsData] = useState<any | null>(null);
+  const [viewsModal, setViewsModal] = useState<{ open: boolean; page?: string }>({ open: false });
+  const [viewsData, setViewsData] = useState<{ views: any[]; total: number } | null>(null);
+  const [viewsLoading, setViewsLoading] = useState(false);
 
   const loadData = useCallback(async (t: string) => {
     const [fb, subs, bcs, users, cl, analytics] = await Promise.all([
@@ -187,6 +190,17 @@ export default function Admin() {
         }
       }
     );
+  };
+
+  const openViewsModal = async (page?: string) => {
+    setViewsModal({ open: true, page });
+    setViewsLoading(true);
+    try {
+      const url = page ? `/admin/analytics/views?page=${encodeURIComponent(page)}&limit=200` : '/admin/analytics/views?limit=200';
+      const data = await adminFetch<any>(url, token);
+      setViewsData(data);
+    } catch { setViewsData(null); }
+    finally { setViewsLoading(false); }
   };
 
   /* ── Password gate ────────────────────────────────────────── */
@@ -713,17 +727,29 @@ export default function Admin() {
               {/* Overview stat row */}
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                 {[
-                  { label: 'Total Views', value: analyticsData.overview?.total ?? 0, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-                  { label: 'Today', value: analyticsData.overview?.today ?? 0, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-                  { label: 'This Week', value: analyticsData.overview?.week ?? 0, color: 'text-blue-600', bg: 'bg-blue-50' },
-                  { label: 'This Month', value: analyticsData.overview?.month ?? 0, color: 'text-purple-600', bg: 'bg-purple-50' },
-                  { label: 'Sessions', value: analyticsData.overview?.unique_sessions ?? 0, color: 'text-amber-600', bg: 'bg-amber-50' },
-                  { label: 'Today Sessions', value: analyticsData.overview?.today_sessions ?? 0, color: 'text-rose-600', bg: 'bg-rose-50' },
+                  { label: 'Total Views', value: analyticsData.overview?.total ?? 0, color: 'text-indigo-600', bg: 'bg-indigo-50', clickable: true },
+                  { label: 'Today', value: analyticsData.overview?.today ?? 0, color: 'text-emerald-600', bg: 'bg-emerald-50', clickable: false },
+                  { label: 'This Week', value: analyticsData.overview?.week ?? 0, color: 'text-blue-600', bg: 'bg-blue-50', clickable: false },
+                  { label: 'This Month', value: analyticsData.overview?.month ?? 0, color: 'text-purple-600', bg: 'bg-purple-50', clickable: false },
+                  { label: 'Sessions', value: analyticsData.overview?.unique_sessions ?? 0, color: 'text-amber-600', bg: 'bg-amber-50', clickable: false },
+                  { label: 'Today Sessions', value: analyticsData.overview?.today_sessions ?? 0, color: 'text-rose-600', bg: 'bg-rose-50', clickable: false },
                 ].map(s => (
-                  <div key={s.label} className={`${s.bg} rounded-xl p-3`}>
-                    <div className={`text-xl font-black ${s.color} leading-none`}>{s.value.toLocaleString()}</div>
-                    <div className="text-[10px] font-medium text-slate-500 mt-1">{s.label}</div>
-                  </div>
+                  s.clickable ? (
+                    <button
+                      key={s.label}
+                      onClick={() => openViewsModal()}
+                      className={`${s.bg} rounded-xl p-3 text-left hover:ring-2 hover:ring-indigo-300 transition-all group`}
+                    >
+                      <div className={`text-xl font-black ${s.color} leading-none`}>{s.value.toLocaleString()}</div>
+                      <div className="text-[10px] font-medium text-slate-500 mt-1">{s.label}</div>
+                      <div className="text-[9px] text-indigo-400 font-bold mt-1 opacity-0 group-hover:opacity-100 transition-opacity">View all →</div>
+                    </button>
+                  ) : (
+                    <div key={s.label} className={`${s.bg} rounded-xl p-3`}>
+                      <div className={`text-xl font-black ${s.color} leading-none`}>{s.value.toLocaleString()}</div>
+                      <div className="text-[10px] font-medium text-slate-500 mt-1">{s.label}</div>
+                    </div>
+                  )
                 ))}
               </div>
 
@@ -892,15 +918,18 @@ export default function Admin() {
                       {(() => {
                         const maxP = Math.max(...analyticsData.pages.map((p: any) => p.count), 1);
                         return analyticsData.pages.map((p: any) => (
-                          <div key={p.page}>
+                          <button key={p.page} onClick={() => openViewsModal(p.page)} className="w-full text-left group">
                             <div className="flex items-center justify-between mb-0.5">
-                              <span className="text-xs font-medium text-slate-700 truncate max-w-[120px]" title={p.page}>{p.page || '/'}</span>
-                              <span className="text-xs font-bold text-slate-500 ml-1 shrink-0">{p.count}</span>
+                              <span className="text-xs font-medium text-slate-700 truncate max-w-[120px] group-hover:text-indigo-600 transition-colors" title={p.page}>{p.page || '/'}</span>
+                              <div className="flex items-center gap-1.5 ml-1 shrink-0">
+                                <span className="text-xs font-bold text-slate-500">{p.count}</span>
+                                <ArrowRight className="w-2.5 h-2.5 text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                              </div>
                             </div>
                             <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                              <div className="h-full bg-rose-400 rounded-full" style={{ width: `${(p.count / maxP) * 100}%` }} />
+                              <div className="h-full bg-rose-400 group-hover:bg-indigo-400 rounded-full transition-colors" style={{ width: `${(p.count / maxP) * 100}%` }} />
                             </div>
-                          </div>
+                          </button>
                         ));
                       })()}
                     </div>
@@ -947,6 +976,106 @@ export default function Admin() {
         </div>
 
       </main>
+
+      {/* ── Page Views Detail Modal ───────────────────────────── */}
+      {viewsModal.open && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setViewsModal({ open: false })} />
+          <div className="relative min-h-screen flex items-start justify-center p-4 sm:p-8">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl relative z-10 overflow-hidden my-8">
+
+              {/* Header */}
+              <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
+                <div className="flex items-center gap-2">
+                  <Eye className="w-4 h-4 text-indigo-600" />
+                  <h2 className="font-black text-slate-900 text-sm">
+                    {viewsModal.page ? `Visits — ${viewsModal.page}` : 'All Page Views'}
+                  </h2>
+                  {viewsData && (
+                    <span className="text-xs text-slate-400">{viewsData.total.toLocaleString()} total</span>
+                  )}
+                </div>
+                <button onClick={() => setViewsModal({ open: false })} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Table */}
+              <div className="overflow-x-auto max-h-[560px] overflow-y-auto">
+                {viewsLoading ? (
+                  <div className="py-16 text-center">
+                    <Globe className="w-8 h-8 text-slate-200 mx-auto mb-2 animate-pulse" />
+                    <p className="text-sm text-slate-300">Loading visits…</p>
+                  </div>
+                ) : !viewsData || viewsData.views.length === 0 ? (
+                  <div className="py-16 text-center">
+                    <Eye className="w-8 h-8 text-slate-200 mx-auto mb-2" />
+                    <p className="text-sm text-slate-300">No page views recorded yet</p>
+                  </div>
+                ) : (
+                  <table className="w-full text-xs">
+                    <thead className="sticky top-0 bg-slate-50 z-10">
+                      <tr className="border-b border-slate-100">
+                        <th className="px-4 py-2.5 text-left font-bold text-slate-400 uppercase tracking-wider text-[10px]">Page</th>
+                        <th className="px-3 py-2.5 text-left font-bold text-slate-400 uppercase tracking-wider text-[10px]">Date & Time</th>
+                        <th className="px-3 py-2.5 text-left font-bold text-slate-400 uppercase tracking-wider text-[10px]">Location</th>
+                        <th className="px-3 py-2.5 text-left font-bold text-slate-400 uppercase tracking-wider text-[10px] hidden sm:table-cell">Device</th>
+                        <th className="px-3 py-2.5 text-left font-bold text-slate-400 uppercase tracking-wider text-[10px] hidden md:table-cell">Browser</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      {viewsData.views.map((v: any) => {
+                        const flag = v.country_code && v.country_code !== 'XX'
+                          ? String.fromCodePoint(...[...v.country_code.toUpperCase()].map((ch: string) => 0x1F1E6 + ch.charCodeAt(0) - 65))
+                          : '🌐';
+                        const dt = new Date(v.created_at);
+                        return (
+                          <tr key={v.id} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="px-4 py-2.5">
+                              <span className="font-medium text-slate-800 truncate max-w-[140px] block" title={v.page}>{v.page || '/'}</span>
+                              {v.referrer && (
+                                <span className="text-[10px] text-slate-300 truncate max-w-[140px] block" title={v.referrer}>↩ {v.referrer}</span>
+                              )}
+                            </td>
+                            <td className="px-3 py-2.5 whitespace-nowrap">
+                              <div className="text-slate-700">{dt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+                              <div className="text-[10px] text-slate-400">{dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
+                            </td>
+                            <td className="px-3 py-2.5">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-sm leading-none">{flag}</span>
+                                <div>
+                                  <div className="text-slate-700">{v.country || 'Unknown'}</div>
+                                  {v.city && <div className="text-[10px] text-slate-400">{v.city}{v.region ? `, ${v.region}` : ''}</div>}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-3 py-2.5 hidden sm:table-cell">
+                              <span className={cn(
+                                'inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full',
+                                v.device === 'Mobile' ? 'bg-emerald-50 text-emerald-700' :
+                                v.device === 'Tablet' ? 'bg-amber-50 text-amber-700' :
+                                'bg-indigo-50 text-indigo-700'
+                              )}>{v.device || 'Desktop'}</span>
+                            </td>
+                            <td className="px-3 py-2.5 text-slate-500 hidden md:table-cell">{v.browser || '—'}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+
+              {viewsData && viewsData.total > 200 && (
+                <div className="px-6 py-3 border-t border-slate-50 text-xs text-slate-400 text-center">
+                  Showing most recent 200 of {viewsData.total.toLocaleString()} visits
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Toast notification ────────────────────────────────── */}
       {toast && (
