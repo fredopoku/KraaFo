@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Sparkles, Palette, Download, Shield, CheckCircle, ArrowRight, FileText, Receipt, Send, Globe, Star, TrendingUp, Clock, AlertCircle, Plus, Settings, Users, ScanLine, X, Mail, MessageSquare } from 'lucide-react';
 import { Logo, LogoMark } from '../components/Logo';
@@ -128,10 +128,12 @@ const steps = [
   { n: '03', title: 'Send it professionally',   desc: 'Download a pixel-perfect PDF, send via email or WhatsApp, and get paid — all from one screen.' },
 ];
 
-const testimonials = [
-  { name: 'Sarah M.', role: 'Owner, Sparkle Clean Co. · UK',    text: "I send a receipt the moment I'm paid and clients love how professional it looks. Total game changer." },
-  { name: 'James T.', role: 'Manager, FreshSpace Services · US', text: 'Switched from Word templates. My invoices now look like a real business — in under a minute.' },
-  { name: 'Ana R.',   role: 'Director, Crystal Clear LLC · CA',  text: 'Brand colors auto-extract from our logo — every document looks exactly on-brand without any effort.' },
+type ReviewCard = { key: string; rating: number; text: string; name: string; sub: string };
+
+const fallbackReviews: ReviewCard[] = [
+  { key: 'sarah', rating: 5, name: 'Sarah M.', sub: 'Owner, Sparkle Clean Co. · UK',    text: "I send a receipt the moment I'm paid and clients love how professional it looks. Total game changer." },
+  { key: 'james', rating: 5, name: 'James T.', sub: 'Manager, FreshSpace Services · US', text: 'Switched from Word templates. My invoices now look like a real business — in under a minute.' },
+  { key: 'ana',   rating: 5, name: 'Ana R.',   sub: 'Director, Crystal Clear LLC · CA',  text: 'Brand colors auto-extract from our logo — every document looks exactly on-brand without any effort.' },
 ];
 
 const industries = ['Cleaning', 'Plumbing', 'Electrical', 'Landscaping', 'Fitness', 'Tutoring', 'IT Support', 'Photography', 'Pet Services', 'Carpentry', 'Catering', 'Consulting'];
@@ -721,6 +723,25 @@ function BrandingSetupMockup() {
 /* ─── Main Landing Component ───────────────────────────────── */
 
 export default function Landing() {
+  const [liveReviews, setLiveReviews] = useState<ReviewCard[]>([]);
+
+  useEffect(() => {
+    api.feedback.highlights()
+      .then(d => {
+        const cards: ReviewCard[] = (d.highlights || []).map(r => ({
+          key: r.id,
+          rating: r.rating,
+          text: r.message,
+          name: r.name,
+          sub: new Date(r.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short' }),
+        }));
+        if (cards.length >= 3) setLiveReviews(cards);
+      })
+      .catch(() => {});
+  }, []);
+
+  const reviews = liveReviews.length >= 3 ? liveReviews : fallbackReviews;
+
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
       <style>{`
@@ -993,15 +1014,22 @@ export default function Landing() {
               {[0,1,2,3,4].map(i => <Star key={i} className="w-4 h-4 text-amber-400 fill-amber-400" />)}
             </div>
             <h2 className="text-3xl font-black text-white tracking-tight">Loved by service professionals worldwide</h2>
+            {liveReviews.length >= 3 && (
+              <p className="text-slate-500 text-xs mt-2">{liveReviews.length} verified review{liveReviews.length !== 1 ? 's' : ''} from real users</p>
+            )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {testimonials.map((t, i) => (
-              <div key={t.name} className="rounded-2xl p-5 hover-lift animate-fade-up" style={{ animationDelay: `${i * 100}ms`, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <div className="flex mb-3">{[0,1,2,3,4].map(s => <span key={s} className="text-amber-400 text-xs">★</span>)}</div>
+            {reviews.map((t, i) => (
+              <div key={t.key} className="rounded-2xl p-5 hover-lift animate-fade-up" style={{ animationDelay: `${i * 100}ms`, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <div className="flex mb-3">
+                  {[1,2,3,4,5].map(s => (
+                    <span key={s} className={`text-xs ${s <= t.rating ? 'text-amber-400' : 'text-slate-700'}`}>★</span>
+                  ))}
+                </div>
                 <p className="text-slate-300 mb-4 leading-relaxed text-sm">"{t.text}"</p>
                 <div>
                   <div className="font-bold text-white text-sm">{t.name}</div>
-                  <div className="text-slate-500 text-xs mt-0.5">{t.role}</div>
+                  <div className="text-slate-500 text-xs mt-0.5">{t.sub}</div>
                 </div>
               </div>
             ))}

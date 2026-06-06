@@ -136,6 +136,7 @@ export const api = {
     submit: (data: { name: string; email?: string; rating: number; message?: string }) =>
       request<{ success: boolean }>('/feedback', { method: 'POST', body: JSON.stringify(data) }),
     list: () => request<{ feedback: any[]; averageRating: number; total: number }>('/feedback'),
+    highlights: () => request<{ highlights: Array<{ id: string; name: string; rating: number; message: string; created_at: string }> }>('/feedback/highlights'),
   },
 
   subscribers: {

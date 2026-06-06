@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Star, Mail, Send, Megaphone, ChevronDown, ChevronUp, LogOut, Shield } from 'lucide-react';
+import { Star, Mail, Send, Megaphone, ChevronDown, ChevronUp, LogOut, Shield, Building2, Users, FileText, Receipt, Quote, TrendingUp, Activity } from 'lucide-react';
 import { LogoMark } from '../components/Logo';
 import { cn } from '../utils/cn';
 
@@ -32,16 +32,20 @@ export default function Admin() {
   const [broadcastForm, setBroadcastForm] = useState({ subject: '', body: '' });
   const [sending, setSending] = useState(false);
   const [broadcastResult, setBroadcastResult] = useState('');
+  const [usersData, setUsersData] = useState<{ orgs: any[]; summary: any } | null>(null);
+  const [showAllOrgs, setShowAllOrgs] = useState(false);
 
   const loadData = useCallback(async (t: string) => {
-    const [fb, subs, bcs] = await Promise.all([
+    const [fb, subs, bcs, users] = await Promise.all([
       adminFetch<any>('/feedback', t),
       adminFetch<any>('/subscribers', t),
       adminFetch<any[]>('/broadcasts', t),
+      adminFetch<any>('/admin/users', t),
     ]);
     setFeedbackData(fb);
     setSubCount(subs.total);
     setBroadcasts(bcs);
+    setUsersData(users);
   }, []);
 
   // Validate stored token on mount
@@ -177,6 +181,131 @@ export default function Admin() {
             </div>
           ))}
         </div>
+
+        {/* ── Platform Usage ──────────────────────────────────── */}
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-50 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Activity className="w-4 h-4 text-indigo-600" />
+              <h2 className="text-sm font-black text-slate-700">Platform Usage</h2>
+            </div>
+            {usersData && (
+              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
+                {usersData.summary.active_orgs} active (30d)
+              </span>
+            )}
+          </div>
+
+          {/* Summary mini-stats */}
+          {usersData && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-slate-50 border-b border-slate-50">
+              {[
+                { label: 'Organisations', value: usersData.summary.total_orgs, icon: Building2, color: 'text-indigo-600' },
+                { label: 'Invoices', value: usersData.summary.total_invoices, icon: FileText, color: 'text-blue-600' },
+                { label: 'Receipts', value: usersData.summary.total_receipts, icon: Receipt, color: 'text-emerald-600' },
+                { label: 'Quotes', value: usersData.summary.total_quotes, icon: Quote, color: 'text-purple-600' },
+              ].map(s => (
+                <div key={s.label} className="px-5 py-3 flex items-center gap-3">
+                  <s.icon className={cn('w-4 h-4 shrink-0', s.color)} />
+                  <div>
+                    <div className="text-lg font-black text-slate-900 leading-none">{s.value}</div>
+                    <div className="text-[10px] text-slate-400 mt-0.5">{s.label}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Org table */}
+          {!usersData || usersData.orgs.length === 0 ? (
+            <div className="py-14 text-center">
+              <Building2 className="w-8 h-8 text-slate-200 mx-auto mb-2" />
+              <p className="text-sm text-slate-300">No organisations registered yet</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-slate-50 bg-slate-50/50">
+                    <th className="px-5 py-2.5 text-left font-bold text-slate-400 uppercase tracking-wider text-[10px]">Business</th>
+                    <th className="px-3 py-2.5 text-left font-bold text-slate-400 uppercase tracking-wider text-[10px] hidden md:table-cell">Country</th>
+                    <th className="px-3 py-2.5 text-right font-bold text-slate-400 uppercase tracking-wider text-[10px]">Invoices</th>
+                    <th className="px-3 py-2.5 text-right font-bold text-slate-400 uppercase tracking-wider text-[10px] hidden sm:table-cell">Receipts</th>
+                    <th className="px-3 py-2.5 text-right font-bold text-slate-400 uppercase tracking-wider text-[10px] hidden sm:table-cell">Quotes</th>
+                    <th className="px-3 py-2.5 text-right font-bold text-slate-400 uppercase tracking-wider text-[10px] hidden lg:table-cell">Clients</th>
+                    <th className="px-3 py-2.5 text-right font-bold text-slate-400 uppercase tracking-wider text-[10px]">Revenue</th>
+                    <th className="px-3 py-2.5 text-center font-bold text-slate-400 uppercase tracking-wider text-[10px] hidden md:table-cell">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {(showAllOrgs ? usersData.orgs : usersData.orgs.slice(0, 8)).map((org: any) => {
+                    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+                    const isActive = org.last_active && org.last_active >= thirtyDaysAgo;
+                    const totalDocs = (org.invoice_count || 0) + (org.receipt_count || 0) + (org.quote_count || 0);
+                    return (
+                      <tr key={org.id} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="px-5 py-3">
+                          <div className="font-bold text-slate-800 truncate max-w-[160px]">{org.name || '—'}</div>
+                          {org.email && <div className="text-[10px] text-slate-400 truncate max-w-[160px]">{org.email}</div>}
+                          <div className="text-[10px] text-slate-300 mt-0.5">
+                            Joined {new Date(org.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })}
+                          </div>
+                        </td>
+                        <td className="px-3 py-3 text-slate-500 hidden md:table-cell">{org.country || '—'}</td>
+                        <td className="px-3 py-3 text-right font-bold text-slate-700">{org.invoice_count || 0}</td>
+                        <td className="px-3 py-3 text-right text-slate-500 hidden sm:table-cell">{org.receipt_count || 0}</td>
+                        <td className="px-3 py-3 text-right text-slate-500 hidden sm:table-cell">{org.quote_count || 0}</td>
+                        <td className="px-3 py-3 text-right text-slate-500 hidden lg:table-cell">{org.client_count || 0}</td>
+                        <td className="px-3 py-3 text-right font-bold text-slate-700">
+                          {org.total_revenue > 0
+                            ? `${Number(org.total_revenue).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+                            : totalDocs > 0 ? <span className="text-slate-300 font-normal">$0</span> : <span className="text-slate-200 font-normal">—</span>}
+                        </td>
+                        <td className="px-3 py-3 text-center hidden md:table-cell">
+                          {totalDocs === 0
+                            ? <span className="text-[10px] text-slate-300 font-medium">No docs</span>
+                            : isActive
+                              ? <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">● Active</span>
+                              : <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">● Idle</span>}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+
+              {usersData.orgs.length > 8 && (
+                <button
+                  onClick={() => setShowAllOrgs(v => !v)}
+                  className="w-full px-5 py-3 flex items-center justify-center gap-1.5 text-xs font-bold text-indigo-500 hover:bg-slate-50 transition-colors border-t border-slate-50"
+                >
+                  {showAllOrgs
+                    ? <><ChevronUp className="w-3.5 h-3.5" /> Show fewer</>
+                    : <><ChevronDown className="w-3.5 h-3.5" /> Show all {usersData.orgs.length} organisations</>}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* ── Revenue overview row ─────────────────────────────── */}
+        {usersData && usersData.summary.total_revenue > 0 && (
+          <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 rounded-2xl px-6 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <TrendingUp className="w-5 h-5 text-indigo-200" />
+              <div>
+                <p className="text-indigo-200 text-[11px] font-bold uppercase tracking-wider">Total Revenue Processed</p>
+                <p className="text-white text-xl font-black mt-0.5">
+                  {Number(usersData.summary.total_revenue).toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                </p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-indigo-300 text-[11px]">across {usersData.summary.total_orgs} org{usersData.summary.total_orgs !== 1 ? 's' : ''}</p>
+              <p className="text-indigo-200 text-[11px] mt-0.5">{usersData.summary.active_orgs} active in last 30 days</p>
+            </div>
+          </div>
+        )}
 
         {/* Feedback + Broadcast */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">

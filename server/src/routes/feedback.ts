@@ -16,6 +16,13 @@ router.post('/', (req: Request, res: Response) => {
   res.json({ success: true, id });
 });
 
+router.get('/highlights', (_req: Request, res: Response) => {
+  const rows = db.prepare(
+    "SELECT id, name, rating, message, created_at FROM feedback WHERE rating >= 4 AND message IS NOT NULL AND message != '' ORDER BY rating DESC, created_at DESC LIMIT 6"
+  ).all();
+  res.json({ highlights: rows });
+});
+
 router.get('/', adminAuth, (_req: Request, res: Response) => {
   const rows = db.prepare('SELECT * FROM feedback ORDER BY created_at DESC').all() as any[];
   const avg = rows.length ? rows.reduce((s, r) => s + r.rating, 0) / rows.length : 0;
