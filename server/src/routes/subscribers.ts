@@ -25,7 +25,7 @@ router.post('/', async (req: Request, res: Response) => {
   db.prepare('INSERT INTO subscribers (id, email, name, token) VALUES (?, ?, ?, ?)')
     .run(id, email.toLowerCase(), name?.trim() || null, token);
 
-  sendSubscriberWelcome(email, name).catch(console.error);
+  sendSubscriberWelcome(email, name, token).catch(console.error);
 
   res.json({ success: true });
 });

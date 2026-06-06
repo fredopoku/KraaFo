@@ -154,7 +154,7 @@ export async function sendInvoiceEmail(
   if (error) throw new Error(error.message);
 }
 
-export async function sendSubscriberWelcome(email: string, name?: string): Promise<void> {
+export async function sendSubscriberWelcome(email: string, name?: string, token?: string): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return;
   const resend = new Resend(apiKey);
@@ -164,7 +164,7 @@ export async function sendSubscriberWelcome(email: string, name?: string): Promi
     to: [email],
     subject: "You're subscribed to KraaFo updates!",
     text: `Welcome${greeting}!\n\nYou're now subscribed to KraaFo updates. We'll keep you in the loop whenever we ship new features, improvements, and tips.\n\nBest,\nThe KraaFo Team`,
-    html: buildWelcomeHtml(email, name),
+    html: buildWelcomeHtml(email, name, token),
   });
 }
 
@@ -193,8 +193,9 @@ export async function sendBroadcast(subject: string, body: string): Promise<{ se
   return { sent, failed };
 }
 
-function buildWelcomeHtml(email: string, name?: string): string {
+function buildWelcomeHtml(email: string, name?: string, token?: string): string {
   const display = name || 'there';
+  const unsubUrl = token ? `${FRONTEND_URL}/unsubscribe?token=${token}` : `${FRONTEND_URL}/unsubscribe`;
   return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">
   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f1f5f9;padding:32px 16px">
@@ -211,7 +212,7 @@ function buildWelcomeHtml(email: string, name?: string): string {
           <a href="${FRONTEND_URL}" style="display:inline-block;background:#4f46e5;color:#fff;padding:12px 28px;border-radius:10px;font-weight:700;font-size:14px;text-decoration:none">Visit KraaFo →</a>
         </td></tr>
         <tr><td style="padding:20px 40px;background:#f9fafb;border-top:1px solid #f3f4f6;text-align:center">
-          <p style="margin:0;color:#9ca3af;font-size:12px">You subscribed with ${email}. Don't want updates? <a href="${FRONTEND_URL}/unsubscribe" style="color:#6b7280">Unsubscribe here</a>.</p>
+          <p style="margin:0;color:#9ca3af;font-size:12px">You subscribed with ${email}. Don't want updates? <a href="${unsubUrl}" style="color:#6b7280">Unsubscribe here</a>.</p>
         </td></tr>
       </table>
     </td></tr>
