@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Star, Mail, Send, Megaphone, ChevronDown, ChevronUp, LogOut, Shield, Building2, Users, FileText, Receipt, Quote, TrendingUp, Activity, Trash2, Zap, Plus, X, ArrowRight } from 'lucide-react';
+import { Star, Mail, Send, Megaphone, ChevronDown, ChevronUp, LogOut, Shield, Building2, Users, FileText, Receipt, Quote, TrendingUp, Activity, Trash2, Zap, Plus, X, ArrowRight, CheckCircle, AlertCircle } from 'lucide-react';
 import { LogoMark } from '../components/Logo';
 import { cn } from '../utils/cn';
 
@@ -31,13 +31,13 @@ export default function Admin() {
   const [showAllFeedback, setShowAllFeedback] = useState(false);
   const [broadcastForm, setBroadcastForm] = useState({ subject: '', body: '' });
   const [sending, setSending] = useState(false);
-  const [broadcastResult, setBroadcastResult] = useState('');
   const [usersData, setUsersData] = useState<{ orgs: any[]; summary: any } | null>(null);
   const [showAllOrgs, setShowAllOrgs] = useState(false);
   const [changelogEntries, setChangelogEntries] = useState<any[]>([]);
   const [clForm, setClForm] = useState({ title: '', description: '', tag: 'New' });
   const [postingCl, setPostingCl] = useState(false);
-  const [clResult, setClResult] = useState('');
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
   const [subscribers, setSubscribers] = useState<any[]>([]);
   const [activeModal, setActiveModal] = useState<null | 'reviews' | 'subscribers' | 'broadcasts'>(null);
   const [showAddReview, setShowAddReview] = useState(false);
@@ -84,24 +84,33 @@ export default function Admin() {
     } finally { setChecking(false); }
   };
 
+  const showToast = (type: 'success' | 'error', message: string) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  const showConfirm = (title: string, message: string, onConfirm: () => void) => {
+    setConfirmModal({ title, message, onConfirm });
+  };
+
   const handleSignOut = () => {
     sessionStorage.removeItem(STORAGE_KEY);
-    setToken(''); setAuthed(false); setInput(''); setBroadcastResult('');
+    setToken(''); setAuthed(false); setInput('');
   };
 
   const handleBroadcast = async () => {
     if (!broadcastForm.subject.trim() || !broadcastForm.body.trim()) return;
-    setSending(true); setBroadcastResult('');
+    setSending(true);
     try {
       const r = await adminFetch<any>('/broadcasts', token, {
         method: 'POST',
         body: JSON.stringify(broadcastForm),
       });
-      setBroadcastResult(`Sent to ${r.sent} subscriber${r.sent !== 1 ? 's' : ''}${r.failed ? ` · ${r.failed} failed` : ''}`);
       setBroadcastForm({ subject: '', body: '' });
       adminFetch<any[]>('/broadcasts', token).then(setBroadcasts).catch(() => {});
+      showToast('success', `Sent to ${r.sent} subscriber${r.sent !== 1 ? 's' : ''}${r.failed ? ` · ${r.failed} failed` : ''}`);
     } catch (err: any) {
-      setBroadcastResult(err.message || 'Failed to send');
+      showToast('error', err.message || 'Failed to send broadcast');
     } finally { setSending(false); }
   };
 
@@ -118,45 +127,63 @@ export default function Admin() {
       setAddReviewForm({ name: '', email: '', rating: 5, message: '' });
       setAddReviewHover(0);
       adminFetch<any>('/feedback', token).then(setFeedbackData).catch(() => {});
-    } catch {} finally { setAddingReview(false); }
+      showToast('success', 'Review added successfully');
+    } catch {
+      showToast('error', 'Failed to add review — please try again');
+    } finally { setAddingReview(false); }
   };
 
-  const handleDeleteFeedback = async (id: string) => {
-    if (!confirm('Remove this review? It will also disappear from the landing page.')) return;
-    try {
-      await adminFetch(`/feedback/${id}`, token, { method: 'DELETE' });
-      setFeedbackData(prev => prev ? {
-        ...prev,
-        feedback: prev.feedback.filter(f => f.id !== id),
-        total: prev.total - 1,
-        averageRating: (() => {
-          const remaining = prev.feedback.filter(f => f.id !== id);
-          return remaining.length ? Number((remaining.reduce((s: number, r: any) => s + r.rating, 0) / remaining.length).toFixed(1)) : 0;
-        })(),
-      } : null);
-    } catch {}
+  const handleDeleteFeedback = (id: string) => {
+    showConfirm(
+      'Remove review?',
+      'This review will be permanently deleted and will no longer appear on the landing page.',
+      async () => {
+        try {
+          await adminFetch(`/feedback/${id}`, token, { method: 'DELETE' });
+          setFeedbackData(prev => prev ? {
+            ...prev,
+            feedback: prev.feedback.filter(f => f.id !== id),
+            total: prev.total - 1,
+            averageRating: (() => {
+              const remaining = prev.feedback.filter(f => f.id !== id);
+              return remaining.length ? Number((remaining.reduce((s: number, r: any) => s + r.rating, 0) / remaining.length).toFixed(1)) : 0;
+            })(),
+          } : null);
+          showToast('success', 'Review removed');
+        } catch {
+          showToast('error', 'Failed to delete review');
+        }
+      }
+    );
   };
 
   const handlePostChangelog = async () => {
     if (!clForm.title.trim() || !clForm.description.trim()) return;
-    setPostingCl(true); setClResult('');
+    setPostingCl(true);
     try {
       const r = await adminFetch<any>('/changelog', token, { method: 'POST', body: JSON.stringify(clForm) });
       setChangelogEntries(prev => [r.entry, ...prev]);
       setClForm({ title: '', description: '', tag: 'New' });
-      setClResult('Posted!');
-      setTimeout(() => setClResult(''), 3000);
+      showToast('success', 'Changelog entry posted');
     } catch (err: any) {
-      setClResult(err.message || 'Failed to post');
+      showToast('error', err.message || 'Failed to post entry');
     } finally { setPostingCl(false); }
   };
 
-  const handleDeleteChangelog = async (id: string) => {
-    if (!confirm('Delete this changelog entry?')) return;
-    try {
-      await adminFetch(`/changelog/${id}`, token, { method: 'DELETE' });
-      setChangelogEntries(prev => prev.filter(e => e.id !== id));
-    } catch {}
+  const handleDeleteChangelog = (id: string) => {
+    showConfirm(
+      'Delete changelog entry?',
+      'This update will be permanently removed from the public changelog and the What\'s New panel.',
+      async () => {
+        try {
+          await adminFetch(`/changelog/${id}`, token, { method: 'DELETE' });
+          setChangelogEntries(prev => prev.filter(e => e.id !== id));
+          showToast('success', 'Entry deleted');
+        } catch {
+          showToast('error', 'Failed to delete entry');
+        }
+      }
+    );
   };
 
   /* ── Password gate ────────────────────────────────────────── */
@@ -550,11 +577,6 @@ export default function Admin() {
                 <Send className="w-3.5 h-3.5" />
                 {sending ? 'Sending…' : `Send to ${subCount} subscriber${subCount !== 1 ? 's' : ''}`}
               </button>
-              {broadcastResult && (
-                <p className={cn('text-xs text-center font-semibold', broadcastResult.startsWith('Sent') ? 'text-emerald-600' : 'text-red-500')}>
-                  {broadcastResult}
-                </p>
-              )}
               {subCount === 0 && (
                 <p className="text-xs text-slate-300 text-center">No subscribers yet — signup form is live on the landing page</p>
               )}
@@ -623,11 +645,6 @@ export default function Admin() {
               rows={3}
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 resize-none"
             />
-            {clResult && (
-              <p className={cn('text-xs font-semibold', clResult === 'Posted!' ? 'text-emerald-600' : 'text-red-500')}>
-                {clResult}
-              </p>
-            )}
           </div>
 
           {/* Existing entries */}
@@ -673,6 +690,54 @@ export default function Admin() {
         </div>
 
       </main>
+
+      {/* ── Toast notification ────────────────────────────────── */}
+      {toast && (
+        <div className={cn(
+          'fixed top-5 right-5 z-[80] flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl text-sm font-semibold max-w-xs',
+          toast.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-red-500 text-white'
+        )}>
+          {toast.type === 'success'
+            ? <CheckCircle className="w-4 h-4 shrink-0" />
+            : <AlertCircle className="w-4 h-4 shrink-0" />}
+          <span className="flex-1">{toast.message}</span>
+          <button onClick={() => setToast(null)} className="opacity-70 hover:opacity-100 transition-opacity shrink-0">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* ── Confirm modal ─────────────────────────────────────── */}
+      {confirmModal && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setConfirmModal(null)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 z-10">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-9 h-9 rounded-xl bg-red-100 flex items-center justify-center shrink-0">
+                <AlertCircle className="w-4.5 h-4.5 text-red-600" style={{ width: 18, height: 18 }} />
+              </div>
+              <div>
+                <h3 className="font-black text-slate-900 text-sm leading-tight">{confirmModal.title}</h3>
+                <p className="text-xs text-slate-500 mt-1 leading-relaxed">{confirmModal.message}</p>
+              </div>
+            </div>
+            <div className="flex gap-2.5">
+              <button
+                onClick={() => setConfirmModal(null)}
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { confirmModal.onConfirm(); setConfirmModal(null); }}
+                className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-sm font-bold text-white transition-all"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Detail Modals ──────────────────────────────────────── */}
       {activeModal && (
