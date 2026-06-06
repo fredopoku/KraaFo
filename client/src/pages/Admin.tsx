@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Star, Mail, Send, Megaphone, ChevronDown, ChevronUp, LogOut, Shield, Building2, Users, FileText, Receipt, Quote, TrendingUp, Activity, Trash2, Zap, Plus } from 'lucide-react';
+import { Star, Mail, Send, Megaphone, ChevronDown, ChevronUp, LogOut, Shield, Building2, Users, FileText, Receipt, Quote, TrendingUp, Activity, Trash2, Zap, Plus, X, ArrowRight } from 'lucide-react';
 import { LogoMark } from '../components/Logo';
 import { cn } from '../utils/cn';
 
@@ -38,6 +38,12 @@ export default function Admin() {
   const [clForm, setClForm] = useState({ title: '', description: '', tag: 'New' });
   const [postingCl, setPostingCl] = useState(false);
   const [clResult, setClResult] = useState('');
+  const [subscribers, setSubscribers] = useState<any[]>([]);
+  const [activeModal, setActiveModal] = useState<null | 'reviews' | 'subscribers' | 'broadcasts'>(null);
+  const [showAddReview, setShowAddReview] = useState(false);
+  const [addReviewForm, setAddReviewForm] = useState({ name: '', email: '', rating: 5, message: '' });
+  const [addReviewHover, setAddReviewHover] = useState(0);
+  const [addingReview, setAddingReview] = useState(false);
 
   const loadData = useCallback(async (t: string) => {
     const [fb, subs, bcs, users, cl] = await Promise.all([
@@ -49,6 +55,7 @@ export default function Admin() {
     ]);
     setFeedbackData(fb);
     setSubCount(subs.total);
+    setSubscribers(subs.subscribers || []);
     setBroadcasts(bcs);
     setUsersData(users);
     setChangelogEntries(cl.entries || []);
@@ -96,6 +103,22 @@ export default function Admin() {
     } catch (err: any) {
       setBroadcastResult(err.message || 'Failed to send');
     } finally { setSending(false); }
+  };
+
+  const handleAddReview = async () => {
+    if (!addReviewForm.name.trim()) return;
+    setAddingReview(true);
+    try {
+      await fetch(`${BASE}/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(addReviewForm),
+      });
+      setShowAddReview(false);
+      setAddReviewForm({ name: '', email: '', rating: 5, message: '' });
+      setAddReviewHover(0);
+      adminFetch<any>('/feedback', token).then(setFeedbackData).catch(() => {});
+    } catch {} finally { setAddingReview(false); }
   };
 
   const handleDeleteFeedback = async (id: string) => {
@@ -196,33 +219,43 @@ export default function Admin() {
 
       <main className="max-w-6xl mx-auto px-4 py-6 space-y-5">
 
-        {/* Stat cards */}
+        {/* Stat cards — clickable */}
         <div className="grid grid-cols-3 gap-4">
           {[
             {
               label: 'Avg Rating', icon: Star, color: 'text-amber-500', bg: 'bg-amber-50',
               value: feedbackData ? `${feedbackData.averageRating} / 5` : '—',
               sub: `${feedbackData?.total ?? 0} review${feedbackData?.total !== 1 ? 's' : ''}`,
+              modal: 'reviews' as const,
             },
             {
               label: 'Subscribers', icon: Mail, color: 'text-indigo-600', bg: 'bg-indigo-50',
               value: subCount,
               sub: 'active email subscribers',
+              modal: 'subscribers' as const,
             },
             {
               label: 'Broadcasts Sent', icon: Megaphone, color: 'text-emerald-600', bg: 'bg-emerald-50',
               value: broadcasts.length,
               sub: 'update emails sent',
+              modal: 'broadcasts' as const,
             },
           ].map(c => (
-            <div key={c.label} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
+            <button
+              key={c.label}
+              onClick={() => setActiveModal(c.modal)}
+              className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 text-left hover:border-indigo-200 hover:shadow-md transition-all group"
+            >
               <div className={cn('w-8 h-8 rounded-xl flex items-center justify-center mb-3', c.bg)}>
                 <c.icon className={cn('w-4 h-4', c.color)} />
               </div>
               <div className="text-xl font-black text-slate-900">{c.value}</div>
               <div className="text-[11px] font-medium text-slate-400 mt-0.5">{c.label}</div>
               <div className="text-[10px] text-slate-300 mt-0.5">{c.sub}</div>
-            </div>
+              <div className="mt-2 flex items-center gap-1 text-[10px] font-bold text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                View details <ArrowRight className="w-3 h-3" />
+              </div>
+            </button>
           ))}
         </div>
 
@@ -361,14 +394,76 @@ export default function Admin() {
                 <Star className="w-4 h-4 text-amber-500" />
                 <h2 className="text-sm font-black text-slate-700">User Feedback</h2>
               </div>
-              {feedbackData && feedbackData.total > 0 && (
+              <div className="flex items-center gap-3">
+                {feedbackData && feedbackData.total > 0 && (
+                  <div className="flex gap-0.5">
+                    {[1, 2, 3, 4, 5].map(n => (
+                      <Star key={n} className={cn('w-3.5 h-3.5', n <= Math.round(feedbackData.averageRating) ? 'fill-amber-400 text-amber-400' : 'text-slate-200')} />
+                    ))}
+                  </div>
+                )}
+                <button
+                  onClick={() => setShowAddReview(v => !v)}
+                  className="flex items-center gap-1 text-[11px] font-bold text-indigo-500 hover:text-indigo-700 transition-colors"
+                >
+                  <Plus className="w-3 h-3" /> Add
+                </button>
+              </div>
+            </div>
+
+            {showAddReview && (
+              <div className="px-5 py-4 border-b border-slate-50 bg-amber-50/40 space-y-2.5">
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Add a review manually</p>
                 <div className="flex gap-0.5">
-                  {[1, 2, 3, 4, 5].map(n => (
-                    <Star key={n} className={cn('w-3.5 h-3.5', n <= Math.round(feedbackData.averageRating) ? 'fill-amber-400 text-amber-400' : 'text-slate-200')} />
+                  {[1,2,3,4,5].map(n => (
+                    <button
+                      key={n}
+                      onMouseEnter={() => setAddReviewHover(n)}
+                      onMouseLeave={() => setAddReviewHover(0)}
+                      onClick={() => setAddReviewForm(f => ({ ...f, rating: n }))}
+                    >
+                      <Star className={cn('w-5 h-5 transition-colors', n <= (addReviewHover || addReviewForm.rating) ? 'fill-amber-400 text-amber-400' : 'text-slate-200')} />
+                    </button>
                   ))}
                 </div>
-              )}
-            </div>
+                <div className="flex gap-2">
+                  <input
+                    value={addReviewForm.name}
+                    onChange={e => setAddReviewForm(f => ({ ...f, name: e.target.value }))}
+                    placeholder="Reviewer name*"
+                    className="flex-1 px-3 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-amber-300"
+                  />
+                  <input
+                    value={addReviewForm.email}
+                    onChange={e => setAddReviewForm(f => ({ ...f, email: e.target.value }))}
+                    placeholder="Email (optional)"
+                    className="flex-1 px-3 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-amber-300"
+                  />
+                </div>
+                <textarea
+                  value={addReviewForm.message}
+                  onChange={e => setAddReviewForm(f => ({ ...f, message: e.target.value }))}
+                  placeholder="Review message (optional — needed to show on the landing page)"
+                  rows={2}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-amber-300 resize-none"
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleAddReview}
+                    disabled={addingReview || !addReviewForm.name.trim()}
+                    className="flex-1 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-all disabled:opacity-50"
+                  >
+                    {addingReview ? 'Adding…' : 'Add Review'}
+                  </button>
+                  <button
+                    onClick={() => setShowAddReview(false)}
+                    className="px-4 py-2 rounded-lg border border-slate-200 text-xs font-bold text-slate-500 hover:bg-slate-50 transition-all"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
 
             {!feedbackData || feedbackData.total === 0 ? (
               <div className="py-14 text-center">
@@ -578,6 +673,180 @@ export default function Admin() {
         </div>
 
       </main>
+
+      {/* ── Detail Modals ──────────────────────────────────────── */}
+      {activeModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setActiveModal(null)} />
+          <div className="relative min-h-screen flex items-start justify-center p-4 sm:p-8">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl relative z-10 overflow-hidden my-8">
+
+              {/* ── Reviews modal ── */}
+              {activeModal === 'reviews' && (
+                <>
+                  <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
+                    <div className="flex items-center gap-2">
+                      <Star className="w-4 h-4 text-amber-500" />
+                      <h2 className="font-black text-slate-900 text-sm">All Reviews</h2>
+                      <span className="text-xs text-slate-400">{feedbackData?.total ?? 0} total</span>
+                    </div>
+                    <button onClick={() => setActiveModal(null)} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {feedbackData && feedbackData.total > 0 && (
+                    <div className="px-6 py-5 border-b border-slate-100 flex items-center gap-6 bg-amber-50/40">
+                      <div className="text-center shrink-0">
+                        <div className="text-4xl font-black text-slate-900 leading-none">{feedbackData.averageRating}</div>
+                        <div className="flex justify-center gap-0.5 mt-1.5">
+                          {[1,2,3,4,5].map(n => (
+                            <Star key={n} className={cn('w-3.5 h-3.5', n <= Math.round(feedbackData.averageRating) ? 'fill-amber-400 text-amber-400' : 'text-slate-200')} />
+                          ))}
+                        </div>
+                        <p className="text-xs text-slate-400 mt-1">out of 5</p>
+                      </div>
+                      <div className="flex-1 space-y-1.5">
+                        {[5,4,3,2,1].map(star => {
+                          const count = feedbackData.feedback.filter((f: any) => f.rating === star).length;
+                          const pct = feedbackData.total ? (count / feedbackData.total) * 100 : 0;
+                          return (
+                            <div key={star} className="flex items-center gap-2">
+                              <span className="text-xs text-slate-500 w-5 shrink-0">{star}★</span>
+                              <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                                <div className="h-full bg-amber-400 rounded-full" style={{ width: `${pct}%` }} />
+                              </div>
+                              <span className="text-xs text-slate-400 w-5 text-right shrink-0">{count}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="divide-y divide-slate-50 max-h-[420px] overflow-y-auto">
+                    {!feedbackData || feedbackData.total === 0 ? (
+                      <div className="py-14 text-center text-sm text-slate-300">No reviews yet</div>
+                    ) : feedbackData.feedback.map((f: any) => (
+                      <div key={f.id} className="px-6 py-4 group">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-sm font-bold text-slate-800">{f.name}</span>
+                              {f.email && <span className="text-xs text-slate-400">{f.email}</span>}
+                            </div>
+                            {f.message && <p className="text-sm text-slate-500 mt-1 leading-relaxed">"{f.message}"</p>}
+                            <p className="text-[10px] text-slate-300 mt-1.5">
+                              {new Date(f.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                            </p>
+                          </div>
+                          <div className="flex flex-col items-end gap-2 shrink-0">
+                            <div className="flex gap-0.5">
+                              {[1,2,3,4,5].map(n => <Star key={n} className={cn('w-3 h-3', n <= f.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-100')} />)}
+                            </div>
+                            <button
+                              onClick={() => { handleDeleteFeedback(f.id); }}
+                              className="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-red-500 transition-all"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* ── Subscribers modal ── */}
+              {activeModal === 'subscribers' && (
+                <>
+                  <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
+                    <div className="flex items-center gap-2">
+                      <Mail className="w-4 h-4 text-indigo-600" />
+                      <h2 className="font-black text-slate-900 text-sm">Subscribers</h2>
+                    </div>
+                    <button onClick={() => setActiveModal(null)} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="px-6 py-3 bg-indigo-50 border-b border-indigo-100 flex items-center justify-between">
+                    <span className="text-sm font-bold text-indigo-700">{subCount} active subscriber{subCount !== 1 ? 's' : ''}</span>
+                    <span className="text-xs text-indigo-400">Newest first</span>
+                  </div>
+
+                  <div className="divide-y divide-slate-50 max-h-[480px] overflow-y-auto">
+                    {subscribers.length === 0 ? (
+                      <div className="py-14 text-center text-sm text-slate-300">No subscribers yet</div>
+                    ) : subscribers.map((s: any, i: number) => (
+                      <div key={s.id} className="px-6 py-3.5 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center shrink-0 text-xs font-bold text-indigo-600">
+                            {(s.name || s.email || '?')[0].toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-sm font-medium text-slate-800 truncate">{s.email}</div>
+                            {s.name && <div className="text-xs text-slate-400 truncate">{s.name}</div>}
+                          </div>
+                        </div>
+                        <div className="text-xs text-slate-400 shrink-0">
+                          {new Date(s.subscribed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* ── Broadcasts modal ── */}
+              {activeModal === 'broadcasts' && (
+                <>
+                  <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
+                    <div className="flex items-center gap-2">
+                      <Megaphone className="w-4 h-4 text-emerald-600" />
+                      <h2 className="font-black text-slate-900 text-sm">Broadcast History</h2>
+                    </div>
+                    <button onClick={() => setActiveModal(null)} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="divide-y divide-slate-50 max-h-[520px] overflow-y-auto">
+                    {broadcasts.length === 0 ? (
+                      <div className="py-14 text-center text-sm text-slate-300">No broadcasts sent yet</div>
+                    ) : broadcasts.map((b: any) => (
+                      <details key={b.id} className="group px-6 py-4 cursor-pointer">
+                        <summary className="flex items-start justify-between gap-3 list-none">
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold text-slate-800 truncate">{b.subject}</p>
+                            <p className="text-xs text-slate-400 mt-0.5">
+                              {new Date(b.sent_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <div className="flex items-center gap-1 text-xs text-slate-500">
+                              <Mail className="w-3 h-3" /> {b.recipient_count}
+                            </div>
+                            <ChevronDown className="w-3.5 h-3.5 text-slate-300 group-open:rotate-180 transition-transform" />
+                          </div>
+                        </summary>
+                        {b.body && (
+                          <p className="mt-3 pt-3 border-t border-slate-50 text-sm text-slate-500 leading-relaxed whitespace-pre-wrap">
+                            {b.body}
+                          </p>
+                        )}
+                      </details>
+                    ))}
+                  </div>
+                </>
+              )}
+
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

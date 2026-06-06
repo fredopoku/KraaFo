@@ -23,7 +23,7 @@ router.post('/', adminAuth, async (req: Request, res: Response) => {
 });
 
 router.get('/', adminAuth, (_req: Request, res: Response) => {
-  const rows = db.prepare('SELECT id, subject, sent_at, recipient_count FROM broadcasts ORDER BY sent_at DESC LIMIT 20').all();
+  const rows = db.prepare('SELECT id, subject, body, sent_at, recipient_count FROM broadcasts ORDER BY sent_at DESC').all();
   res.json(rows);
 });
 

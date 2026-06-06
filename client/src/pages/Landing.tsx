@@ -731,16 +731,19 @@ export default function Landing() {
         const cards: ReviewCard[] = (d.highlights || []).map(r => ({
           key: r.id,
           rating: r.rating,
-          text: r.message,
+          text: r.message || '',
           name: r.name,
           sub: new Date(r.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short' }),
         }));
-        if (cards.length >= 3) setLiveReviews(cards);
+        if (cards.length > 0) setLiveReviews(cards);
       })
       .catch(() => {});
   }, []);
 
-  const reviews = liveReviews.length >= 3 ? liveReviews : fallbackReviews;
+  // Show real reviews; pad with fallbacks to always display at least 3 cards
+  const reviews = liveReviews.length > 0
+    ? [...liveReviews, ...fallbackReviews.slice(0, Math.max(0, 3 - liveReviews.length))]
+    : fallbackReviews;
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
@@ -1014,7 +1017,7 @@ export default function Landing() {
               {[0,1,2,3,4].map(i => <Star key={i} className="w-4 h-4 text-amber-400 fill-amber-400" />)}
             </div>
             <h2 className="text-3xl font-black text-white tracking-tight">Loved by service professionals worldwide</h2>
-            {liveReviews.length >= 3 && (
+            {liveReviews.length > 0 && (
               <p className="text-slate-500 text-xs mt-2">{liveReviews.length} verified review{liveReviews.length !== 1 ? 's' : ''} from real users</p>
             )}
           </div>

@@ -18,7 +18,7 @@ router.post('/', (req: Request, res: Response) => {
 
 router.get('/highlights', (_req: Request, res: Response) => {
   const rows = db.prepare(
-    "SELECT id, name, rating, message, created_at FROM feedback WHERE rating >= 4 AND message IS NOT NULL AND message != '' ORDER BY rating DESC, created_at DESC LIMIT 6"
+    'SELECT id, name, rating, message, created_at FROM feedback WHERE rating >= 4 ORDER BY rating DESC, created_at DESC LIMIT 6'
   ).all();
   res.json({ highlights: rows });
 });
