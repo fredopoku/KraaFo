@@ -15,7 +15,8 @@
   <img src="https://img.shields.io/badge/Node.js-Express-339933?style=flat-square&logo=node.js" />
   <img src="https://img.shields.io/badge/SQLite-better--sqlite3-003B57?style=flat-square&logo=sqlite" />
   <img src="https://img.shields.io/badge/PDF-Puppeteer-40B5A4?style=flat-square" />
-  <img src="https://img.shields.io/badge/AI-Groq%20%2B%20Gemini-FF6B35?style=flat-square" />
+  <img src="https://img.shields.io/badge/AI-Claude%20%2B%20Groq-FF6B35?style=flat-square" />
+  <img src="https://img.shields.io/badge/Email-Resend-000000?style=flat-square" />
   <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" />
 </p>
 
@@ -43,11 +44,12 @@
 - **Invoice, Receipt & Quote Builder** — line items, quantities, units, discounts (flat or %), tax rate, payment tracking, due dates, notes, and terms
 - **Live Preview** — see the branded PDF update in real time as you type
 - **PDF Export** — pixel-perfect branded PDFs via headless Chromium (Puppeteer)
-- **Document History** — all saved documents stored locally, searchable from the toolbar
+- **Mobile PDF Sharing** — on iOS and Android, download/preview triggers the native share sheet (Save to Files, WhatsApp, AirDrop, etc.) using the Web Share API
+- **Document History** — all saved documents stored and searchable from the toolbar
 
 ### AI & Automation
-- **Smart Fill** — picks your industry and client type, then suggests relevant service descriptions, line items, notes, and payment terms automatically
-- **Import from Document** — upload an existing invoice or receipt (image or PDF) and the AI reads it and populates the form; falls back to local OCR if no API key is set
+- **Smart Fill** — picks your industry and client type, then suggests relevant service descriptions, line items, notes, and payment terms automatically (Claude → Groq → built-in templates fallback chain)
+- **Import from Document** — upload an existing invoice or receipt (image or PDF) and the AI reads it and populates the form; falls back to local OCR (Tesseract.js) if no API key is set
 - **Auto Quote→Invoice** — convert a saved quote into a full invoice in one click
 
 ### Branding
@@ -57,13 +59,24 @@
 
 ### Clients & Delivery
 - **Client Address Book** — save and reuse client details across documents
-- **Email Delivery** — send branded PDF invoices directly to clients via email (platform-managed SMTP)
+- **Email Delivery** — send branded PDF invoices directly to clients via Resend (or custom SMTP)
 - **WhatsApp & SMS** — one-tap share to WhatsApp or open in Messages (mobile-ready)
 - **Quotes Management** — dedicated quotes list, status tracking (Draft → Sent → Accepted → Declined)
 
 ### Payments
 - **Payment Details** — add bank account, PayPal, M-Pesa, MTN Mobile Money, Airtel Money, Telecel Cash
 - **QR Code** — auto-generated payment QR on invoices linking to PayPal or mobile money
+
+### Ratings & Feedback
+- **Star Rating Widget** — visitors rate KraaFo (1–5 stars) and leave a comment directly on the landing page
+- **Feedback Dashboard** — the owner sees all submitted reviews with average rating, individual comments, names, and dates
+- **Expandable Review List** — show/collapse all reviews in the dashboard panel
+
+### Newsletter & Broadcasts
+- **Subscriber Sign-up** — email capture form on the landing page; sends a branded welcome email on subscription
+- **One-click Unsubscribe** — every broadcast email contains a unique unsubscribe link (`/unsubscribe?token=...`) that opts the user out instantly
+- **Broadcast Composer** — in the dashboard, write a subject and message body and send to all active subscribers in one click; supports multi-paragraph plain-text formatting
+- **Send History** — recent broadcasts shown below the composer with subject line and recipient count
 
 ### Internationalisation
 - **Multi-currency** — USD, GBP, EUR, CAD, AUD, GHS, NGN, ZAR and more
@@ -79,11 +92,12 @@
 | Backend | Node.js, Express, TypeScript, ts-node-dev |
 | Database | SQLite via better-sqlite3 |
 | PDF Generation | Puppeteer (headless Chromium) |
-| AI — Smart Fill | Groq API (Llama 3) + Gemini fallback |
-| AI — Document Import | Groq vision models + pdf-parse |
-| OCR Fallback | Tesseract.js (fully local, no API needed) |
+| AI — Smart Fill | Anthropic Claude (primary) → Groq (Llama 3) → built-in templates |
+| AI — Document Import | Groq vision models + pdf-parse + Tesseract.js OCR fallback |
 | Image Processing | Sharp, node-vibrant (brand colour extraction) |
-| Email Delivery | Nodemailer (platform SMTP — configured once by owner) |
+| Email — Invoices | Resend API (primary) or Nodemailer (custom SMTP) |
+| Email — Broadcasts | Resend API (subscriber welcome + update emails) |
+| Mobile PDF | Web Share API (navigator.share) with blob-URL anchor fallback |
 
 ---
 
@@ -98,8 +112,8 @@
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/krafo.git
-cd krafo
+git clone https://github.com/fredopoku/KraaFo.git
+cd KraaFo
 
 # Install all dependencies (frontend + backend)
 npm run install:all
@@ -119,15 +133,26 @@ NODE_ENV=development
 UPLOAD_DIR=./uploads
 DB_PATH=./data/krafo.db
 
+# Frontend URL (used in unsubscribe links inside broadcast emails)
+FRONTEND_URL=https://kraafo.com
+
 # AI — Smart Fill (optional, falls back to built-in templates)
+# Primary: get a key at console.anthropic.com
+ANTHROPIC_API_KEY=your_anthropic_key_here
+
+# AI — Smart Fill fallback (optional)
 # Get a free key at console.groq.com
 GROQ_API_KEY=your_groq_key_here
 
-# AI — Document Import vision model (optional)
+# AI — Document Import vision fallback (optional)
 GEMINI_API_KEY=your_gemini_key_here
 
-# Platform SMTP — set once, all client emails route through here
-# For Gmail: create an App Password at myaccount.google.com/apppasswords
+# Email — Resend (recommended — used for invoice delivery, welcome emails, broadcasts)
+# Get a free key at resend.com
+RESEND_API_KEY=your_resend_key_here
+RESEND_FROM=invoices@kraafo.com
+
+# Email — Custom SMTP (alternative to Resend, per-org configuration)
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your@gmail.com
@@ -135,7 +160,7 @@ SMTP_PASS=your_app_password_here
 SMTP_FROM=your@gmail.com
 ```
 
-> The app runs fully without any API keys. Smart Fill uses built-in templates, document import falls back to local OCR, and email can be configured later.
+> The app runs fully without any API keys — Smart Fill uses built-in templates, document import falls back to local OCR, and email features require at minimum a Resend key.
 
 ### Run in Development
 
@@ -161,58 +186,65 @@ npm run dev:client   # frontend only
 ## Project Structure
 
 ```
-krafo/
-├── client/                        # React frontend (Vite)
+KraaFo/
+├── client/                          # React frontend (Vite)
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── Logo.tsx           # KraaFo logo component
-│   │   │   └── SignaturePad.tsx   # Draw / upload signature modal
+│   │   │   ├── Logo.tsx             # KraaFo logo component
+│   │   │   └── SignaturePad.tsx     # Draw / upload signature modal
 │   │   ├── pages/
-│   │   │   ├── Landing.tsx        # Marketing landing page
-│   │   │   ├── Setup.tsx          # Organisation setup wizard (4 steps)
-│   │   │   ├── Dashboard.tsx      # Business overview + recent docs
-│   │   │   ├── Generator.tsx      # Invoice / receipt / quote builder
-│   │   │   ├── Clients.tsx        # Client address book
-│   │   │   └── Quotes.tsx         # Quotes list + status management
+│   │   │   ├── Landing.tsx          # Marketing page + feedback widget + newsletter signup
+│   │   │   ├── Setup.tsx            # Organisation setup wizard (4 steps)
+│   │   │   ├── Dashboard.tsx        # Business overview + feedback panel + broadcast composer
+│   │   │   ├── Generator.tsx        # Invoice / receipt / quote builder
+│   │   │   ├── Clients.tsx          # Client address book
+│   │   │   ├── Quotes.tsx           # Quotes list + status management
+│   │   │   └── Unsubscribe.tsx      # Email unsubscribe confirmation page
 │   │   ├── hooks/
-│   │   │   └── useOrg.ts          # Organisation data hook
+│   │   │   └── useOrg.ts            # Organisation data hook
 │   │   └── utils/
-│   │       ├── api.ts             # Typed API client
-│   │       ├── cn.ts              # Tailwind class helper
-│   │       └── industryData.ts    # Industry → line item map
+│   │       ├── api.ts               # Typed API client (incl. mobile PDF + community APIs)
+│   │       ├── cn.ts                # Tailwind class helper
+│   │       └── industryData.ts      # Industry → line item map
 │   └── public/
 │       └── krafo-logo.png
 │
-├── server/                        # Express backend
+├── server/                          # Express backend
 │   ├── src/
 │   │   ├── db/
-│   │   │   └── schema.ts          # SQLite schema + auto-migrations
+│   │   │   └── schema.ts            # SQLite schema (organizations, invoices, clients,
+│   │   │                            #   quotes, subscribers, feedback, broadcasts, …)
 │   │   ├── routes/
 │   │   │   ├── organizations.ts
 │   │   │   ├── invoices.ts
 │   │   │   ├── quotes.ts
 │   │   │   ├── clients.ts
-│   │   │   ├── deliver.ts         # Email / send routes
-│   │   │   ├── ai.ts              # Smart Fill + document import
-│   │   │   ├── pdf.ts             # PDF generation
-│   │   │   ├── analytics.ts       # Dashboard metrics
-│   │   │   └── upload.ts          # Logo upload + colour extraction
+│   │   │   ├── deliver.ts           # Invoice email / WhatsApp delivery
+│   │   │   ├── ai.ts                # Smart Fill + document import
+│   │   │   ├── pdf.ts               # PDF generation + serving
+│   │   │   ├── analytics.ts         # Dashboard KPI metrics
+│   │   │   ├── upload.ts            # Logo upload + colour extraction
+│   │   │   ├── feedback.ts          # Star ratings + feedback submission
+│   │   │   ├── subscribers.ts       # Newsletter subscribe / unsubscribe
+│   │   │   └── broadcasts.ts        # Send update emails to all subscribers
 │   │   ├── services/
-│   │   │   ├── emailService.ts    # Nodemailer (env-var SMTP)
-│   │   │   ├── aiService.ts       # Groq / Gemini / OCR logic
-│   │   │   ├── pdfService.ts      # Puppeteer PDF rendering
-│   │   │   └── imageService.ts    # Logo processing
+│   │   │   ├── emailService.ts      # Invoice emails + welcome + broadcast via Resend
+│   │   │   ├── aiService.ts         # Claude / Groq / Gemini / OCR logic
+│   │   │   ├── pdfService.ts        # Puppeteer PDF rendering
+│   │   │   └── imageService.ts      # Logo processing + colour extraction
 │   │   └── templates/
-│   │       └── invoiceTemplate.ts # HTML invoice / receipt template
-│   └── uploads/                   # Uploaded logos (git-ignored)
+│   │       └── invoiceTemplate.ts   # HTML invoice / receipt / quote template
+│   └── uploads/                     # Uploaded logos & signatures (git-ignored)
 │
 └── docs/
-    └── screenshots/               # README screenshots
+    └── screenshots/                 # README screenshots
 ```
 
 ---
 
 ## API Reference
+
+### Core
 
 | Method | Endpoint | Description |
 |---|---|---|
@@ -220,22 +252,54 @@ krafo/
 | GET | `/api/organizations/:id` | Get organisation by ID |
 | POST | `/api/organizations` | Create organisation |
 | PUT | `/api/organizations/:id` | Update organisation |
-| GET | `/api/invoices` | List invoices / receipts |
+| GET | `/api/invoices` | List invoices / receipts (filterable by type, status, client) |
 | POST | `/api/invoices` | Create invoice / receipt |
 | PUT | `/api/invoices/:id` | Update invoice / receipt |
+| DELETE | `/api/invoices/:id` | Delete invoice / receipt |
 | GET | `/api/quotes` | List quotes |
 | POST | `/api/quotes` | Create quote |
 | PUT | `/api/quotes/:id` | Update quote |
-| GET | `/api/clients` | List clients |
+| POST | `/api/quotes/:id/convert` | Convert quote to invoice |
+| DELETE | `/api/quotes/:id` | Delete quote |
+| GET | `/api/clients` | List clients (supports search) |
 | POST | `/api/clients` | Create client |
 | PUT | `/api/clients/:id` | Update client |
-| POST | `/api/deliver/email` | Send document via email |
-| POST | `/api/ai/suggest` | Smart Fill suggestions |
+| DELETE | `/api/clients/:id` | Delete client |
+
+### Delivery & PDF
+
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/api/deliver/email/:invoiceId` | Send document PDF via email |
+| GET | `/api/deliver/whatsapp/:invoiceId` | Get WhatsApp share link |
+| GET | `/api/deliver/payment-links/:invoiceId` | Get payment method details |
+| POST | `/api/deliver/generate-dkim` | Generate DKIM key pair |
+| POST | `/api/deliver/test-email` | Send a test email |
+| GET | `/api/pdf/:invoiceId` | Download or preview invoice PDF |
+| GET | `/api/pdf/quote/:quoteId` | Download or preview quote PDF |
+
+### AI & Upload
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/ai/status` | Check if AI is enabled |
+| POST | `/api/ai/suggest` | Smart Fill — suggest line items and terms |
+| POST | `/api/ai/enhance` | Improve a line item description |
 | POST | `/api/ai/parse-receipt` | Import document via AI / OCR |
-| GET | `/api/pdf/:invoiceId` | Download PDF |
-| POST | `/api/pdf/preview` | Preview PDF inline |
-| POST | `/api/upload/logo` | Upload company logo |
-| GET | `/api/analytics/:orgId` | Dashboard metrics |
+| POST | `/api/upload/logo` | Upload company logo + extract brand colours |
+| GET | `/api/analytics` | Dashboard KPI metrics |
+
+### Community
+
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/api/feedback` | Submit a star rating + message |
+| GET | `/api/feedback` | List all feedback with average rating |
+| POST | `/api/subscribers` | Subscribe an email to updates |
+| GET | `/api/subscribers` | List all active subscribers |
+| GET | `/api/subscribers/unsubscribe/:token` | Unsubscribe via token from email link |
+| POST | `/api/broadcasts` | Send a broadcast email to all subscribers |
+| GET | `/api/broadcasts` | List recent broadcast history |
 
 ---
 
@@ -246,20 +310,28 @@ The Import feature accepts:
 - **Images** — JPG, PNG, WebP (Groq vision AI or Tesseract local OCR)
 - **PDFs** — text-based or scanned (Groq + pdf-parse or local OCR fallback)
 
-With a Groq API key (free at [console.groq.com](https://console.groq.com)), the AI extracts client info, line items, dates, totals, notes, and payment terms in seconds. Without a key the app falls back to local OCR and pattern matching — no data leaves your machine.
+With an Anthropic or Groq API key, the AI extracts client info, line items, dates, totals, notes, and payment terms in seconds. Without a key the app falls back to local OCR and pattern matching — no data leaves your machine.
 
 ---
 
 ## Roadmap
 
+- [x] Invoice, Receipt & Quote builder
+- [x] AI Smart Fill & document import
+- [x] Email & WhatsApp delivery
+- [x] Mobile PDF sharing (Web Share API)
+- [x] Client ratings & feedback system
+- [x] Newsletter subscription & broadcast emails
 - [ ] Recurring invoice schedules
 - [ ] Cloud sync / multi-device
 - [ ] Stripe / PayPal payment link integration
 - [ ] Client portal (view & pay invoices online)
 - [ ] Multi-user / team accounts
+- [ ] Changelog / What's New page
+- [ ] Feature request voting board
 
 ---
 
 ## License
 
-MIT © KraaFo
+MIT © Frederick Opoku Afriyie
