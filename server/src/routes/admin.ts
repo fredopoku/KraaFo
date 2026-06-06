@@ -34,4 +34,80 @@ router.get('/users', adminAuth, (_req: Request, res: Response) => {
   res.json({ orgs, summary: { ...summary, active_orgs } });
 });
 
+router.get('/analytics', adminAuth, (_req: Request, res: Response) => {
+  const overview = db.prepare(`
+    SELECT
+      COUNT(*) as total,
+      COUNT(CASE WHEN date(created_at) = date('now') THEN 1 END) as today,
+      COUNT(CASE WHEN created_at >= datetime('now', '-7 days')  THEN 1 END) as week,
+      COUNT(CASE WHEN created_at >= datetime('now', '-30 days') THEN 1 END) as month,
+      COUNT(DISTINCT session_id) as unique_sessions,
+      COUNT(DISTINCT CASE WHEN date(created_at) = date('now') THEN session_id END) as today_sessions
+    FROM page_views
+  `).get() as any;
+
+  const countries = db.prepare(`
+    SELECT country, country_code, COUNT(*) as count
+    FROM page_views
+    WHERE country IS NOT NULL AND country NOT IN ('Unknown','Local','')
+    GROUP BY country, country_code
+    ORDER BY count DESC
+    LIMIT 20
+  `).all();
+
+  const cities = db.prepare(`
+    SELECT city, region, country, country_code, COUNT(*) as count
+    FROM page_views
+    WHERE city IS NOT NULL AND city != '' AND country NOT IN ('Unknown','Local','')
+    GROUP BY city, region, country
+    ORDER BY count DESC
+    LIMIT 20
+  `).all();
+
+  const daily = db.prepare(`
+    SELECT date(created_at) as date, COUNT(*) as count
+    FROM page_views
+    WHERE created_at >= datetime('now', '-30 days')
+    GROUP BY date(created_at)
+    ORDER BY date ASC
+  `).all();
+
+  const pages = db.prepare(`
+    SELECT page, COUNT(*) as count
+    FROM page_views
+    GROUP BY page
+    ORDER BY count DESC
+    LIMIT 10
+  `).all();
+
+  const devices = db.prepare(`
+    SELECT device, COUNT(*) as count
+    FROM page_views
+    WHERE device IS NOT NULL
+    GROUP BY device
+    ORDER BY count DESC
+  `).all();
+
+  const browsers = db.prepare(`
+    SELECT browser, COUNT(*) as count
+    FROM page_views
+    WHERE browser IS NOT NULL
+    GROUP BY browser
+    ORDER BY count DESC
+    LIMIT 8
+  `).all();
+
+  const referrers = db.prepare(`
+    SELECT referrer, COUNT(*) as count
+    FROM page_views
+    WHERE referrer IS NOT NULL AND referrer != ''
+      AND referrer NOT LIKE '%kraafo%'
+    GROUP BY referrer
+    ORDER BY count DESC
+    LIMIT 10
+  `).all();
+
+  res.json({ overview, countries, cities, daily, pages, devices, browsers, referrers });
+});
+
 export default router;

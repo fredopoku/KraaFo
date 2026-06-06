@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Star, Mail, Send, Megaphone, ChevronDown, ChevronUp, LogOut, Shield, Building2, Users, FileText, Receipt, Quote, TrendingUp, Activity, Trash2, Zap, Plus, X, ArrowRight, CheckCircle, AlertCircle } from 'lucide-react';
+import { Star, Mail, Send, Megaphone, ChevronDown, ChevronUp, LogOut, Shield, Building2, Users, FileText, Receipt, Quote, TrendingUp, Activity, Trash2, Zap, Plus, X, ArrowRight, CheckCircle, AlertCircle, Globe, Monitor, Smartphone, Tablet, Eye } from 'lucide-react';
 import { LogoMark } from '../components/Logo';
 import { cn } from '../utils/cn';
 
@@ -44,14 +44,16 @@ export default function Admin() {
   const [addReviewForm, setAddReviewForm] = useState({ name: '', email: '', rating: 5, message: '' });
   const [addReviewHover, setAddReviewHover] = useState(0);
   const [addingReview, setAddingReview] = useState(false);
+  const [analyticsData, setAnalyticsData] = useState<any | null>(null);
 
   const loadData = useCallback(async (t: string) => {
-    const [fb, subs, bcs, users, cl] = await Promise.all([
+    const [fb, subs, bcs, users, cl, analytics] = await Promise.all([
       adminFetch<any>('/feedback', t),
       adminFetch<any>('/subscribers', t),
       adminFetch<any[]>('/broadcasts', t),
       adminFetch<any>('/admin/users', t),
       fetch(`${BASE}/changelog`).then(r => r.json()),
+      adminFetch<any>('/admin/analytics', t),
     ]);
     setFeedbackData(fb);
     setSubCount(subs.total);
@@ -59,6 +61,7 @@ export default function Admin() {
     setBroadcasts(bcs);
     setUsersData(users);
     setChangelogEntries(cl.entries || []);
+    setAnalyticsData(analytics);
   }, []);
 
   // Validate stored token on mount
@@ -685,6 +688,260 @@ export default function Admin() {
                   </div>
                 );
               })}
+            </div>
+          )}
+        </div>
+
+        {/* ── Analytics Dashboard ──────────────────────────────── */}
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-50 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Globe className="w-4 h-4 text-indigo-600" />
+              <h2 className="text-sm font-black text-slate-700">Website Analytics</h2>
+            </div>
+            <span className="text-[10px] text-slate-400">Real visitors · city-level · live data</span>
+          </div>
+
+          {!analyticsData ? (
+            <div className="py-14 text-center">
+              <Globe className="w-8 h-8 text-slate-200 mx-auto mb-2 animate-pulse" />
+              <p className="text-sm text-slate-300">Loading analytics…</p>
+            </div>
+          ) : (
+            <div className="p-5 space-y-6">
+
+              {/* Overview stat row */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                {[
+                  { label: 'Total Views', value: analyticsData.overview?.total ?? 0, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+                  { label: 'Today', value: analyticsData.overview?.today ?? 0, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+                  { label: 'This Week', value: analyticsData.overview?.week ?? 0, color: 'text-blue-600', bg: 'bg-blue-50' },
+                  { label: 'This Month', value: analyticsData.overview?.month ?? 0, color: 'text-purple-600', bg: 'bg-purple-50' },
+                  { label: 'Sessions', value: analyticsData.overview?.unique_sessions ?? 0, color: 'text-amber-600', bg: 'bg-amber-50' },
+                  { label: 'Today Sessions', value: analyticsData.overview?.today_sessions ?? 0, color: 'text-rose-600', bg: 'bg-rose-50' },
+                ].map(s => (
+                  <div key={s.label} className={`${s.bg} rounded-xl p-3`}>
+                    <div className={`text-xl font-black ${s.color} leading-none`}>{s.value.toLocaleString()}</div>
+                    <div className="text-[10px] font-medium text-slate-500 mt-1">{s.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Daily chart — last 30 days */}
+              {analyticsData.daily && analyticsData.daily.length > 0 && (() => {
+                const maxVal = Math.max(...analyticsData.daily.map((d: any) => d.count), 1);
+                return (
+                  <div>
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3">Page views — last 30 days</p>
+                    <div className="flex items-end gap-[3px] h-24 border-b border-slate-100 pb-1">
+                      {analyticsData.daily.map((d: any) => (
+                        <div key={d.date} className="flex-1 flex flex-col items-center justify-end gap-0.5 group relative">
+                          <div
+                            className="w-full bg-indigo-500 rounded-t-sm hover:bg-indigo-600 transition-colors cursor-default"
+                            style={{ height: `${Math.max((d.count / maxVal) * 88, 2)}px` }}
+                            title={`${d.date}: ${d.count} view${d.count !== 1 ? 's' : ''}`}
+                          />
+                          <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                            {d.count} · {d.date.slice(5)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex justify-between text-[9px] text-slate-300 mt-1">
+                      <span>{analyticsData.daily[0]?.date?.slice(5)}</span>
+                      <span>{analyticsData.daily[analyticsData.daily.length - 1]?.date?.slice(5)}</span>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Countries + Cities */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                {/* Top countries */}
+                {analyticsData.countries && analyticsData.countries.length > 0 && (
+                  <div>
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3">Top countries</p>
+                    <div className="space-y-2">
+                      {(() => {
+                        const maxC = Math.max(...analyticsData.countries.map((c: any) => c.count), 1);
+                        return analyticsData.countries.map((c: any) => {
+                          const flag = c.country_code && c.country_code !== 'XX'
+                            ? String.fromCodePoint(...[...c.country_code.toUpperCase()].map((ch: string) => 0x1F1E6 + ch.charCodeAt(0) - 65))
+                            : '🌐';
+                          return (
+                            <div key={c.country} className="flex items-center gap-2">
+                              <span className="text-base leading-none w-6 shrink-0">{flag}</span>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between mb-0.5">
+                                  <span className="text-xs font-medium text-slate-700 truncate">{c.country}</span>
+                                  <span className="text-xs font-bold text-slate-500 ml-2 shrink-0">{c.count}</span>
+                                </div>
+                                <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                  <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${(c.count / maxC) * 100}%` }} />
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        });
+                      })()}
+                    </div>
+                  </div>
+                )}
+
+                {/* Top cities */}
+                {analyticsData.cities && analyticsData.cities.length > 0 && (
+                  <div>
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3">Top cities</p>
+                    <div className="space-y-2">
+                      {(() => {
+                        const maxCt = Math.max(...analyticsData.cities.map((c: any) => c.count), 1);
+                        return analyticsData.cities.map((c: any) => {
+                          const flag = c.country_code && c.country_code !== 'XX'
+                            ? String.fromCodePoint(...[...c.country_code.toUpperCase()].map((ch: string) => 0x1F1E6 + ch.charCodeAt(0) - 65))
+                            : '🌐';
+                          return (
+                            <div key={`${c.city}-${c.region}`} className="flex items-center gap-2">
+                              <span className="text-base leading-none w-6 shrink-0">{flag}</span>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between mb-0.5">
+                                  <div className="min-w-0">
+                                    <span className="text-xs font-medium text-slate-700 truncate">{c.city}</span>
+                                    {c.region && <span className="text-[10px] text-slate-400 ml-1">{c.region}</span>}
+                                  </div>
+                                  <span className="text-xs font-bold text-slate-500 ml-2 shrink-0">{c.count}</span>
+                                </div>
+                                <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                  <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${(c.count / maxCt) * 100}%` }} />
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        });
+                      })()}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Devices + Browsers + Pages */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+                {/* Devices */}
+                {analyticsData.devices && analyticsData.devices.length > 0 && (
+                  <div>
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3">Devices</p>
+                    <div className="space-y-2">
+                      {(() => {
+                        const total = analyticsData.devices.reduce((s: number, d: any) => s + d.count, 0) || 1;
+                        const icons: Record<string, any> = { Desktop: Monitor, Mobile: Smartphone, Tablet };
+                        return analyticsData.devices.map((d: any) => {
+                          const Icon = icons[d.device] || Monitor;
+                          const pct = Math.round((d.count / total) * 100);
+                          const colors: Record<string, string> = { Desktop: 'bg-indigo-500', Mobile: 'bg-emerald-500', Tablet: 'bg-amber-500' };
+                          return (
+                            <div key={d.device}>
+                              <div className="flex items-center justify-between mb-0.5">
+                                <div className="flex items-center gap-1.5">
+                                  <Icon className="w-3 h-3 text-slate-400" />
+                                  <span className="text-xs font-medium text-slate-700">{d.device}</span>
+                                </div>
+                                <span className="text-xs font-bold text-slate-500">{pct}%</span>
+                              </div>
+                              <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                                <div className={`h-full rounded-full ${colors[d.device] || 'bg-slate-400'}`} style={{ width: `${pct}%` }} />
+                              </div>
+                            </div>
+                          );
+                        });
+                      })()}
+                    </div>
+                  </div>
+                )}
+
+                {/* Browsers */}
+                {analyticsData.browsers && analyticsData.browsers.length > 0 && (
+                  <div>
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3">Browsers</p>
+                    <div className="space-y-2">
+                      {(() => {
+                        const total = analyticsData.browsers.reduce((s: number, b: any) => s + b.count, 0) || 1;
+                        return analyticsData.browsers.map((b: any) => {
+                          const pct = Math.round((b.count / total) * 100);
+                          return (
+                            <div key={b.browser}>
+                              <div className="flex items-center justify-between mb-0.5">
+                                <span className="text-xs font-medium text-slate-700">{b.browser}</span>
+                                <span className="text-xs font-bold text-slate-500">{pct}%</span>
+                              </div>
+                              <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                                <div className="h-full bg-purple-500 rounded-full" style={{ width: `${pct}%` }} />
+                              </div>
+                            </div>
+                          );
+                        });
+                      })()}
+                    </div>
+                  </div>
+                )}
+
+                {/* Top pages */}
+                {analyticsData.pages && analyticsData.pages.length > 0 && (
+                  <div>
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3">Top pages</p>
+                    <div className="space-y-2">
+                      {(() => {
+                        const maxP = Math.max(...analyticsData.pages.map((p: any) => p.count), 1);
+                        return analyticsData.pages.map((p: any) => (
+                          <div key={p.page}>
+                            <div className="flex items-center justify-between mb-0.5">
+                              <span className="text-xs font-medium text-slate-700 truncate max-w-[120px]" title={p.page}>{p.page || '/'}</span>
+                              <span className="text-xs font-bold text-slate-500 ml-1 shrink-0">{p.count}</span>
+                            </div>
+                            <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                              <div className="h-full bg-rose-400 rounded-full" style={{ width: `${(p.count / maxP) * 100}%` }} />
+                            </div>
+                          </div>
+                        ));
+                      })()}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Referrers */}
+              {analyticsData.referrers && analyticsData.referrers.length > 0 && (
+                <div>
+                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3">Traffic sources</p>
+                  <div className="space-y-1.5">
+                    {(() => {
+                      const maxR = Math.max(...analyticsData.referrers.map((r: any) => r.count), 1);
+                      return analyticsData.referrers.map((r: any) => (
+                        <div key={r.referrer} className="flex items-center gap-2">
+                          <Eye className="w-3 h-3 text-slate-300 shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-0.5">
+                              <span className="text-xs text-slate-600 truncate max-w-[260px]" title={r.referrer}>{r.referrer}</span>
+                              <span className="text-xs font-bold text-slate-400 ml-2 shrink-0">{r.count}</span>
+                            </div>
+                            <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                              <div className="h-full bg-amber-400 rounded-full" style={{ width: `${(r.count / maxR) * 100}%` }} />
+                            </div>
+                          </div>
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                </div>
+              )}
+
+              {analyticsData.overview?.total === 0 && (
+                <div className="py-8 text-center">
+                  <Globe className="w-10 h-10 text-slate-200 mx-auto mb-2" />
+                  <p className="text-sm text-slate-400 font-medium">No page views recorded yet</p>
+                  <p className="text-xs text-slate-300 mt-1">Tracking starts automatically as visitors arrive</p>
+                </div>
+              )}
+
             </div>
           )}
         </div>
