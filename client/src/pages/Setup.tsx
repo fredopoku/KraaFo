@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, Check, ChevronRight, ChevronLeft, Loader2, Building2, Palette, CreditCard, FileText } from 'lucide-react';
+import { Upload, Check, ChevronRight, ChevronLeft, Loader2, Building2, Palette, CreditCard, FileText, ShieldCheck } from 'lucide-react';
 import { LogoMark } from '../components/Logo';
 import { api } from '../utils/api';
 import { Organization, BrandColors } from '../types';
 import { cn } from '../utils/cn';
 import { useOrg } from '../hooks/useOrg';
+import { TurnstileWidget, TURNSTILE_ENABLED } from '../components/Turnstile';
 
 const STEPS = [
   { id: 1, label: 'Company Info', icon: Building2 },
@@ -28,6 +29,8 @@ const CURRENCIES = [
 export default function Setup() {
   const navigate = useNavigate();
   const { org, setOrg } = useOrg();
+  const [humanVerified, setHumanVerified] = useState(false);
+  const [cfToken, setCfToken] = useState('');
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -158,6 +161,39 @@ export default function Setup() {
       setSaving(false);
     }
   };
+
+  /* ── Verification gate — only for brand-new users ──────────── */
+  if (!org && !humanVerified && TURNSTILE_ENABLED) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden text-center">
+          <div className="bg-indigo-600 px-8 py-6 flex flex-col items-center">
+            <LogoMark size={52} />
+            <h1 className="text-white text-xl font-black mt-3 tracking-tight">Welcome to KraaFo</h1>
+            <p className="text-indigo-200 text-sm mt-1">Free professional invoicing for your business</p>
+          </div>
+          <div className="px-8 py-8 space-y-5">
+            <div className="flex items-center justify-center gap-2 text-slate-500 text-sm">
+              <ShieldCheck className="w-4 h-4 text-indigo-500 shrink-0" />
+              <span>Quick security check before you get started</span>
+            </div>
+            <TurnstileWidget
+              onVerify={token => { setCfToken(token); }}
+              onExpire={() => setCfToken('')}
+            />
+            <button
+              onClick={() => setHumanVerified(true)}
+              disabled={!cfToken}
+              className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              Continue to Setup <ChevronRight className="w-4 h-4" />
+            </button>
+            <p className="text-xs text-slate-300">Protected by Cloudflare Turnstile</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
