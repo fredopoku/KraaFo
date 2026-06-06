@@ -173,6 +173,32 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_invoice_items_invoice ON invoice_items(invoice_id);
   CREATE INDEX IF NOT EXISTS idx_clients_org ON clients(org_id);
   CREATE INDEX IF NOT EXISTS idx_quotes_org ON quotes(org_id);
+
+  CREATE TABLE IF NOT EXISTS subscribers (
+    id TEXT PRIMARY KEY,
+    email TEXT NOT NULL UNIQUE,
+    name TEXT,
+    token TEXT NOT NULL UNIQUE,
+    subscribed_at TEXT DEFAULT (datetime('now')),
+    unsubscribed_at TEXT
+  );
+
+  CREATE TABLE IF NOT EXISTS feedback (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT,
+    rating INTEGER NOT NULL CHECK(rating BETWEEN 1 AND 5),
+    message TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS broadcasts (
+    id TEXT PRIMARY KEY,
+    subject TEXT NOT NULL,
+    body TEXT NOT NULL,
+    sent_at TEXT DEFAULT (datetime('now')),
+    recipient_count INTEGER DEFAULT 0
+  );
 `);
 
 // Safe column additions for existing databases

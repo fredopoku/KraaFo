@@ -7,6 +7,7 @@ import QRCode from 'qrcode';
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
 const FROM_ADDRESS = process.env.RESEND_FROM || 'invoices@kraafo.com';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://kraafo.com';
 
 export async function sendInvoiceEmail(
   invoiceId: string,
@@ -151,6 +152,95 @@ export async function sendInvoiceEmail(
   });
 
   if (error) throw new Error(error.message);
+}
+
+export async function sendSubscriberWelcome(email: string, name?: string): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return;
+  const resend = new Resend(apiKey);
+  const greeting = name ? `, ${name}` : '';
+  await resend.emails.send({
+    from: `KraaFo <${FROM_ADDRESS}>`,
+    to: [email],
+    subject: "You're subscribed to KraaFo updates!",
+    text: `Welcome${greeting}!\n\nYou're now subscribed to KraaFo updates. We'll keep you in the loop whenever we ship new features, improvements, and tips.\n\nBest,\nThe KraaFo Team`,
+    html: buildWelcomeHtml(email, name),
+  });
+}
+
+export async function sendBroadcast(subject: string, body: string): Promise<{ sent: number; failed: number }> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) throw new Error('Email not configured — RESEND_API_KEY missing');
+  const subscribers = db.prepare("SELECT * FROM subscribers WHERE unsubscribed_at IS NULL").all() as any[];
+  if (!subscribers.length) throw new Error('No active subscribers');
+  const resend = new Resend(apiKey);
+  let sent = 0;
+  let failed = 0;
+  for (const sub of subscribers) {
+    try {
+      await resend.emails.send({
+        from: `KraaFo <${FROM_ADDRESS}>`,
+        to: [sub.email],
+        subject,
+        html: buildBroadcastHtml(body, sub.token),
+        text: body,
+      });
+      sent++;
+    } catch {
+      failed++;
+    }
+  }
+  return { sent, failed };
+}
+
+function buildWelcomeHtml(email: string, name?: string): string {
+  const display = name || 'there';
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f1f5f9;padding:32px 16px">
+    <tr><td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08)">
+        <tr><td style="background:#4f46e5;padding:32px 40px;text-align:center">
+          <p style="margin:0;color:#fff;font-size:26px;font-weight:800;letter-spacing:-0.5px">KraaFo</p>
+          <p style="margin:6px 0 0;color:rgba(255,255,255,0.75);font-size:13px">Professional Invoicing Platform</p>
+        </td></tr>
+        <tr><td style="padding:40px;text-align:center">
+          <p style="font-size:36px;margin:0 0 16px">🎉</p>
+          <h2 style="margin:0 0 12px;color:#111827;font-size:20px;font-weight:800">You're in, ${display}!</h2>
+          <p style="margin:0 0 28px;color:#6b7280;font-size:15px;line-height:1.7">Thanks for subscribing to KraaFo updates. We'll keep you in the loop whenever we ship new features, improvements, and tips.</p>
+          <a href="${FRONTEND_URL}" style="display:inline-block;background:#4f46e5;color:#fff;padding:12px 28px;border-radius:10px;font-weight:700;font-size:14px;text-decoration:none">Visit KraaFo →</a>
+        </td></tr>
+        <tr><td style="padding:20px 40px;background:#f9fafb;border-top:1px solid #f3f4f6;text-align:center">
+          <p style="margin:0;color:#9ca3af;font-size:12px">You subscribed with ${email}. Don't want updates? <a href="${FRONTEND_URL}/unsubscribe" style="color:#6b7280">Unsubscribe here</a>.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+}
+
+function buildBroadcastHtml(body: string, unsubToken: string): string {
+  const unsubUrl = `${FRONTEND_URL}/unsubscribe?token=${unsubToken}`;
+  const formatted = body.replace(/\n\n/g, '</p><p style="margin:0 0 16px;color:#374151;font-size:15px;line-height:1.8">').replace(/\n/g, '<br>');
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f1f5f9;padding:32px 16px">
+    <tr><td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08)">
+        <tr><td style="background:#4f46e5;padding:28px 40px">
+          <p style="margin:0;color:#fff;font-size:22px;font-weight:800;letter-spacing:-0.5px">KraaFo</p>
+          <p style="margin:4px 0 0;color:rgba(255,255,255,0.7);font-size:12px;text-transform:uppercase;letter-spacing:1px">Platform Update</p>
+        </td></tr>
+        <tr><td style="padding:36px 40px">
+          <p style="margin:0 0 16px;color:#374151;font-size:15px;line-height:1.8">${formatted}</p>
+        </td></tr>
+        <tr><td style="padding:20px 40px;background:#f9fafb;border-top:1px solid #f3f4f6;text-align:center">
+          <p style="margin:0;color:#9ca3af;font-size:12px">KraaFo — Professional Invoicing Platform &nbsp;·&nbsp; <a href="${unsubUrl}" style="color:#6b7280">Unsubscribe</a></p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
 }
 
 function buildEmailHtml(invoice: any, org: any, message: string, docType: string, sym: string): string {

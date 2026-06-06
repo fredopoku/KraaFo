@@ -1,6 +1,115 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, Palette, Download, Shield, CheckCircle, ArrowRight, FileText, Receipt, Send, Globe, Star, TrendingUp, Clock, AlertCircle, Plus, Settings, Users, ScanLine, X } from 'lucide-react';
+import { Sparkles, Palette, Download, Shield, CheckCircle, ArrowRight, FileText, Receipt, Send, Globe, Star, TrendingUp, Clock, AlertCircle, Plus, Settings, Users, ScanLine, X, Mail, MessageSquare } from 'lucide-react';
 import { Logo, LogoMark } from '../components/Logo';
+import { api } from '../utils/api';
+
+function FeedbackWidget() {
+  const [hovered, setHovered] = useState(0);
+  const [selected, setSelected] = useState(0);
+  const [form, setForm] = useState({ name: '', email: '', message: '' });
+  const [submitting, setSubmitting] = useState(false);
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.name.trim() || !selected) { setError('Please enter your name and pick a rating.'); return; }
+    setSubmitting(true); setError('');
+    try {
+      await api.feedback.submit({ name: form.name, email: form.email || undefined, rating: selected, message: form.message || undefined });
+      setDone(true);
+    } catch { setError('Something went wrong. Please try again.'); }
+    finally { setSubmitting(false); }
+  };
+
+  if (done) return (
+    <div className="text-center py-6">
+      <div className="text-4xl mb-3">🙏</div>
+      <h3 className="text-lg font-black text-slate-900 mb-1">Thank you!</h3>
+      <p className="text-slate-500 text-sm">Your feedback helps us build a better KraaFo.</p>
+    </div>
+  );
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Star picker */}
+      <div className="flex justify-center gap-2">
+        {[1, 2, 3, 4, 5].map(n => (
+          <button key={n} type="button"
+            onMouseEnter={() => setHovered(n)} onMouseLeave={() => setHovered(0)}
+            onClick={() => setSelected(n)}
+            className="transition-transform hover:scale-110 focus:outline-none"
+            aria-label={`${n} star${n > 1 ? 's' : ''}`}
+          >
+            <Star className={`w-8 h-8 transition-colors ${n <= (hovered || selected) ? 'fill-amber-400 text-amber-400' : 'text-slate-200'}`} />
+          </button>
+        ))}
+      </div>
+      {selected > 0 && (
+        <p className="text-center text-xs font-bold text-slate-400">
+          {['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent!'][selected]}
+        </p>
+      )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <input required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+          placeholder="Your name *" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white" />
+        <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+          placeholder="Email (optional)" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white" />
+      </div>
+      <textarea value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
+        placeholder="Tell us more… (optional)" rows={3}
+        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white resize-none" />
+      {error && <p className="text-xs text-red-500">{error}</p>}
+      <button type="submit" disabled={submitting}
+        className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm transition-all disabled:opacity-60">
+        {submitting ? 'Sending…' : 'Submit Feedback'}
+      </button>
+    </form>
+  );
+}
+
+function NewsletterSignup() {
+  const [form, setForm] = useState({ email: '', name: '' });
+  const [submitting, setSubmitting] = useState(false);
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.email.trim()) { setError('Email is required.'); return; }
+    setSubmitting(true); setError('');
+    try {
+      await api.subscribers.subscribe({ email: form.email, name: form.name || undefined });
+      setDone(true);
+    } catch (err: any) { setError(err.message || 'Something went wrong.'); }
+    finally { setSubmitting(false); }
+  };
+
+  if (done) return (
+    <div className="text-center py-2">
+      <CheckCircle className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
+      <p className="text-white font-bold">You're subscribed!</p>
+      <p className="text-indigo-200 text-sm mt-1">We'll keep you in the loop on every new feature.</p>
+    </div>
+  );
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-lg mx-auto">
+      <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+        placeholder="Your name (optional)"
+        className="flex-1 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-indigo-300 text-sm focus:outline-none focus:ring-2 focus:ring-white/40" />
+      <input required type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+        placeholder="Your email *"
+        className="flex-1 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-indigo-300 text-sm focus:outline-none focus:ring-2 focus:ring-white/40" />
+      <button type="submit" disabled={submitting}
+        className="px-6 py-3 rounded-xl bg-white text-indigo-700 font-bold text-sm hover:bg-indigo-50 transition-all disabled:opacity-60 whitespace-nowrap">
+        {submitting ? 'Joining…' : 'Stay Updated →'}
+      </button>
+      {error && <p className="text-xs text-red-300 col-span-full mt-1">{error}</p>}
+    </form>
+  );
+}
 
 const features = [
   { icon: Sparkles, title: 'Smart Fill',            desc: 'Pick your industry and job type — KraaFo auto-populates line items, pricing, notes, and payment terms instantly.' },
@@ -909,6 +1018,39 @@ export default function Landing() {
           <Link to="/setup" className="inline-flex items-center gap-2.5 bg-indigo-600 hover:bg-indigo-700 text-white px-10 py-3.5 rounded-xl font-bold text-base transition-all shadow-2xl shadow-indigo-200 btn-glow">
             Get Started Free <ArrowRight className="w-4 h-4" />
           </Link>
+        </div>
+      </section>
+
+      {/* ── Newsletter ──────────────────────────────────────── */}
+      <section className="py-16 px-6 bg-indigo-600">
+        <div className="max-w-2xl mx-auto text-center">
+          <div className="flex justify-center mb-4">
+            <div className="w-11 h-11 rounded-2xl bg-white/15 flex items-center justify-center">
+              <Mail className="w-5 h-5 text-white" />
+            </div>
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight mb-2">Stay in the loop</h2>
+          <p className="text-indigo-200 mb-8 text-sm sm:text-base">
+            We keep shipping — new features, improvements, tips. Drop your email and we'll update you whenever something worth knowing lands.
+          </p>
+          <NewsletterSignup />
+          <p className="text-indigo-300 text-xs mt-4">No spam, ever. Unsubscribe with one click anytime.</p>
+        </div>
+      </section>
+
+      {/* ── Feedback ────────────────────────────────────────── */}
+      <section className="py-16 px-6 bg-white">
+        <div className="max-w-lg mx-auto text-center">
+          <div className="flex justify-center mb-4">
+            <div className="w-11 h-11 rounded-2xl bg-slate-100 flex items-center justify-center">
+              <MessageSquare className="w-5 h-5 text-indigo-600" />
+            </div>
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mb-2">How are we doing?</h2>
+          <p className="text-slate-500 mb-8 text-sm">Rate KraaFo and share any thoughts — every piece of feedback shapes what we build next.</p>
+          <div className="bg-slate-50 rounded-2xl border border-slate-100 p-6 sm:p-8">
+            <FeedbackWidget />
+          </div>
         </div>
       </section>
 

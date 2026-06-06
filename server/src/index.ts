@@ -13,6 +13,9 @@ import clientsRouter from './routes/clients';
 import quotesRouter from './routes/quotes';
 import deliverRouter from './routes/deliver';
 import analyticsRouter from './routes/analytics';
+import feedbackRouter from './routes/feedback';
+import subscribersRouter from './routes/subscribers';
+import broadcastsRouter from './routes/broadcasts';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -56,6 +59,9 @@ app.use('/api/clients', clientsRouter);
 app.use('/api/quotes', quotesRouter);
 app.use('/api/deliver', deliverRouter);
 app.use('/api/analytics', analyticsRouter);
+app.use('/api/feedback', feedbackRouter);
+app.use('/api/subscribers', subscribersRouter);
+app.use('/api/broadcasts', broadcastsRouter);
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', version: '1.0.0', timestamp: new Date().toISOString() });

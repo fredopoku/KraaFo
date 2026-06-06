@@ -132,6 +132,26 @@ export const api = {
     get: (orgId: string) => request<any>(`/analytics?org_id=${orgId}`),
   },
 
+  feedback: {
+    submit: (data: { name: string; email?: string; rating: number; message?: string }) =>
+      request<{ success: boolean }>('/feedback', { method: 'POST', body: JSON.stringify(data) }),
+    list: () => request<{ feedback: any[]; averageRating: number; total: number }>('/feedback'),
+  },
+
+  subscribers: {
+    subscribe: (data: { email: string; name?: string }) =>
+      request<{ success: boolean; alreadySubscribed?: boolean; resubscribed?: boolean }>('/subscribers', { method: 'POST', body: JSON.stringify(data) }),
+    list: () => request<{ subscribers: any[]; total: number }>('/subscribers'),
+    unsubscribe: (token: string) =>
+      request<{ success: boolean; email: string; already?: boolean }>(`/subscribers/unsubscribe/${token}`),
+  },
+
+  broadcasts: {
+    send: (data: { subject: string; body: string }) =>
+      request<{ success: boolean; sent: number; failed: number }>('/broadcasts', { method: 'POST', body: JSON.stringify(data) }),
+    list: () => request<any[]>('/broadcasts'),
+  },
+
   pdf: {
     preview: (invoiceId: string) => pdfOpen(`${BASE}/pdf/${invoiceId}?inline=true`, 'invoice.pdf'),
     download: (invoiceId: string) => pdfOpen(`${BASE}/pdf/${invoiceId}`, 'invoice.pdf'),
