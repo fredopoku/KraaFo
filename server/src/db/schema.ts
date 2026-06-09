@@ -249,4 +249,23 @@ addCol('organizations', 'dkim_selector', 'TEXT');
 addCol('organizations', 'dkim_private_key', 'TEXT');
 addCol('invoices', 'quote_id', 'TEXT');
 
+// Seed initial changelog entries (INSERT OR IGNORE — safe to run on every boot)
+db.exec(`
+  INSERT OR IGNORE INTO changelog (id, title, description, tag, published_at) VALUES
+  (
+    'cl-bot-protection-2025',
+    'Bot Protection with Cloudflare Turnstile',
+    'Added Cloudflare Turnstile (Managed mode) bot-protection challenges to the Feedback form, Newsletter signup, and the new-user Setup page. Real users pass invisibly; bots are blocked before they can touch the server.',
+    'New',
+    '2025-11-01 00:00:00'
+  ),
+  (
+    'cl-analytics-dashboard-2025',
+    'Upgraded Website Analytics Dashboard',
+    'The admin analytics panel now works like a real analytics product: choose a date range (7d / 30d / 90d / all-time), see trend arrows comparing the current period to the previous one, a live-visitor badge, session quality metrics (avg pages per session, avg duration, bounce rate), a 24-hour traffic heatmap, entry and exit pages, and all existing breakdowns — countries, cities, devices, browsers, top pages, and referrers — filtered to the selected period.',
+    'Improved',
+    '2025-12-01 00:00:00'
+  );
+`);
+
 export default db;
