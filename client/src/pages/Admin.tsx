@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Star, Mail, Send, Megaphone, ChevronDown, ChevronUp, LogOut, Shield, Building2, Users, FileText, Receipt, Quote, TrendingUp, Activity, Trash2, Zap, Plus, X, ArrowRight, CheckCircle, AlertCircle, Globe, Monitor, Smartphone, Tablet, Eye } from 'lucide-react';
+import { Star, Mail, Send, Megaphone, ChevronDown, ChevronUp, LogOut, Shield, Building2, Users, FileText, Receipt, Quote, TrendingUp, TrendingDown, Activity, Trash2, Zap, Plus, X, ArrowRight, CheckCircle, AlertCircle, Globe, Monitor, Smartphone, Tablet, Eye } from 'lucide-react';
 import { LogoMark } from '../components/Logo';
 import { cn } from '../utils/cn';
 
@@ -45,18 +45,20 @@ export default function Admin() {
   const [addReviewHover, setAddReviewHover] = useState(0);
   const [addingReview, setAddingReview] = useState(false);
   const [analyticsData, setAnalyticsData] = useState<any | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [days, setDays] = useState(30);
   const [viewsModal, setViewsModal] = useState<{ open: boolean; page?: string }>({ open: false });
   const [viewsData, setViewsData] = useState<{ views: any[]; total: number } | null>(null);
   const [viewsLoading, setViewsLoading] = useState(false);
 
-  const loadData = useCallback(async (t: string) => {
+  const loadData = useCallback(async (t: string, d = 30) => {
     const [fb, subs, bcs, users, cl, analytics] = await Promise.all([
       adminFetch<any>('/feedback', t),
       adminFetch<any>('/subscribers', t),
       adminFetch<any[]>('/broadcasts', t),
       adminFetch<any>('/admin/users', t),
       fetch(`${BASE}/changelog`).then(r => r.json()),
-      adminFetch<any>('/admin/analytics', t),
+      adminFetch<any>(`/admin/analytics?days=${d}`, t),
     ]);
     setFeedbackData(fb);
     setSubCount(subs.total);
@@ -66,6 +68,15 @@ export default function Admin() {
     setChangelogEntries(cl.entries || []);
     setAnalyticsData(analytics);
   }, []);
+
+  const refreshAnalytics = async (d: number) => {
+    if (!token) return;
+    setAnalyticsLoading(true);
+    try {
+      const data = await adminFetch<any>(`/admin/analytics?days=${d}`, token);
+      setAnalyticsData(data);
+    } catch {} finally { setAnalyticsLoading(false); }
+  };
 
   // Validate stored token on mount
   useEffect(() => {
@@ -708,67 +719,122 @@ export default function Admin() {
 
         {/* ── Analytics Dashboard ──────────────────────────────── */}
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-50 flex items-center justify-between">
+          {/* Header + date range */}
+          <div className="px-5 py-4 border-b border-slate-50 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <Globe className="w-4 h-4 text-indigo-600" />
               <h2 className="text-sm font-black text-slate-700">Website Analytics</h2>
+              {analyticsData?.realtime?.active > 0 && (
+                <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                  <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse inline-block" />
+                  {analyticsData.realtime.active} live now
+                </span>
+              )}
             </div>
-            <span className="text-[10px] text-slate-400">Real visitors · city-level · live data</span>
+            <div className="flex items-center gap-1.5">
+              {([{ label: '7d', value: 7 }, { label: '30d', value: 30 }, { label: '90d', value: 90 }, { label: 'All', value: 0 }] as const).map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => { setDays(opt.value); refreshAnalytics(opt.value); }}
+                  className={cn('px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all', days === opt.value ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200')}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
           </div>
 
-          {!analyticsData ? (
+          {!analyticsData || analyticsLoading ? (
             <div className="py-14 text-center">
               <Globe className="w-8 h-8 text-slate-200 mx-auto mb-2 animate-pulse" />
-              <p className="text-sm text-slate-300">Loading analytics…</p>
+              <p className="text-sm text-slate-300">{analyticsLoading ? 'Refreshing…' : 'Loading analytics…'}</p>
             </div>
           ) : (
             <div className="p-5 space-y-6">
 
-              {/* Overview stat row */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                {[
-                  { label: 'Total Views', value: analyticsData.overview?.total ?? 0, color: 'text-indigo-600', bg: 'bg-indigo-50', clickable: true },
-                  { label: 'Today', value: analyticsData.overview?.today ?? 0, color: 'text-emerald-600', bg: 'bg-emerald-50', clickable: false },
-                  { label: 'This Week', value: analyticsData.overview?.week ?? 0, color: 'text-blue-600', bg: 'bg-blue-50', clickable: false },
-                  { label: 'This Month', value: analyticsData.overview?.month ?? 0, color: 'text-purple-600', bg: 'bg-purple-50', clickable: false },
-                  { label: 'Sessions', value: analyticsData.overview?.unique_sessions ?? 0, color: 'text-amber-600', bg: 'bg-amber-50', clickable: false },
-                  { label: 'Today Sessions', value: analyticsData.overview?.today_sessions ?? 0, color: 'text-rose-600', bg: 'bg-rose-50', clickable: false },
-                ].map(s => (
-                  s.clickable ? (
-                    <button
-                      key={s.label}
-                      onClick={() => openViewsModal()}
-                      className={`${s.bg} rounded-xl p-3 text-left hover:ring-2 hover:ring-indigo-300 transition-all group`}
-                    >
-                      <div className={`text-xl font-black ${s.color} leading-none`}>{s.value.toLocaleString()}</div>
-                      <div className="text-[10px] font-medium text-slate-500 mt-1">{s.label}</div>
-                      <div className="text-[9px] text-indigo-400 font-bold mt-1 opacity-0 group-hover:opacity-100 transition-opacity">View all →</div>
-                    </button>
-                  ) : (
-                    <div key={s.label} className={`${s.bg} rounded-xl p-3`}>
-                      <div className={`text-xl font-black ${s.color} leading-none`}>{s.value.toLocaleString()}</div>
-                      <div className="text-[10px] font-medium text-slate-500 mt-1">{s.label}</div>
-                    </div>
-                  )
-                ))}
-              </div>
+              {/* Overview + session metrics */}
+              {(() => {
+                const ov = analyticsData.overview;
+                const pv = analyticsData.prev;
+                const calcTrend = (current: number, previous: number) => {
+                  if (!previous) return null;
+                  const pct = Math.round(((current - previous) / previous) * 100);
+                  return { pct, up: pct >= 0 };
+                };
+                const periodTrend = calcTrend(ov.period, pv.total);
+                const sessionTrend = calcTrend(ov.week_sessions, pv.unique_sessions);
+                const sm = analyticsData.sessionMetrics;
+                const bd = analyticsData.bounceData;
+                const bounceRate = bd?.total_sessions ? Math.round((bd.bounced / bd.total_sessions) * 100) : 0;
+                const avgDuration = Math.round(sm?.avg_session_duration || 0);
+                const avgPages = Number((sm?.avg_pages_per_session || 0).toFixed(1));
 
-              {/* Daily chart — last 30 days */}
+                const cards = [
+                  { label: `Views (${days > 0 ? `${days}d` : 'all'})`, value: (ov.period ?? 0).toLocaleString(), trend: periodTrend, color: 'text-indigo-600', bg: 'bg-indigo-50', clickable: false },
+                  { label: 'Today', value: (ov.today ?? 0).toLocaleString(), trend: null, color: 'text-emerald-600', bg: 'bg-emerald-50', clickable: false },
+                  { label: 'This Week', value: (ov.week ?? 0).toLocaleString(), trend: null, color: 'text-blue-600', bg: 'bg-blue-50', clickable: false },
+                  { label: 'All-time Views', value: (ov.total ?? 0).toLocaleString(), trend: null, color: 'text-slate-600', bg: 'bg-slate-50', clickable: true },
+                  { label: 'Sessions', value: (ov.unique_sessions ?? 0).toLocaleString(), trend: sessionTrend, color: 'text-amber-600', bg: 'bg-amber-50', clickable: false },
+                  { label: 'Today Sessions', value: (ov.today_sessions ?? 0).toLocaleString(), trend: null, color: 'text-rose-600', bg: 'bg-rose-50', clickable: false },
+                ];
+
+                return (
+                  <>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                      {cards.map(s => {
+                        const inner = (
+                          <>
+                            <div className={`text-xl font-black ${s.color} leading-none`}>{s.value}</div>
+                            <div className="text-[10px] font-medium text-slate-500 mt-1">{s.label}</div>
+                            {s.trend && (
+                              <div className={cn('flex items-center gap-0.5 mt-1 text-[10px] font-bold', s.trend.up ? 'text-emerald-600' : 'text-red-500')}>
+                                {s.trend.up ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                                {s.trend.up ? '+' : ''}{s.trend.pct}% vs prev
+                              </div>
+                            )}
+                            {s.clickable && <div className="text-[9px] text-indigo-400 font-bold mt-1 opacity-0 group-hover:opacity-100 transition-opacity">View all →</div>}
+                          </>
+                        );
+                        return s.clickable
+                          ? <button key={s.label} onClick={() => openViewsModal()} className={`${s.bg} rounded-xl p-3 text-left hover:ring-2 hover:ring-indigo-300 transition-all group`}>{inner}</button>
+                          : <div key={s.label} className={`${s.bg} rounded-xl p-3`}>{inner}</div>;
+                      })}
+                    </div>
+
+                    {/* Session quality metrics */}
+                    <div className="grid grid-cols-3 gap-3">
+                      {[
+                        { label: 'Avg Pages / Session', value: String(avgPages), color: 'text-indigo-600' },
+                        { label: 'Avg Session Duration', value: avgDuration >= 60 ? `${Math.floor(avgDuration / 60)}m ${avgDuration % 60}s` : `${avgDuration}s`, color: 'text-emerald-600' },
+                        { label: 'Bounce Rate', value: `${bounceRate}%`, color: bounceRate > 70 ? 'text-red-500' : bounceRate > 50 ? 'text-amber-600' : 'text-emerald-600' },
+                      ].map(m => (
+                        <div key={m.label} className="bg-slate-50 rounded-xl p-3 text-center">
+                          <div className={`text-xl font-black ${m.color} leading-none`}>{m.value}</div>
+                          <div className="text-[10px] font-medium text-slate-500 mt-1">{m.label}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                );
+              })()}
+
+              {/* Daily bar chart */}
               {analyticsData.daily && analyticsData.daily.length > 0 && (() => {
                 const maxVal = Math.max(...analyticsData.daily.map((d: any) => d.count), 1);
                 return (
                   <div>
-                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3">Page views — last 30 days</p>
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3">
+                      Page views — {days > 0 ? `last ${days} days` : 'all time'}
+                    </p>
                     <div className="flex items-end gap-[3px] h-24 border-b border-slate-100 pb-1">
                       {analyticsData.daily.map((d: any) => (
-                        <div key={d.date} className="flex-1 flex flex-col items-center justify-end gap-0.5 group relative">
+                        <div key={d.date} className="flex-1 flex flex-col items-center justify-end group relative">
                           <div
                             className="w-full bg-indigo-500 rounded-t-sm hover:bg-indigo-600 transition-colors cursor-default"
                             style={{ height: `${Math.max((d.count / maxVal) * 88, 2)}px` }}
-                            title={`${d.date}: ${d.count} view${d.count !== 1 ? 's' : ''}`}
                           />
-                          <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
-                            {d.count} · {d.date.slice(5)}
+                          <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[9px] px-1.5 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 leading-tight">
+                            {d.count} views<br />{d.sessions} sessions<br />{d.date.slice(5)}
                           </div>
                         </div>
                       ))}
@@ -781,9 +847,39 @@ export default function Admin() {
                 );
               })()}
 
+              {/* Hourly heatmap */}
+              {analyticsData.hourly && analyticsData.hourly.length > 0 && (() => {
+                const hourMap: Record<number, number> = {};
+                analyticsData.hourly.forEach((h: any) => { hourMap[h.hour] = h.count; });
+                const maxH = Math.max(...Object.values(hourMap), 1);
+                return (
+                  <div>
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3">Traffic by hour of day</p>
+                    <div className="flex items-end gap-[2px] h-14">
+                      {Array.from({ length: 24 }, (_, h) => h).map(h => {
+                        const count = hourMap[h] || 0;
+                        return (
+                          <div key={h} className="flex-1 flex flex-col items-center justify-end group relative">
+                            <div
+                              className="w-full rounded-t-[2px] bg-indigo-400 hover:bg-indigo-600 transition-colors cursor-default"
+                              style={{ height: `${Math.max((count / maxH) * 52, count > 0 ? 3 : 1)}px` }}
+                            />
+                            <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                              {h}:00 · {count}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="flex justify-between text-[9px] text-slate-300 mt-1 px-0.5">
+                      <span>12am</span><span>6am</span><span>12pm</span><span>6pm</span><span>11pm</span>
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Countries + Cities */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                {/* Top countries */}
                 {analyticsData.countries && analyticsData.countries.length > 0 && (
                   <div>
                     <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3">Top countries</p>
@@ -813,8 +909,6 @@ export default function Admin() {
                     </div>
                   </div>
                 )}
-
-                {/* Top cities */}
                 {analyticsData.cities && analyticsData.cities.length > 0 && (
                   <div>
                     <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3">Top cities</p>
@@ -849,10 +943,8 @@ export default function Admin() {
                 )}
               </div>
 
-              {/* Devices + Browsers + Pages */}
+              {/* Devices + Browsers + Top pages */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-
-                {/* Devices */}
                 {analyticsData.devices && analyticsData.devices.length > 0 && (
                   <div>
                     <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3">Devices</p>
@@ -883,8 +975,6 @@ export default function Admin() {
                     </div>
                   </div>
                 )}
-
-                {/* Browsers */}
                 {analyticsData.browsers && analyticsData.browsers.length > 0 && (
                   <div>
                     <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3">Browsers</p>
@@ -909,8 +999,6 @@ export default function Admin() {
                     </div>
                   </div>
                 )}
-
-                {/* Top pages */}
                 {analyticsData.pages && analyticsData.pages.length > 0 && (
                   <div>
                     <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3">Top pages</p>
@@ -936,6 +1024,62 @@ export default function Admin() {
                   </div>
                 )}
               </div>
+
+              {/* Entry + Exit pages */}
+              {((analyticsData.entryPages?.length > 0) || (analyticsData.exitPages?.length > 0)) && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                  {analyticsData.entryPages?.length > 0 && (
+                    <div>
+                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3">
+                        Entry pages <span className="normal-case font-normal">— where sessions start</span>
+                      </p>
+                      <div className="space-y-1.5">
+                        {(() => {
+                          const maxE = Math.max(...analyticsData.entryPages.map((p: any) => p.count), 1);
+                          return analyticsData.entryPages.map((p: any) => (
+                            <div key={p.page} className="flex items-center gap-2">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between mb-0.5">
+                                  <span className="text-xs text-slate-700 truncate max-w-[180px]" title={p.page}>{p.page || '/'}</span>
+                                  <span className="text-xs font-bold text-slate-400 ml-2 shrink-0">{p.count}</span>
+                                </div>
+                                <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                  <div className="h-full bg-blue-400 rounded-full" style={{ width: `${(p.count / maxE) * 100}%` }} />
+                                </div>
+                              </div>
+                            </div>
+                          ));
+                        })()}
+                      </div>
+                    </div>
+                  )}
+                  {analyticsData.exitPages?.length > 0 && (
+                    <div>
+                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3">
+                        Exit pages <span className="normal-case font-normal">— where sessions end</span>
+                      </p>
+                      <div className="space-y-1.5">
+                        {(() => {
+                          const maxX = Math.max(...analyticsData.exitPages.map((p: any) => p.count), 1);
+                          return analyticsData.exitPages.map((p: any) => (
+                            <div key={p.page} className="flex items-center gap-2">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between mb-0.5">
+                                  <span className="text-xs text-slate-700 truncate max-w-[180px]" title={p.page}>{p.page || '/'}</span>
+                                  <span className="text-xs font-bold text-slate-400 ml-2 shrink-0">{p.count}</span>
+                                </div>
+                                <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                  <div className="h-full bg-orange-400 rounded-full" style={{ width: `${(p.count / maxX) * 100}%` }} />
+                                </div>
+                              </div>
+                            </div>
+                          ));
+                        })()}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Referrers */}
               {analyticsData.referrers && analyticsData.referrers.length > 0 && (

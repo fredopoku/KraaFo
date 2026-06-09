@@ -1,4 +1,5 @@
 const SESSION_KEY = 'krafo_sid';
+const ADMIN_TOKEN_KEY = 'krafo_admin_token';
 
 function getSessionId(): string {
   let sid = sessionStorage.getItem(SESSION_KEY);
@@ -9,7 +10,13 @@ function getSessionId(): string {
   return sid;
 }
 
+function isAdminSession(): boolean {
+  return Boolean(sessionStorage.getItem(ADMIN_TOKEN_KEY));
+}
+
 export function trackPage(page: string): void {
+  // Never track admin sessions or admin pages
+  if (isAdminSession() || page.startsWith('/admin')) return;
   try {
     const payload = JSON.stringify({
       page,
