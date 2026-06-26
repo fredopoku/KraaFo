@@ -95,6 +95,8 @@ export default function Generator() {
   const [clientSuggestions, setClientSuggestions] = useState<Client[]>([]);
   const [showClientSuggestions, setShowClientSuggestions] = useState(false);
   const [converting, setConverting] = useState(false);
+  const [checklistDismissed, setChecklistDismissed] = useState(() => !!localStorage.getItem('krafo_checklist_done'));
+  const [hasSent, setHasSent] = useState(() => !!localStorage.getItem('krafo_first_sent'));
   const location = useLocation();
   const isDemo = new URLSearchParams(location.search).get('demo') === 'true';
   const effectiveOrg = isDemo ? DEMO_ORG : org;
@@ -392,6 +394,7 @@ export default function Generator() {
       showToast(`${docLabel} sent by email!`, 'success');
       setShowSend(false);
       setSendEmail(''); setSendMessage('');
+      if (!hasSent) { localStorage.setItem('krafo_first_sent', '1'); setHasSent(true); }
     } catch (err) {
       showToast((err as Error).message || 'Email failed', 'error');
     }
@@ -433,6 +436,7 @@ export default function Generator() {
     const phone = sendPhone.replace(/\D/g, '');
     const msg = encodeURIComponent(buildMobileMessage(!!sendEmail));
     window.open(phone ? `https://wa.me/${phone}?text=${msg}` : `https://wa.me/?text=${msg}`, '_blank');
+    if (!hasSent) { localStorage.setItem('krafo_first_sent', '1'); setHasSent(true); }
   };
 
   const openSMS = (phone: string) => {
@@ -480,6 +484,7 @@ export default function Generator() {
     } else {
       showToast('WhatsApp and SMS opened', 'success');
       setShowSend(false);
+      if (!hasSent) { localStorage.setItem('krafo_first_sent', '1'); setHasSent(true); }
     }
   };
 
@@ -854,6 +859,70 @@ export default function Generator() {
           </button>
         </div>
       )}
+
+      {/* Onboarding Checklist */}
+      {!isDemo && !checklistDismissed && (() => {
+        const profileDone = !!(effectiveOrg?.name && effectiveOrg?.email);
+        const docDone = invoiceList.length > 0;
+        const sendDone = hasSent;
+        const allDone = profileDone && docDone && sendDone;
+        const completed = [profileDone, docDone, sendDone].filter(Boolean).length;
+
+        if (allDone) {
+          localStorage.setItem('krafo_checklist_done', '1');
+          return null;
+        }
+
+        const steps = [
+          { label: 'Complete your profile', sub: 'Add your business name and email', done: profileDone, action: () => navigate('/setup') },
+          { label: 'Create your first document', sub: 'Save an invoice, receipt or quote', done: docDone, action: null },
+          { label: 'Send it to a client', sub: 'Via WhatsApp, email or SMS', done: sendDone, action: null },
+        ];
+
+        return (
+          <div className="bg-indigo-600 text-white px-4 py-3">
+            <div className="max-w-7xl mx-auto flex items-center gap-4 flex-wrap">
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="text-xs font-black uppercase tracking-wider opacity-70">Getting started</div>
+                <div className="bg-white/20 rounded-full px-2 py-0.5 text-xs font-bold">{completed}/3</div>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
+                {steps.map((s, i) => (
+                  <button
+                    key={i}
+                    onClick={s.action || undefined}
+                    disabled={s.done || !s.action}
+                    className={cn(
+                      'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0',
+                      s.done
+                        ? 'bg-white/10 text-white/50 line-through cursor-default'
+                        : s.action
+                          ? 'bg-white/20 hover:bg-white/30 text-white cursor-pointer'
+                          : 'bg-white/10 text-white/70 cursor-default'
+                    )}
+                  >
+                    <span className={cn(
+                      'w-4 h-4 rounded-full flex items-center justify-center shrink-0 text-[10px] font-black border',
+                      s.done ? 'bg-emerald-400 border-emerald-400' : 'border-white/40 bg-transparent'
+                    )}>
+                      {s.done ? '✓' : i + 1}
+                    </span>
+                    <span className="hidden sm:inline">{s.label}</span>
+                    <span className="sm:hidden">{s.label.split(' ').slice(-1)[0]}</span>
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => { localStorage.setItem('krafo_checklist_done', '1'); setChecklistDismissed(true); }}
+                className="shrink-0 p-1 rounded-lg hover:bg-white/10 transition-colors opacity-60 hover:opacity-100"
+                title="Dismiss"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Documents Dropdown */}
       {showList && (
