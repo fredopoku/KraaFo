@@ -1702,6 +1702,26 @@ export default function Generator() {
               </div>
               <p className="text-[10px] text-slate-400 text-center">SMS works best on mobile. On desktop it opens your Messages app if Handoff is enabled.</p>
 
+              {/* Copy shareable link */}
+              <button
+                onClick={() => {
+                  const url = `${window.location.origin}/view/${savedInvoice.id}`;
+                  navigator.clipboard.writeText(url).then(() => {
+                    setLinkCopied(true);
+                    setTimeout(() => setLinkCopied(false), 2500);
+                  });
+                }}
+                className={cn(
+                  'w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold border transition-all',
+                  linkCopied
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                    : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700'
+                )}
+              >
+                {linkCopied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                {linkCopied ? 'Link copied!' : 'Copy shareable link — client opens in browser'}
+              </button>
+
               {/* Payment links */}
               {paymentLinks && Object.keys(paymentLinks.links || {}).length > 0 && (
                 <div className="border border-slate-100 rounded-2xl p-4">

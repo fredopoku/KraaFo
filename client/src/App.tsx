@@ -9,6 +9,7 @@ import Quotes from './pages/Quotes';
 import Unsubscribe from './pages/Unsubscribe';
 import Admin from './pages/Admin';
 import Changelog from './pages/Changelog';
+import InvoiceView from './pages/InvoiceView';
 import { trackPage } from './utils/tracker';
 
 function RouterTracker() {
@@ -33,6 +34,7 @@ export default function App() {
         <Route path="/unsubscribe" element={<Unsubscribe />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/changelog" element={<Changelog />} />
+        <Route path="/view/:id" element={<InvoiceView />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
