@@ -132,6 +132,9 @@ export const api = {
     get: (orgId: string) => request<any>(`/analytics?org_id=${orgId}`),
   },
 
+  stats: {
+    get: () => request<{ documents: number; countries: number; avgRating: number | null; ratingCount: number }>('/stats'),
+  },
   feedback: {
     submit: (data: { name: string; email?: string; rating: number; message?: string }) =>
       request<{ success: boolean }>('/feedback', { method: 'POST', body: JSON.stringify(data) }),

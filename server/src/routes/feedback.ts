@@ -24,9 +24,17 @@ router.post('/', async (req: Request, res: Response) => {
 
 router.get('/highlights', (_req: Request, res: Response) => {
   const rows = db.prepare(
-    'SELECT id, name, rating, message, created_at FROM feedback WHERE rating >= 4 ORDER BY rating DESC, created_at DESC LIMIT 6'
+    'SELECT id, name, rating, message, created_at FROM feedback WHERE rating >= 4 AND approved = 1 ORDER BY rating DESC, created_at DESC LIMIT 6'
   ).all();
   res.json({ highlights: rows });
+});
+
+router.patch('/:id/approve', adminAuth, (req: Request, res: Response) => {
+  const row = db.prepare('SELECT id, approved FROM feedback WHERE id = ?').get(req.params.id) as any;
+  if (!row) return res.status(404).json({ error: 'Not found' });
+  const next = row.approved ? 0 : 1;
+  db.prepare('UPDATE feedback SET approved = ? WHERE id = ?').run(next, req.params.id);
+  res.json({ success: true, approved: next === 1 });
 });
 
 router.get('/', adminAuth, (_req: Request, res: Response) => {

@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, Palette, Download, Shield, CheckCircle, ArrowRight, FileText, Receipt, Send, Globe, Star, TrendingUp, Clock, AlertCircle, Plus, Settings, Users, ScanLine, X, Mail, MessageSquare } from 'lucide-react';
+import { Sparkles, Palette, Download, Shield, CheckCircle, ArrowRight, FileText, Receipt, Send, Globe, Star, TrendingUp, Clock, AlertCircle, Plus, Settings, Users, ScanLine, X, Mail, MessageSquare, Zap } from 'lucide-react';
 import { Logo, LogoMark } from '../components/Logo';
 import { api } from '../utils/api';
 import { TurnstileWidget, TURNSTILE_ENABLED } from '../components/Turnstile';
@@ -741,10 +741,111 @@ function BrandingSetupMockup() {
   );
 }
 
+/* ─── Email Capture Popup ──────────────────────────────────── */
+
+function EmailCapturePopup() {
+  const [visible, setVisible] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+  const [email, setEmail] = useState('');
+  const [done, setDone] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const shown = useRef(false);
+
+  useEffect(() => {
+    if (sessionStorage.getItem('krafo_popup_shown')) return;
+    const show = () => {
+      if (shown.current) return;
+      shown.current = true;
+      sessionStorage.setItem('krafo_popup_shown', '1');
+      setVisible(true);
+    };
+    const timer = setTimeout(show, 30000);
+    const onScroll = () => {
+      const pct = window.scrollY / Math.max(document.body.scrollHeight - window.innerHeight, 1);
+      if (pct >= 0.6) show();
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => { clearTimeout(timer); window.removeEventListener('scroll', onScroll); };
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) return;
+    setSubmitting(true); setError('');
+    try {
+      const res = await fetch('/api/subscribers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Failed'); }
+      setDone(true);
+    } catch (err: any) { setError('Something went wrong. Try again.'); }
+    finally { setSubmitting(false); }
+  };
+
+  if (!visible || dismissed) return null;
+
+  return (
+    <div className="fixed bottom-6 right-6 z-50 w-80 bg-white rounded-2xl shadow-2xl shadow-slate-300/50 border border-slate-100 overflow-hidden animate-fade-up">
+      <div className="h-1 bg-gradient-to-r from-indigo-600 to-violet-600" />
+      <div className="p-5">
+        <button
+          onClick={() => setDismissed(true)}
+          className="absolute top-3 right-3 text-slate-300 hover:text-slate-500 transition-colors p-1"
+          aria-label="Close"
+        >
+          <X className="w-4 h-4" />
+        </button>
+        {done ? (
+          <div className="text-center py-2">
+            <CheckCircle className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+            <p className="font-bold text-slate-800 text-sm">You're in!</p>
+            <p className="text-xs text-slate-400 mt-1">We'll keep you updated on every new feature.</p>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
+                <Zap className="w-4 h-4 text-indigo-600" />
+              </div>
+              <div>
+                <p className="text-sm font-black text-slate-800">Stay ahead with KraaFo</p>
+                <p className="text-[10px] text-slate-400">New features drop regularly — be first to know.</p>
+              </div>
+            </div>
+            <form onSubmit={handleSubmit} className="space-y-2">
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="Your email address"
+                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              />
+              {error && <p className="text-[11px] text-red-500">{error}</p>}
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm transition-all disabled:opacity-60"
+              >
+                {submitting ? 'Joining…' : 'Get updates — it\'s free'}
+              </button>
+              <p className="text-[10px] text-slate-300 text-center">No spam · Unsubscribe anytime</p>
+            </form>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ─── Main Landing Component ───────────────────────────────── */
 
 export default function Landing() {
   const [liveReviews, setLiveReviews] = useState<ReviewCard[]>([]);
+  const [stats, setStats] = useState<{ documents: number; countries: number; avgRating: number | null; ratingCount: number } | null>(null);
 
   useEffect(() => {
     api.feedback.highlights()
@@ -759,6 +860,7 @@ export default function Landing() {
         if (cards.length > 0) setLiveReviews(cards);
       })
       .catch(() => {});
+    api.stats.get().then(setStats).catch(() => {});
   }, []);
 
   // Show real reviews; pad with fallbacks to always display at least 3 cards
@@ -768,6 +870,7 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
+      <EmailCapturePopup />
       <style>{`
         @keyframes marquee { 0% { transform: translateX(0) } 100% { transform: translateX(-50%) } }
         @keyframes chipFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
@@ -815,29 +918,51 @@ export default function Landing() {
             <LogoMark size={120} className="animate-float drop-shadow-xl" />
           </div>
           <div className="inline-flex items-center gap-2 bg-indigo-50 text-indigo-600 border border-indigo-100 px-4 py-1.5 rounded-full text-sm font-semibold mb-5 animate-hero delay-75">
-            <Sparkles className="w-3.5 h-3.5" /> Smart templates for 12+ service industries
+            <Sparkles className="w-3.5 h-3.5" /> Free forever · No card · No catch
           </div>
           <h1 className="text-5xl md:text-[62px] font-black text-slate-900 tracking-tight leading-[1.06] mb-5 animate-hero delay-150">
-            Invoices &amp; Receipts<br />
-            <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #4f46e5, #7c3aed)' }}>Built for Professionals</span>
+            Get paid faster.<br />
+            <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #4f46e5, #7c3aed)' }}>Invoice by WhatsApp, Email or SMS.</span>
           </h1>
           <p className="text-lg text-slate-500 mb-8 max-w-2xl mx-auto leading-relaxed animate-hero delay-200">
-            Upload your logo, pick your industry, and generate stunning invoices and receipts in under a minute. KraaFo handles the details.
+            Send professional invoices, receipts and quotes in under 2 minutes — with your logo, your brand colors, your currency. Works in every market, on any device.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center animate-hero delay-300">
             <Link to="/setup" className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3.5 rounded-xl font-bold text-base transition-all shadow-lg shadow-indigo-200 btn-glow">
-              Start for Free <ArrowRight className="w-4 h-4" />
+              Start Free — No Card <ArrowRight className="w-4 h-4" />
             </Link>
             <Link to="/generator?demo=true" className="flex items-center justify-center gap-2 text-slate-600 px-8 py-3.5 rounded-xl font-bold text-base border border-slate-200 bg-white/80 hover:bg-white hover:border-slate-300 transition-all shadow-sm">
-              View Demo
+              See it in action
             </Link>
           </div>
-          <div className="mt-7 flex items-center justify-center gap-5 flex-wrap animate-hero delay-400">
-            {['No account needed', 'Works worldwide', '12+ industries'].map(t => (
-              <div key={t} className="flex items-center gap-1.5 text-slate-500 text-sm">
-                <CheckCircle className="w-3.5 h-3.5 text-indigo-500 shrink-0" /> {t}
+
+          {/* Live stats bar */}
+          <div className="mt-8 flex items-center justify-center gap-6 flex-wrap animate-hero delay-400">
+            {stats && stats.documents > 0 && (
+              <div className="flex items-center gap-1.5 text-slate-600 text-sm font-semibold">
+                <FileText className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                {stats.documents.toLocaleString()}+ documents generated
               </div>
-            ))}
+            )}
+            {stats && stats.countries > 0 && (
+              <div className="flex items-center gap-1.5 text-slate-600 text-sm font-semibold">
+                <Globe className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                Used in {stats.countries}+ countries
+              </div>
+            )}
+            {stats && stats.avgRating && (
+              <div className="flex items-center gap-1 text-slate-600 text-sm font-semibold">
+                <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400 shrink-0" />
+                {stats.avgRating} / 5 rating
+              </div>
+            )}
+            {(!stats || (stats.documents === 0 && stats.countries === 0)) && (
+              ['No account needed', 'Works worldwide', '12+ industries'].map(t => (
+                <div key={t} className="flex items-center gap-1.5 text-slate-500 text-sm">
+                  <CheckCircle className="w-3.5 h-3.5 text-indigo-500 shrink-0" /> {t}
+                </div>
+              ))
+            )}
           </div>
         </div>
 
@@ -1038,9 +1163,11 @@ export default function Landing() {
               {[0,1,2,3,4].map(i => <Star key={i} className="w-4 h-4 text-amber-400 fill-amber-400" />)}
             </div>
             <h2 className="text-3xl font-black text-white tracking-tight">Loved by service professionals worldwide</h2>
-            {liveReviews.length > 0 && (
+            {stats?.avgRating && stats.ratingCount > 0 ? (
+              <p className="text-slate-400 text-sm mt-2 font-semibold">{stats.avgRating} out of 5 · {stats.ratingCount} verified review{stats.ratingCount !== 1 ? 's' : ''}</p>
+            ) : liveReviews.length > 0 ? (
               <p className="text-slate-500 text-xs mt-2">{liveReviews.length} verified review{liveReviews.length !== 1 ? 's' : ''} from real users</p>
-            )}
+            ) : null}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {reviews.map((t, i) => (

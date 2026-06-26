@@ -174,6 +174,19 @@ export default function Admin() {
     );
   };
 
+  const handleApproveFeedback = async (id: string, currentlyApproved: boolean) => {
+    try {
+      await adminFetch(`/feedback/${id}/approve`, token, { method: 'PATCH' });
+      setFeedbackData(prev => prev ? {
+        ...prev,
+        feedback: prev.feedback.map(f => f.id === id ? { ...f, approved: currentlyApproved ? 0 : 1 } : f),
+      } : prev);
+      showToast('success', currentlyApproved ? 'Removed from homepage' : 'Now showing on homepage');
+    } catch {
+      showToast('error', 'Failed to update review');
+    }
+  };
+
   const handlePostChangelog = async () => {
     if (!clForm.title.trim() || !clForm.description.trim()) return;
     setPostingCl(true);
@@ -529,12 +542,17 @@ export default function Admin() {
             ) : (
               <div className="divide-y divide-slate-50">
                 {(showAllFeedback ? feedbackData.feedback : feedbackData.feedback.slice(0, 5)).map((f: any) => (
-                  <div key={f.id} className="px-5 py-3.5 group">
+                  <div key={f.id} className={cn('px-5 py-3.5 group transition-colors', f.approved ? 'bg-emerald-50/40' : '')}>
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <div className="flex items-center gap-1.5 mb-0.5">
+                        <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
                           <span className="text-xs font-bold text-slate-800">{f.name}</span>
                           {f.email && <span className="text-[10px] text-slate-400 truncate hidden sm:block">{f.email}</span>}
+                          {f.approved ? (
+                            <span className="text-[9px] font-bold text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded-full">On homepage</span>
+                          ) : (
+                            <span className="text-[9px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full">Hidden</span>
+                          )}
                         </div>
                         {f.message && <p className="text-xs text-slate-500 leading-relaxed">{f.message}</p>}
                       </div>
@@ -544,6 +562,13 @@ export default function Admin() {
                             <Star key={n} className={cn('w-3 h-3', n <= f.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-100')} />
                           ))}
                         </div>
+                        <button
+                          onClick={() => handleApproveFeedback(f.id, Boolean(f.approved))}
+                          className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full border transition-all', f.approved ? 'border-emerald-200 text-emerald-600 bg-emerald-50 hover:bg-red-50 hover:text-red-500 hover:border-red-200' : 'border-slate-200 text-slate-400 bg-white hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200')}
+                          title={f.approved ? 'Remove from homepage' : 'Show on homepage'}
+                        >
+                          {f.approved ? '✓ Approved' : 'Approve'}
+                        </button>
                         <button
                           onClick={() => handleDeleteFeedback(f.id)}
                           className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-300 hover:text-red-500 p-0.5 rounded"

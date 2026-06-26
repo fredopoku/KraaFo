@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Trash2, Sparkles, Download, Eye, Save, FileText, Receipt, Loader2, Settings, ChevronDown, X, CheckCircle, PenLine, ScanLine, Send, MessageCircle, CreditCard, BarChart2, Users, Lock, Share2, Copy, Menu } from 'lucide-react';
+import { Plus, Trash2, Sparkles, Download, Eye, Save, FileText, Receipt, Loader2, Settings, ChevronDown, X, CheckCircle, PenLine, ScanLine, Send, MessageCircle, CreditCard, BarChart2, Users, Lock, Share2, Copy, Menu, Star } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useOrg } from '../hooks/useOrg';
 import { api, formatCurrency, generateInvoiceNumber, today, addDays } from '../utils/api';
@@ -86,6 +86,10 @@ export default function Generator() {
   const [sending, setSending] = useState(false);
   const [paymentLinks, setPaymentLinks] = useState<any>(null);
   const [showShareNudge, setShowShareNudge] = useState(false);
+  const [showFeedbackPrompt, setShowFeedbackPrompt] = useState(false);
+  const [feedbackRating, setFeedbackRating] = useState(0);
+  const [feedbackHover, setFeedbackHover] = useState(0);
+  const [feedbackDone, setFeedbackDone] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [clientSuggestions, setClientSuggestions] = useState<Client[]>([]);
@@ -232,7 +236,12 @@ export default function Generator() {
       loadInvoices();
       const label = form.type === 'invoice' ? 'Invoice' : form.type === 'receipt' ? 'Receipt' : 'Quote';
       showToast(`${label} ${saved.number} saved`, 'success');
-      if (isFirstSave) setShowShareNudge(true);
+      if (isFirstSave) {
+        setShowShareNudge(true);
+      } else if (!localStorage.getItem('krafo_rated') && !sessionStorage.getItem('krafo_feedback_shown')) {
+        sessionStorage.setItem('krafo_feedback_shown', '1');
+        setTimeout(() => setShowFeedbackPrompt(true), 3000);
+      }
       return saved;
     } catch (err) {
       showToast((err as Error).message || 'Save failed — check required fields', 'error');
@@ -1670,6 +1679,59 @@ export default function Generator() {
                 <p className="text-[10px] text-slate-400 text-center">Add payment details (PayPal, M-Pesa, MTN, Airtel, Telecel) in <button onClick={() => { setShowSend(false); navigate('/setup'); }} className="underline font-bold">Settings</button></p>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Post-save feedback prompt ────────────────────────── */}
+      {showFeedbackPrompt && !feedbackDone && (
+        <div className="fixed bottom-6 left-6 z-50 w-72 bg-white rounded-2xl shadow-2xl shadow-slate-300/50 border border-slate-100 overflow-hidden animate-fade-up">
+          <div className="h-1 bg-gradient-to-r from-amber-400 to-orange-400" />
+          <div className="p-4">
+            <button
+              onClick={() => setShowFeedbackPrompt(false)}
+              className="absolute top-3 right-3 text-slate-300 hover:text-slate-500 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <p className="text-sm font-black text-slate-800 mb-0.5">Enjoying KraaFo?</p>
+            <p className="text-[11px] text-slate-400 mb-3">Quick rating helps us grow — takes 5 seconds.</p>
+            <div className="flex gap-1 justify-center mb-3">
+              {[1, 2, 3, 4, 5].map(n => (
+                <button
+                  key={n}
+                  onMouseEnter={() => setFeedbackHover(n)}
+                  onMouseLeave={() => setFeedbackHover(0)}
+                  onClick={async () => {
+                    setFeedbackRating(n);
+                    try {
+                      await fetch('/api/feedback', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: org?.name || 'KraaFo User', rating: n }),
+                      });
+                      localStorage.setItem('krafo_rated', '1');
+                      setFeedbackDone(true);
+                      setTimeout(() => setShowFeedbackPrompt(false), 2500);
+                    } catch {}
+                  }}
+                  className="transition-transform hover:scale-110"
+                >
+                  <Star className={`w-7 h-7 transition-colors ${n <= (feedbackHover || feedbackRating) ? 'fill-amber-400 text-amber-400' : 'text-slate-200'}`} />
+                </button>
+              ))}
+            </div>
+            <p className="text-[10px] text-slate-300 text-center">Anonymous · no email needed</p>
+          </div>
+        </div>
+      )}
+      {showFeedbackPrompt && feedbackDone && (
+        <div className="fixed bottom-6 left-6 z-50 w-72 bg-white rounded-2xl shadow-2xl shadow-slate-300/50 border border-slate-100 overflow-hidden animate-fade-up">
+          <div className="h-1 bg-gradient-to-r from-emerald-400 to-teal-400" />
+          <div className="p-4 text-center">
+            <div className="text-2xl mb-1">🙏</div>
+            <p className="text-sm font-black text-slate-800">Thank you!</p>
+            <p className="text-[11px] text-slate-400 mt-1">Your rating helps us reach more people.</p>
           </div>
         </div>
       )}

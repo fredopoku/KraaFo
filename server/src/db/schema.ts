@@ -248,6 +248,7 @@ addCol('organizations', 'dkim_domain', 'TEXT');
 addCol('organizations', 'dkim_selector', 'TEXT');
 addCol('organizations', 'dkim_private_key', 'TEXT');
 addCol('invoices', 'quote_id', 'TEXT');
+addCol('feedback', 'approved', 'INTEGER DEFAULT 0');
 
 // Seed initial changelog entries (INSERT OR IGNORE — safe to run on every boot)
 db.exec(`
