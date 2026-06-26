@@ -911,7 +911,7 @@ export default function Generator() {
 
       {/* Share modal */}
       {showShareNudge && (() => {
-        const SHARE_MSG = "I've been using KraaFo to create professional invoices and receipts - and it's free to use right now!";
+        const SHARE_MSG = "I've been using KraaFo to create professional invoices and receipts - and it's free to use!";
         const SHARE_URL = 'https://kraafo.com';
         const SHARE_FULL = `${SHARE_MSG} Try it at ${SHARE_URL}`;
         const enc = encodeURIComponent;

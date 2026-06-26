@@ -918,7 +918,7 @@ export default function Landing() {
             <LogoMark size={120} className="animate-float drop-shadow-xl" />
           </div>
           <div className="inline-flex items-center gap-2 bg-indigo-50 text-indigo-600 border border-indigo-100 px-4 py-1.5 rounded-full text-sm font-semibold mb-5 animate-hero delay-75">
-            <Sparkles className="w-3.5 h-3.5" /> Free right now · No card · No catch
+            <Sparkles className="w-3.5 h-3.5" /> Free to use · No card · No catch
           </div>
           <h1 className="text-5xl md:text-[62px] font-black text-slate-900 tracking-tight leading-[1.06] mb-5 animate-hero delay-150">
             Get paid faster.<br />

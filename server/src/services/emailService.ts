@@ -243,7 +243,7 @@ function buildWelcomeHtml(email: string, name?: string, token?: string): string 
       <li>Work in any currency, in any country</li>
     </ul>
     <p style="margin:0 0 4px;color:#374151;font-size:14px;font-weight:700">Ready to try it?</p>
-    <p style="margin:0 0 20px;color:#6b7280;font-size:14px">Takes 2 minutes to set up. Free to use right now — no card, no catch.</p>
+    <p style="margin:0 0 20px;color:#6b7280;font-size:14px">Takes 2 minutes to set up. Free to use — no card, no catch.</p>
     ${cta(`${FRONTEND_URL}/setup`, 'Create my first invoice →')}
     <p style="margin:20px 0 0;color:#9ca3af;font-size:13px;text-align:center">Or <a href="${FRONTEND_URL}/generator?demo=true" style="color:#6b7280">try the live demo first</a> — no account needed.</p>
   `;
@@ -266,7 +266,7 @@ export async function sendOrgWelcome(org: any): Promise<void> {
     ${step('2', 'Use Smart Fill', 'Pick your industry, click Smart Fill — line items and pricing fill automatically.')}
     ${step('3', 'Send it', 'Download the PDF, or send directly by WhatsApp or email — right from the app.')}
     ${cta(`${FRONTEND_URL}/generator`, 'Create my first invoice →')}
-    <p style="margin:20px 0 0;color:#9ca3af;font-size:13px;text-align:center">Free to use now. No card required.</p>
+    <p style="margin:20px 0 0;color:#9ca3af;font-size:13px;text-align:center">Free to use. No card required.</p>
   `;
   await resend.emails.send({
     from: `KraaFo <${FROM_ADDRESS}>`,
@@ -312,7 +312,7 @@ export async function sendDay4Email(org: any): Promise<void> {
     <p style="margin:0 0 12px;color:#6b7280;font-size:15px;line-height:1.7">Hey ${name},</p>
     <p style="margin:0 0 8px;color:#374151;font-size:17px;font-weight:800;line-height:1.4">We know what you might be thinking — what's the catch with KraaFo being free?</p>
     <p style="margin:0 0 24px;color:#6b7280;font-size:15px;line-height:1.7">There isn't one.</p>
-    <p style="margin:0 0 12px;color:#374151;font-size:14px;font-weight:700">Here's what's free to use right now:</p>
+    <p style="margin:0 0 12px;color:#374151;font-size:14px;font-weight:700">Here's what's free to use:</p>
     <ul style="margin:0 0 24px;padding-left:20px;color:#6b7280;font-size:14px;line-height:2.2">
       <li>Unlimited invoices, receipts &amp; quotes</li>
       <li>WhatsApp, email &amp; SMS delivery</li>
@@ -329,7 +329,7 @@ export async function sendDay4Email(org: any): Promise<void> {
     from: `KraaFo <${FROM_ADDRESS}>`,
     to: [org.email],
     subject: "The catch? There isn't one.",
-    html: emailShell('#059669', 'No catch — here\'s what you get 💚', 'KraaFo · Free to use right now', body,
+    html: emailShell('#059669', 'No catch — here\'s what you get 💚', 'KraaFo · Free to use', body,
       `Sent to ${org.email} · <a href="${FRONTEND_URL}" style="color:#6b7280">kraafo.com</a>`),
   });
   db.prepare('UPDATE organizations SET day4_email_sent = 1 WHERE id = ?').run(org.id);
@@ -352,7 +352,7 @@ export async function sendDay7Email(org: any): Promise<void> {
     </ul>
     <p style="margin:0 0 20px;color:#6b7280;font-size:14px;line-height:1.7">Give it one try. If it doesn't work for you, no hard feelings — but it takes 2 minutes to find out.</p>
     ${cta(`${FRONTEND_URL}/generator`, 'Give it one try →')}
-    <p style="margin:20px 0 0;color:#9ca3af;font-size:13px;text-align:center">Free to use right now. Nothing to lose.</p>
+    <p style="margin:20px 0 0;color:#9ca3af;font-size:13px;text-align:center">Free to use. Nothing to lose.</p>
   `;
   await resend.emails.send({
     from: `KraaFo <${FROM_ADDRESS}>`,
