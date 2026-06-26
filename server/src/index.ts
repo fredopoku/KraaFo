@@ -20,6 +20,7 @@ import adminRouter from './routes/admin';
 import changelogRouter from './routes/changelog';
 import trackRouter from './routes/track';
 import statsRouter from './routes/stats';
+import { startScheduler } from './services/scheduler';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -97,6 +98,7 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
 app.listen(PORT, () => {
   console.log(`\nKraaFo server running on port ${PORT} [${isProd ? 'production' : 'development'}]`);
   if (isProd) console.log(`  Serving frontend from ${clientDist}`);
+  startScheduler();
 });
 
 export default app;

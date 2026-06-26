@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import db from '../db/schema';
+import { sendOrgWelcome } from '../services/emailService';
 
 const router = Router();
 
@@ -42,8 +43,10 @@ router.post('/', (req: Request, res: Response) => {
     smtp_host || null, smtp_port || 587, smtp_user || null, smtp_pass || null, smtp_from || null,
     whatsapp_number || null, mpesa_number || null, mtn_number || null, airtel_number || null, telecel_number || null, paypal_email || null);
 
-  const org = db.prepare('SELECT * FROM organizations WHERE id = ?').get(id);
+  const org = db.prepare('SELECT * FROM organizations WHERE id = ?').get(id) as any;
   res.status(201).json(org);
+  // Send welcome email in background — non-blocking
+  sendOrgWelcome(org).catch(console.error);
 });
 
 router.put('/:id', (req: Request, res: Response) => {

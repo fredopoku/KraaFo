@@ -249,6 +249,11 @@ addCol('organizations', 'dkim_selector', 'TEXT');
 addCol('organizations', 'dkim_private_key', 'TEXT');
 addCol('invoices', 'quote_id', 'TEXT');
 addCol('feedback', 'approved', 'INTEGER DEFAULT 0');
+addCol('organizations', 'welcome_email_sent', 'INTEGER DEFAULT 0');
+addCol('organizations', 'day2_email_sent', 'INTEGER DEFAULT 0');
+addCol('organizations', 'day4_email_sent', 'INTEGER DEFAULT 0');
+addCol('organizations', 'day7_email_sent', 'INTEGER DEFAULT 0');
+addCol('organizations', 'email_unsubscribed', 'INTEGER DEFAULT 0');
 
 // Seed initial changelog entries (INSERT OR IGNORE — safe to run on every boot)
 db.exec(`
