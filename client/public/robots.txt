@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /clients
+Disallow: /settings
+Disallow: /team
+Disallow: /admin
+Disallow: /api/
+
+Sitemap: https://kraafo.com/sitemap.xml
