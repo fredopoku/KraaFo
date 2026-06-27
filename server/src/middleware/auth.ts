@@ -58,6 +58,10 @@ function isPublic(req: Request): boolean {
 export function requireAuth(req: Request, res: Response, next: NextFunction): void {
   if (isPublic(req)) { next(); return; }
 
+  // Valid admin token gets full access to all endpoints
+  const adminToken = process.env.ADMIN_TOKEN;
+  if (adminToken && req.headers['x-admin-token'] === adminToken) { next(); return; }
+
   const header = req.headers['authorization'];
   const token = header?.startsWith('Bearer ') ? header.slice(7) : null;
 
