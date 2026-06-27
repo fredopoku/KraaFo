@@ -6,7 +6,7 @@
 
 <p align="center">
   Create, brand, and deliver professional invoices, receipts, and quotes in under a minute.<br/>
-  Built for freelancers and service businesses worldwide. No account required.
+  Built for freelancers and service businesses worldwide. Try the generator free — sign up to save and access from any device.
 </p>
 
 <p align="center">
@@ -131,6 +131,7 @@
 | Security Headers | Helmet (X-Frame-Options, HSTS, X-Content-Type-Options, Referrer-Policy) |
 | Bot Protection | Cloudflare Turnstile (Managed mode — server-side verification) |
 | Analytics | Custom — `navigator.sendBeacon` + ip-api.com geo + SQLite |
+| SEO | Post-build pre-renderer (`scripts/prerender.cjs`) — landing page, generator, and changelog rendered to static HTML at build time so search crawlers see full content |
 
 ---
 
@@ -296,6 +297,8 @@ KraaFo/
 │   │       └── invoiceTemplate.ts   # HTML invoice / receipt / quote template
 │   └── uploads/                     # Uploaded logos & signatures (git-ignored)
 │
+├── scripts/
+│   └── prerender.cjs                # Post-build SEO pre-renderer (puppeteer-core)
 └── docs/
     └── screenshots/                 # README screenshots
 ```
@@ -421,7 +424,8 @@ Server-side verification uses the `TURNSTILE_SECRET` environment variable. If th
 - [x] Multi-user / team accounts
 - [x] Triple-channel delivery (WhatsApp + SMS + Email simultaneously)
 - [x] Security hardening (org isolation, CORS exact-match, HTTP security headers)
-- [ ] Cloud sync / multi-device
+- [x] Multi-device access (sign in from any browser or device — data lives on the server)
+- [x] SEO pre-rendering (landing page, generator, changelog served as static HTML at build time)
 - [ ] Stripe / PayPal payment link integration
 - [ ] Client portal (view & pay invoices online)
 - [ ] Feature request voting board

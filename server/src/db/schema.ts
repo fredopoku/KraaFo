@@ -363,6 +363,13 @@ db.exec(`
     '2026-06-20 00:00:00'
   ),
   (
+    'cl-navigation-2026',
+    'Clearer Navigation Across Every Page',
+    'Every page in the app now has a visible back arrow in the header so you always know how to get back. The Dashboard, Generator, Clients, Quotes, and Team pages all follow the same consistent navigation pattern — no more hunting for how to return to where you were.',
+    'Improved',
+    '2026-06-27 00:00:00'
+  ),
+  (
     'cl-security-hardening-2026',
     'Security Hardening',
     'Full security audit applied before this release. Every API endpoint now derives the organisation ID from the verified login token — not from request parameters — so one account cannot access another''s data. HTTP security headers (X-Frame-Options, Strict-Transport-Security, X-Content-Type-Options, Referrer-Policy) now ship on every response. CORS origin matching switched to exact-match only.',
