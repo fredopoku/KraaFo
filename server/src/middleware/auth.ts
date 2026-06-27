@@ -53,6 +53,7 @@ function isPublic(req: Request): boolean {
   if (req.method === 'GET' && /^\/api\/invoices\/[^/]+\/public$/.test(p)) return true;
   if (req.method === 'POST' && p === '/api/feedback') return true;
   if (req.method === 'POST' && p === '/api/organizations') return true; // initial signup — no token yet
+  if (req.method === 'POST' && p === '/api/upload/logo') return true; // logo uploaded before auth exists
   if (p.startsWith('/api/admin') || p.startsWith('/api/broadcasts')) return true;
   return false;
 }
