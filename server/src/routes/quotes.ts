@@ -137,4 +137,15 @@ router.delete('/:id', (req: Request, res: Response) => {
   res.json({ success: true });
 });
 
+// Update quote status (accept / decline)
+router.patch('/:id/status', (req: Request, res: Response) => {
+  const quote = db.prepare('SELECT * FROM quotes WHERE id = ?').get(req.params.id) as any;
+  if (!quote) return res.status(404).json({ error: 'Quote not found' });
+  const allowed = ['draft', 'sent', 'accepted', 'declined', 'expired'];
+  const { status } = req.body;
+  if (!allowed.includes(status)) return res.status(400).json({ error: 'Invalid status' });
+  db.prepare("UPDATE quotes SET status = ?, updated_at = datetime('now') WHERE id = ?").run(status, quote.id);
+  res.json({ ...quote, status });
+});
+
 export default router;

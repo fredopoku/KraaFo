@@ -121,7 +121,13 @@ export const api = {
     create: (data: Record<string, unknown>) => request<any>('/quotes', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: Record<string, unknown>) => request<any>(`/quotes/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     convert: (id: string) => request<any>(`/quotes/${id}/convert`, { method: 'POST' }),
+    updateStatus: (id: string, status: string) => request<any>(`/quotes/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
     delete: (id: string) => request<any>(`/quotes/${id}`, { method: 'DELETE' }),
+  },
+
+  invoicePayment: {
+    record: (id: string, amount_paid: number, paid_date: string, payment_method?: string) =>
+      request<any>(`/invoices/${id}/payment`, { method: 'PATCH', body: JSON.stringify({ amount_paid, paid_date, payment_method }) }),
   },
 
   deliver: {

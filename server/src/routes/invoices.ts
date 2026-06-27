@@ -167,4 +167,30 @@ router.delete('/:id', (req: Request, res: Response) => {
   res.json({ success: true });
 });
 
+// Record a payment against an invoice (full or partial)
+router.patch('/:id/payment', (req: Request, res: Response) => {
+  const invoice = db.prepare('SELECT * FROM invoices WHERE id = ?').get(req.params.id) as any;
+  if (!invoice) return res.status(404).json({ error: 'Invoice not found' });
+
+  const { amount_paid, paid_date, payment_method } = req.body;
+  if (typeof amount_paid !== 'number' || amount_paid < 0) {
+    return res.status(400).json({ error: 'Valid amount_paid required' });
+  }
+
+  const newStatus = amount_paid >= invoice.total ? 'paid' : amount_paid > 0 ? 'sent' : invoice.status;
+  const newPaidDate = amount_paid >= invoice.total ? (paid_date || new Date().toISOString().slice(0, 10)) : null;
+
+  db.prepare(`
+    UPDATE invoices SET amount_paid = ?, status = ?, paid_date = ?, updated_at = datetime('now')
+    WHERE id = ?
+  `).run(amount_paid, newStatus, newPaidDate, invoice.id);
+
+  if (payment_method) {
+    db.prepare("UPDATE invoices SET footer_text = ? WHERE id = ?").run(payment_method, invoice.id);
+  }
+
+  const updated = db.prepare('SELECT * FROM invoices WHERE id = ?').get(invoice.id);
+  res.json(updated);
+});
+
 export default router;

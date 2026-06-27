@@ -364,6 +364,62 @@ export async function sendDay7Email(org: any): Promise<void> {
   db.prepare('UPDATE organizations SET day7_email_sent = 1 WHERE id = ?').run(org.id);
 }
 
+export async function sendPaymentReminder(invoice: any, org: any, daysOverdue: number): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey || !invoice.client_email) return;
+
+  const resend = new Resend(apiKey);
+  const sym = org.currency_symbol || '$';
+  const outstanding = (invoice.total - (invoice.amount_paid || 0)).toFixed(2);
+  const viewUrl = `${FRONTEND_URL}/view/${invoice.id}`;
+
+  const urgency = daysOverdue <= 1
+    ? { subject: `Friendly reminder: Invoice ${invoice.number} is due`, tone: 'gentle' }
+    : daysOverdue <= 7
+    ? { subject: `Invoice ${invoice.number} is overdue — ${sym}${outstanding} outstanding`, tone: 'firm' }
+    : { subject: `Final reminder: Invoice ${invoice.number} — ${sym}${outstanding} unpaid`, tone: 'urgent' };
+
+  const body = daysOverdue <= 1 ? `
+    <p style="margin:0 0 16px;color:#374151;font-size:15px">Hi ${invoice.client_name || 'there'},</p>
+    <p style="margin:0 0 16px;color:#374151;font-size:15px">
+      This is a friendly reminder that invoice <strong>${invoice.number}</strong> from <strong>${org.name}</strong>
+      for <strong>${sym}${outstanding}</strong> was due today.
+    </p>
+    <p style="margin:0 0 24px;color:#6b7280;font-size:14px">If you've already sent payment, please ignore this message. Otherwise, you can view your invoice below.</p>
+    ${cta(viewUrl, 'View Invoice')}
+  ` : daysOverdue <= 7 ? `
+    <p style="margin:0 0 16px;color:#374151;font-size:15px">Hi ${invoice.client_name || 'there'},</p>
+    <p style="margin:0 0 16px;color:#374151;font-size:15px">
+      Invoice <strong>${invoice.number}</strong> from <strong>${org.name}</strong> is now <strong>${daysOverdue} days overdue</strong>.
+      The outstanding balance is <strong>${sym}${outstanding}</strong>.
+    </p>
+    <p style="margin:0 0 24px;color:#6b7280;font-size:14px">Please arrange payment at your earliest convenience.</p>
+    ${cta(viewUrl, 'View & Pay Invoice')}
+  ` : `
+    <p style="margin:0 0 16px;color:#374151;font-size:15px">Hi ${invoice.client_name || 'there'},</p>
+    <p style="margin:0 0 16px;color:#374151;font-size:15px">
+      This is a final reminder for invoice <strong>${invoice.number}</strong> from <strong>${org.name}</strong>.
+      This invoice is <strong>${daysOverdue} days overdue</strong> with <strong>${sym}${outstanding}</strong> unpaid.
+    </p>
+    <p style="margin:0 0 24px;color:#6b7280;font-size:14px">Please contact ${org.name} immediately to resolve this.</p>
+    ${cta(viewUrl, 'View Invoice')}
+  `;
+
+  await resend.emails.send({
+    from: org.email ? `${org.name} via KraaFo <${FROM_ADDRESS}>` : `${org.name} <${FROM_ADDRESS}>`,
+    to: [invoice.client_email],
+    replyTo: org.email || undefined,
+    subject: urgency.subject,
+    html: emailShell(
+      daysOverdue > 7 ? '#dc2626' : daysOverdue > 1 ? '#d97706' : '#4f46e5',
+      urgency.subject,
+      `From ${org.name}`,
+      body,
+      `Sent on behalf of ${org.name} via KraaFo &mdash; Professional Invoicing`
+    ),
+  });
+}
+
 function buildBroadcastHtml(body: string, unsubToken: string): string {
   const unsubUrl = `${FRONTEND_URL}/unsubscribe?token=${unsubToken}`;
   const formatted = body.replace(/\n\n/g, '</p><p style="margin:0 0 16px;color:#374151;font-size:15px;line-height:1.8">').replace(/\n/g, '<br>');

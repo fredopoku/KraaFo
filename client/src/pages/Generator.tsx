@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Trash2, Sparkles, Download, Eye, Save, FileText, Receipt, Loader2, Settings, ChevronDown, X, CheckCircle, PenLine, ScanLine, Send, MessageCircle, CreditCard, BarChart2, Users, Lock, Share2, Copy, Menu, Star } from 'lucide-react';
+import confetti from 'canvas-confetti';
+import { Plus, Trash2, Sparkles, Download, Eye, Save, FileText, Receipt, Loader2, Settings, ChevronDown, X, CheckCircle, PenLine, ScanLine, Send, MessageCircle, CreditCard, BarChart2, Users, Lock, Share2, Copy, Menu, Star, DollarSign, ThumbsUp, ThumbsDown, ArrowRightLeft } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useOrg } from '../hooks/useOrg';
 import { api, formatCurrency, generateInvoiceNumber, today, addDays } from '../utils/api';
@@ -95,6 +96,11 @@ export default function Generator() {
   const [clientSuggestions, setClientSuggestions] = useState<Client[]>([]);
   const [showClientSuggestions, setShowClientSuggestions] = useState(false);
   const [converting, setConverting] = useState(false);
+  const [showPayModal, setShowPayModal] = useState(false);
+  const [payAmount, setPayAmount] = useState('');
+  const [payDate, setPayDate] = useState('');
+  const [payMethod, setPayMethod] = useState('');
+  const [recordingPayment, setRecordingPayment] = useState(false);
   const [checklistDismissed, setChecklistDismissed] = useState(() => !!localStorage.getItem('krafo_checklist_done'));
   const [hasSent, setHasSent] = useState(() => !!localStorage.getItem('krafo_first_sent'));
   const location = useLocation();
@@ -491,6 +497,52 @@ export default function Generator() {
   const loadPaymentLinks = async () => {
     if (!savedInvoice) return;
     try { setPaymentLinks(await api.deliver.paymentLinks(savedInvoice.id)); } catch {}
+  };
+
+  const fireConfetti = () => {
+    confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 }, colors: ['#4f46e5', '#7c3aed', '#059669', '#fbbf24'] });
+    setTimeout(() => confetti({ particleCount: 60, spread: 120, origin: { y: 0.5 }, colors: ['#4f46e5', '#10b981'] }), 300);
+  };
+
+  const handleRecordPayment = async () => {
+    if (!savedInvoice) return;
+    setRecordingPayment(true);
+    try {
+      const amount = parseFloat(payAmount) || savedInvoice.total;
+      const updated = await api.invoicePayment.record(savedInvoice.id, amount, payDate || today(), payMethod || undefined);
+      setSavedInvoice(updated);
+      setForm(f => ({ ...f, status: updated.status, amount_paid: updated.amount_paid, paid_date: updated.paid_date || '' }));
+      setInvoiceList(prev => prev.map(i => i.id === updated.id ? { ...i, ...updated } : i));
+      setShowPayModal(false);
+      if (updated.status === 'paid') {
+        fireConfetti();
+        showToast('Payment recorded — invoice marked as paid!', 'success');
+      } else {
+        showToast(`Partial payment of ${org?.currency_symbol || '$'}${amount.toFixed(2)} recorded`, 'success');
+      }
+    } catch (err) {
+      showToast((err as Error).message, 'error');
+    } finally {
+      setRecordingPayment(false);
+    }
+  };
+
+  const handleQuoteStatus = async (status: 'accepted' | 'declined') => {
+    if (!savedInvoice || isDemo) return;
+    try {
+      await api.quotes.updateStatus(savedInvoice.id, status);
+      setSavedInvoice(prev => prev ? { ...prev, status } : prev);
+      setForm(f => ({ ...f, status }));
+      setInvoiceList(prev => prev.map(i => i.id === savedInvoice.id ? { ...i, status } : i));
+      if (status === 'accepted') {
+        fireConfetti();
+        showToast('Quote accepted — great news!', 'success');
+      } else {
+        showToast('Quote marked as declined', 'info');
+      }
+    } catch (err) {
+      showToast((err as Error).message, 'error');
+    }
   };
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -966,6 +1018,14 @@ export default function Generator() {
                   >
                     Preview PDF
                   </button>
+                  {inv.type === 'invoice' && !['paid', 'cancelled'].includes(inv.status) && (
+                    <button
+                      onClick={() => { loadInvoice(inv); setShowList(false); setPayAmount(String(Math.max(0, inv.total - (inv.amount_paid || 0)))); setPayDate(today()); setPayMethod(''); setShowPayModal(true); }}
+                      className="flex-1 text-xs py-1.5 rounded-xl text-white font-bold transition-all bg-indigo-600 hover:bg-indigo-700"
+                    >
+                      Mark Paid
+                    </button>
+                  )}
                 </div>
               </div>
             );
@@ -1526,9 +1586,45 @@ export default function Generator() {
               </div>
 
               {savedInvoice && (
-                <div className="mt-3 flex items-center justify-center gap-1.5 text-xs text-emerald-600 font-bold animate-fade-in">
-                  <CheckCircle className="w-3.5 h-3.5" />
-                  Saved as {savedInvoice.number}
+                <div className="mt-3 space-y-2 animate-fade-in">
+                  <div className="flex items-center justify-center gap-1.5 text-xs text-emerald-600 font-bold">
+                    <CheckCircle className="w-3.5 h-3.5" />
+                    Saved as {savedInvoice.number}
+                  </div>
+                  {/* Invoice / Receipt — Mark as Paid */}
+                  {(form.type === 'invoice') && !['paid', 'cancelled'].includes(form.status) && (
+                    <button
+                      onClick={() => { setPayAmount(String(balanceDue)); setPayDate(today()); setPayMethod(''); setShowPayModal(true); }}
+                      className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-black text-white bg-emerald-600 hover:bg-emerald-700 transition-all"
+                    >
+                      <DollarSign className="w-3.5 h-3.5" /> Mark as Paid
+                    </button>
+                  )}
+                  {form.type === 'invoice' && form.status === 'paid' && (
+                    <div className="flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-black text-emerald-600 bg-emerald-50">
+                      <CheckCircle className="w-3.5 h-3.5" /> Paid — {form.paid_date}
+                    </div>
+                  )}
+                  {/* Quote — Accept / Decline / Convert */}
+                  {form.type === 'quote' && !['accepted', 'declined', 'invoiced'].includes(form.status) && (
+                    <div className="flex gap-1.5">
+                      <button onClick={() => handleQuoteStatus('accepted')}
+                        className="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl text-xs font-black text-white bg-emerald-600 hover:bg-emerald-700 transition-all">
+                        <ThumbsUp className="w-3 h-3" /> Accept
+                      </button>
+                      <button onClick={() => handleQuoteStatus('declined')}
+                        className="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl text-xs font-black text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all">
+                        <ThumbsDown className="w-3 h-3" /> Decline
+                      </button>
+                    </div>
+                  )}
+                  {form.type === 'quote' && form.status === 'accepted' && (
+                    <button onClick={handleConvertQuote} disabled={converting}
+                      className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-black text-white bg-indigo-600 hover:bg-indigo-700 transition-all disabled:opacity-40">
+                      {converting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowRightLeft className="w-3.5 h-3.5" />}
+                      Convert to Invoice
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -1594,6 +1690,64 @@ export default function Generator() {
           onSave={saveSignature}
           onClose={() => setShowSignaturePad(false)}
         />
+      )}
+
+      {/* Mark as Paid modal */}
+      {showPayModal && savedInvoice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm animate-bounce-in overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+              <h2 className="text-base font-black text-slate-800 flex items-center gap-2">
+                <DollarSign className="w-4 h-4 text-emerald-500" /> Record Payment
+              </h2>
+              <button onClick={() => setShowPayModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <div>
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5 block">Amount received ({sym})</label>
+                <input
+                  type="number" min="0" step="0.01"
+                  value={payAmount}
+                  onChange={e => setPayAmount(e.target.value)}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                  placeholder={String(balanceDue)}
+                />
+                <p className="text-[11px] text-slate-400 mt-1">Balance due: {formatCurrency(balanceDue, sym)}</p>
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5 block">Payment date</label>
+                <input
+                  type="date" value={payDate} onChange={e => setPayDate(e.target.value)}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5 block">Payment method (optional)</label>
+                <select value={payMethod} onChange={e => setPayMethod(e.target.value)}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white">
+                  <option value="">Select method</option>
+                  <option>Bank Transfer</option>
+                  <option>Mobile Money</option>
+                  <option>Cash</option>
+                  <option>Card</option>
+                  <option>PayPal</option>
+                  <option>Cheque</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <button
+                onClick={handleRecordPayment}
+                disabled={recordingPayment}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-black text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 transition-all"
+              >
+                {recordingPayment ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                {recordingPayment ? 'Saving…' : 'Confirm Payment'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Send modal */}
