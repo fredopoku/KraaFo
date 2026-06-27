@@ -600,12 +600,18 @@ export default function Generator() {
       <div className="text-center max-w-sm animate-fade-up">
         <LogoMark size={96} className="mx-auto mb-6 animate-float" />
         <h2 className="text-2xl font-black text-slate-900 mb-2 tracking-tight">Welcome to KraaFo</h2>
-        <p className="text-slate-400 mb-8 text-sm leading-relaxed">Set up your organization to start creating professional invoices and receipts.</p>
+        <p className="text-slate-400 mb-6 text-sm leading-relaxed">Sign in to access your invoices, clients and documents.</p>
+        <button
+          onClick={() => navigate('/login')}
+          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-xl font-bold text-sm transition-all btn-glow mb-3"
+        >
+          Sign in
+        </button>
         <button
           onClick={() => navigate('/setup')}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-xl font-bold text-sm transition-all btn-glow"
+          className="w-full border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-600 px-8 py-3 rounded-xl font-bold text-sm transition-all"
         >
-          Get Started
+          Create an account
         </button>
       </div>
     </div>
