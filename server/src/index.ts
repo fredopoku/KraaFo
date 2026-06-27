@@ -115,8 +115,15 @@ app.get('/api/health', (_req, res) => {
 const clientDist = path.resolve(__dirname, '../../client/dist');
 if (isProd && fs.existsSync(clientDist)) {
   app.use(express.static(clientDist));
-  // SPA fallback — all non-API routes serve index.html
-  app.get('*', (_req, res) => {
+  // SPA fallback — serve pre-rendered route HTML when available, otherwise index.html
+  app.get('*', (req, res) => {
+    const safePath = path.normalize(req.path);
+    if (safePath !== '/') {
+      const routeHtml = path.join(clientDist, safePath, 'index.html');
+      if (routeHtml.startsWith(clientDist) && fs.existsSync(routeHtml)) {
+        return res.sendFile(routeHtml);
+      }
+    }
     res.sendFile(path.join(clientDist, 'index.html'));
   });
 } else if (isProd) {

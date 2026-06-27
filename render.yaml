@@ -2,11 +2,13 @@ services:
   - type: web
     name: krafo
     runtime: node
-    buildCommand: npm install --prefix server && npm install --prefix client --include=dev && npm run build --prefix server && npm run build --prefix client
+    buildCommand: npm install --prefix server && npm install --prefix client --include=dev && npm run build --prefix server && npm run build --prefix client && (node scripts/prerender.cjs || echo '[prerender] skipped')
     startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PUPPETEER_EXECUTABLE_PATH
+        value: /usr/bin/google-chrome-stable
       - key: PORT
         value: 10000
       - key: DB_PATH
