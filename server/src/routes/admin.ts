@@ -120,7 +120,8 @@ router.get('/orgs/:id', adminAuth, (req: Request, res: Response) => {
 
 router.get('/analytics', adminAuth, (req: Request, res: Response) => {
   // days param: 7 | 30 | 90 | 0 (all time)
-  const days = Number(req.query.days) || 30;
+  const ALLOWED_DAYS = new Set([0, 7, 30, 90]);
+  const days = ALLOWED_DAYS.has(Number(req.query.days)) ? Number(req.query.days) : 30;
   const since = days > 0 ? `datetime('now', '-${days} days')` : `'2000-01-01'`;
   const prevSince = days > 0 ? `datetime('now', '-${days * 2} days')` : `'2000-01-01'`;
   const prevUntil = days > 0 ? `datetime('now', '-${days} days')` : `datetime('now', '-${days} days')`;
