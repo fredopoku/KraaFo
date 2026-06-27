@@ -1,6 +1,6 @@
 import db from '../db/schema';
 import { v4 as uuidv4 } from 'uuid';
-import { sendDay2Email, sendDay4Email, sendDay7Email, sendPaymentReminder } from './emailService';
+import { sendDay2Email, sendDay4Email, sendDay7Email, sendPaymentReminder, sendInvoiceEmail } from './emailService';
 
 async function runOnboardingSequence(): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
@@ -51,6 +51,15 @@ async function runOverdueAndReminders(): Promise<void> {
       AND due_date IS NOT NULL
       AND due_date < date('now')
       AND amount_paid < total
+  `).run();
+
+  // Mark sent/draft quotes as expired when expiry_date has passed
+  db.prepare(`
+    UPDATE quotes
+    SET status = 'expired', updated_at = datetime('now')
+    WHERE status IN ('sent', 'draft')
+      AND expiry_date IS NOT NULL
+      AND expiry_date < date('now')
   `).run();
 
   const apiKey = process.env.RESEND_API_KEY;
@@ -168,15 +177,16 @@ async function runRecurringInvoices(): Promise<void> {
         client_id, client_name, client_email, client_phone, client_address, client_city,
         client_state, client_zip, client_company,
         subtotal, discount_type, discount_value, discount_amount, tax_rate, tax_amount, total,
-        amount_paid, notes, terms, footer_text, currency_symbol,
+        amount_paid, balance_due, notes, terms, footer_text, currency_symbol,
         is_recurring, recurring_parent_id, created_at, updated_at)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,?,?,?,0,?,datetime('now'),datetime('now'))
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,?,?,?,?,0,?,datetime('now'),datetime('now'))
     `).run(
       newId, tmpl.org_id, 'invoice', num, 'sent', issueDate, dueDate,
       tmpl.client_id, tmpl.client_name, tmpl.client_email, tmpl.client_phone, tmpl.client_address,
       tmpl.client_city, tmpl.client_state, tmpl.client_zip, tmpl.client_company,
       tmpl.subtotal, tmpl.discount_type, tmpl.discount_value, tmpl.discount_amount,
       tmpl.tax_rate, tmpl.tax_amount, tmpl.total,
+      tmpl.total,
       tmpl.notes, tmpl.terms, tmpl.footer_text, tmpl.currency_symbol, tmpl.id,
     );
 
@@ -187,7 +197,12 @@ async function runRecurringInvoices(): Promise<void> {
     }
 
     // Bump org invoice counter
-    db.prepare('UPDATE organizations SET next_invoice_number = COALESCE(next_invoice_number, 0) + 1 WHERE id = ?').run(tmpl.org_id);
+    db.prepare('UPDATE organizations SET next_invoice_number = COALESCE(next_invoice_number, 1) + 1 WHERE id = ?').run(tmpl.org_id);
+
+    // Auto-send email to client if they have an address
+    if (tmpl.client_email) {
+      sendInvoiceEmail(newId, tmpl.client_email).catch(console.error);
+    }
 
     // Advance recurring_next_date on the template
     const nextDate = nextDateAfter(tmpl.recurring_next_date, tmpl.recurring_interval);

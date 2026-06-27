@@ -52,7 +52,8 @@ router.get('/:id/statement', (req: Request, res: Response) => {
 
   const org = db.prepare(`
     SELECT name, email, phone, address, city, country, logo_url, currency_symbol, primary_color,
-           website, momo_number, momo_name, bank_name, bank_account_name, bank_account_number
+           website, bank_name, bank_account, bank_routing,
+           mpesa_number, mtn_number, airtel_number, telecel_number, paypal_email
     FROM organizations WHERE id = ?
   `).get(org_id) as any;
 
