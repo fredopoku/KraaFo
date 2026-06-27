@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock, AlertCircle, FileText, Receipt, Users, Quote, Plus, Settings, ArrowRight, CheckCircle, Zap, X, DollarSign, BarChart2 } from 'lucide-react';
+import { Clock, AlertCircle, FileText, Receipt, Users, Quote, Plus, Settings, ArrowRight, ArrowLeft, CheckCircle, Zap, X, DollarSign, BarChart2 } from 'lucide-react';
 import { useOrg } from '../hooks/useOrg';
 import { api, formatCurrency } from '../utils/api';
 import { LogoMark, Logo } from '../components/Logo';
@@ -72,13 +72,17 @@ export default function Dashboard() {
       <header className="bg-white/90 glass border-b border-slate-100 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between gap-2" style={{ height: '68px' }}>
 
-          {/* Brand — logo only on mobile, logo+name on sm+ */}
-          <button onClick={() => navigate('/generator')} className="shrink-0 hover:opacity-80 transition-opacity">
-            <Logo size="sm" className="sm:hidden" />
-            <Logo size="md" className="hidden sm:flex" />
-            <span className="text-slate-200 hidden sm:block">|</span>
-            <span className="text-xs text-slate-400 font-medium hidden sm:block truncate max-w-[160px]">{org.name}</span>
-          </button>
+          {/* Back to generator + brand */}
+          <div className="flex items-center gap-2">
+            <button onClick={() => navigate('/generator')} className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all" title="Back to generator">
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+            <button onClick={() => navigate('/generator')} className="hover:opacity-80 transition-opacity shrink-0">
+              <Logo size="sm" className="sm:hidden" />
+              <Logo size="md" className="hidden sm:flex" />
+            </button>
+            <h1 className="font-black text-slate-900 tracking-tight hidden sm:block">Dashboard</h1>
+          </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
             {/* Clients + Quotes hidden on mobile */}
