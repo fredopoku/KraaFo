@@ -96,6 +96,8 @@ export default function Generator() {
   const [feedbackDone, setFeedbackDone] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Invoice | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [clientSuggestions, setClientSuggestions] = useState<Client[]>([]);
   const [showClientSuggestions, setShowClientSuggestions] = useState(false);
   const [converting, setConverting] = useState(false);
@@ -123,6 +125,27 @@ export default function Generator() {
   const showToast = (msg: string, type: 'success' | 'error' | 'info' = 'info') => {
     setToast({ msg, type, key: Date.now() });
     setTimeout(() => setToast(null), 4000);
+  };
+
+  const handleDeleteDoc = async (inv: Invoice) => {
+    setDeleting(true);
+    try {
+      if (inv.type === 'quote') {
+        await api.quotes.delete(inv.id);
+      } else {
+        await api.invoices.delete(inv.id);
+      }
+      if (savedInvoice?.id === inv.id) {
+        newDocument();
+      }
+      setDeleteTarget(null);
+      await loadInvoices();
+      showToast(`${inv.type === 'receipt' ? 'Receipt' : inv.type === 'quote' ? 'Quote' : 'Invoice'} ${inv.number} deleted`, 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Delete failed', 'error');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   useEffect(() => {
@@ -751,6 +774,11 @@ export default function Generator() {
             ) : (
               /* Desktop action buttons — hidden on mobile (mobile uses bottom bar) */
               <div className="hidden lg:flex items-center gap-1.5">
+                {savedInvoice && (
+                  <button onClick={() => setDeleteTarget(savedInvoice)} className="p-2 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all" title="Delete document">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
                 <button onClick={() => importRef.current?.click()} disabled={importing} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-indigo-600 border border-indigo-200 hover:bg-indigo-50 transition-all disabled:opacity-50">
                   {importing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ScanLine className="w-3.5 h-3.5" />}
                   {importing ? 'Reading…' : 'Import'}
@@ -878,6 +906,18 @@ export default function Generator() {
                     {converting ? <Loader2 className="w-4 h-4 text-violet-500 animate-spin" /> : <FileText className="w-4 h-4 text-violet-500" />}
                   </div>
                   Convert to Invoice
+                </button>
+              )}
+
+              {savedInvoice && (
+                <button
+                  onClick={() => { setShowMobileMenu(false); setDeleteTarget(savedInvoice); }}
+                  className="w-full flex items-center gap-3 px-5 py-3.5 text-sm font-bold text-red-600 hover:bg-red-50 transition-colors"
+                >
+                  <div className="w-9 h-9 bg-red-100 rounded-xl flex items-center justify-center shrink-0">
+                    <Trash2 className="w-4 h-4 text-red-500" />
+                  </div>
+                  Delete This Document
                 </button>
               )}
 
@@ -1033,6 +1073,13 @@ export default function Generator() {
                       Mark Paid
                     </button>
                   )}
+                  <button
+                    onClick={() => { setShowList(false); setDeleteTarget(inv); }}
+                    className="p-1.5 rounded-xl text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
+                    title="Delete"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </div>
             );
@@ -1165,6 +1212,27 @@ export default function Generator() {
           </div>
         );
       })()}
+
+      {/* Delete document confirmation */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => !deleting && setDeleteTarget(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xs p-6 text-center" onClick={e => e.stopPropagation()}>
+            <div className="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Trash2 className="w-5 h-5 text-red-500" />
+            </div>
+            <h3 className="text-base font-black text-slate-800 mb-1">Delete document?</h3>
+            <p className="text-sm text-slate-500 mb-5">
+              <span className="font-semibold text-slate-700">{deleteTarget.number}</span> will be permanently deleted. This cannot be undone.
+            </p>
+            <div className="flex gap-2">
+              <button onClick={() => setDeleteTarget(null)} disabled={deleting} className="flex-1 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-50">Cancel</button>
+              <button onClick={() => handleDeleteDoc(deleteTarget)} disabled={deleting} className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-1.5">
+                {deleting ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Deleting…</> : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Toast */}
       {toast && (

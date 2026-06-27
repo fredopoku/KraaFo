@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, ArrowLeft, FileText, CheckCircle, XCircle, Clock, ArrowRight } from 'lucide-react';
+import { Plus, ArrowLeft, FileText, CheckCircle, Clock, ArrowRight, Trash2, Loader2 } from 'lucide-react';
 import { useOrg } from '../hooks/useOrg';
 import { api, formatCurrency } from '../utils/api';
 import { Quote } from '../types';
@@ -22,6 +22,8 @@ export default function Quotes() {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [converting, setConverting] = useState<string | null>(null);
   const [toast, setToast] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<Quote | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => { if (org) load(); }, [org]);
 
@@ -41,6 +43,21 @@ export default function Quotes() {
       setTimeout(() => navigate('/generator', { state: { loadId: result.invoice_id } }), 1200);
     } catch { showToast('Conversion failed'); }
     setConverting(null);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await api.quotes.delete(deleteTarget.id);
+      setQuotes(prev => prev.filter(q => q.id !== deleteTarget.id));
+      setDeleteTarget(null);
+      showToast(`Quote ${deleteTarget.number} deleted`);
+    } catch {
+      showToast('Delete failed — please try again');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const primary = org?.primary_color || '#2563EB';
@@ -93,31 +110,39 @@ export default function Quotes() {
               {quotes.map((q, i) => {
                 const meta = STATUS_META[q.status] || STATUS_META.draft;
                 return (
-                  <div key={q.id} onClick={() => navigate('/generator', { state: { loadQuoteId: q.id } })} className="px-6 py-4 flex items-center justify-between hover:bg-slate-50/80 transition-colors animate-fade-in cursor-pointer" style={{ animationDelay: `${i * 40}ms` }}>
-                    <div className="min-w-0 flex-1">
+                  <div key={q.id} className="px-6 py-4 flex items-center justify-between hover:bg-slate-50/80 transition-colors animate-fade-in" style={{ animationDelay: `${i * 40}ms` }}>
+                    <button onClick={() => navigate('/generator', { state: { loadQuoteId: q.id } })} className="min-w-0 flex-1 text-left">
                       <div className="flex items-center gap-2 mb-0.5">
                         <span className="text-sm font-black text-slate-800">{q.number}</span>
                         <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full', meta.cls)}>{meta.label}</span>
                       </div>
                       <div className="text-xs text-slate-400">{q.client_name || 'No client'} · {q.issue_date}</div>
-                    </div>
-                    <div className="flex items-center gap-3 ml-4 shrink-0">
+                    </button>
+                    <div className="flex items-center gap-2 ml-4 shrink-0">
                       <span className="text-sm font-black text-slate-700">{formatCurrency(q.total, sym)}</span>
                       {q.status !== 'invoiced' && (
                         <button
-                          onClick={e => { e.stopPropagation(); convertToInvoice(q.id); }}
+                          onClick={() => convertToInvoice(q.id)}
                           disabled={converting === q.id}
                           className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-200 text-slate-600 hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50 transition-all disabled:opacity-50"
                         >
                           {converting === q.id ? <Clock className="w-3 h-3 animate-spin" /> : <ArrowRight className="w-3 h-3" />}
-                          Convert to Invoice
+                          <span className="hidden sm:inline">Convert</span>
                         </button>
                       )}
                       {q.status === 'invoiced' && (
                         <div className="flex items-center gap-1 text-xs text-emerald-600 font-bold">
-                          <CheckCircle className="w-3.5 h-3.5" /> Invoiced
+                          <CheckCircle className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline">Invoiced</span>
                         </div>
                       )}
+                      <button
+                        onClick={() => setDeleteTarget(q)}
+                        className="p-1.5 rounded-xl text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+                        title="Delete quote"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
                 );
@@ -126,6 +151,28 @@ export default function Quotes() {
           </div>
         )}
       </main>
+
+      {/* Delete confirmation */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => !deleting && setDeleteTarget(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xs p-6 text-center" onClick={e => e.stopPropagation()}>
+            <div className="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Trash2 className="w-5 h-5 text-red-500" />
+            </div>
+            <h3 className="text-base font-black text-slate-800 mb-1">Delete quote?</h3>
+            <p className="text-sm text-slate-500 mb-5">
+              <span className="font-semibold text-slate-700">{deleteTarget.number}</span>
+              {deleteTarget.client_name ? ` · ${deleteTarget.client_name}` : ''} will be permanently deleted.
+            </p>
+            <div className="flex gap-2">
+              <button onClick={() => setDeleteTarget(null)} disabled={deleting} className="flex-1 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-50">Cancel</button>
+              <button onClick={handleDelete} disabled={deleting} className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-1.5">
+                {deleting ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Deleting…</> : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {toast && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs font-bold px-5 py-2.5 rounded-full shadow-lg animate-fade-up z-50">
