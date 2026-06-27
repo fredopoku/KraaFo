@@ -5,8 +5,8 @@ import db from '../db/schema';
 const router = Router();
 
 router.get('/', (req: Request, res: Response) => {
-  const { org_id, q } = req.query;
-  if (!org_id) return res.status(400).json({ error: 'org_id required' });
+  const { q } = req.query;
+  const org_id = req.auth!.orgId;
   const search = q ? `%${q}%` : '%';
   const clients = db.prepare(`
     SELECT * FROM clients WHERE org_id = ? AND (name LIKE ? OR company LIKE ? OR email LIKE ?)
@@ -16,7 +16,7 @@ router.get('/', (req: Request, res: Response) => {
 });
 
 router.get('/:id', (req: Request, res: Response) => {
-  const client = db.prepare('SELECT * FROM clients WHERE id = ?').get(req.params.id);
+  const client = db.prepare('SELECT * FROM clients WHERE id = ? AND org_id = ?').get(req.params.id, req.auth!.orgId);
   if (!client) return res.status(404).json({ error: 'Client not found' });
   res.json(client);
 });
@@ -33,6 +33,8 @@ router.post('/', (req: Request, res: Response) => {
 });
 
 router.put('/:id', (req: Request, res: Response) => {
+  const existing = db.prepare('SELECT id FROM clients WHERE id = ? AND org_id = ?').get(req.params.id, req.auth!.orgId);
+  if (!existing) return res.status(404).json({ error: 'Client not found' });
   const fields = ['name','email','phone','address','city','state','zip','country','company','notes'];
   const updates = fields.filter(f => req.body[f] !== undefined);
   if (!updates.length) return res.status(400).json({ error: 'No fields to update' });
@@ -77,7 +79,8 @@ router.get('/:id/statement', (req: Request, res: Response) => {
 });
 
 router.delete('/:id', (req: Request, res: Response) => {
-  // Detach invoices first — invoices.client_id FK would block the delete otherwise
+  const existing = db.prepare('SELECT id FROM clients WHERE id = ? AND org_id = ?').get(req.params.id, req.auth!.orgId);
+  if (!existing) return res.status(404).json({ error: 'Client not found' });
   db.prepare('UPDATE invoices SET client_id = NULL WHERE client_id = ?').run(req.params.id);
   db.prepare('DELETE FROM clients WHERE id = ?').run(req.params.id);
   res.json({ success: true });

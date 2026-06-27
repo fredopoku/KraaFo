@@ -170,6 +170,7 @@ db.exec(`
 
   CREATE INDEX IF NOT EXISTS idx_invoices_org ON invoices(org_id);
   CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(status);
+  CREATE INDEX IF NOT EXISTS idx_invoices_recurring ON invoices(is_recurring, recurring_next_date);
   CREATE INDEX IF NOT EXISTS idx_invoice_items_invoice ON invoice_items(invoice_id);
   CREATE INDEX IF NOT EXISTS idx_clients_org ON clients(org_id);
   CREATE INDEX IF NOT EXISTS idx_quotes_org ON quotes(org_id);

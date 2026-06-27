@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Star, Mail, Send, Megaphone, ChevronDown, ChevronUp, LogOut, Shield, Building2, Users, FileText, Receipt, Quote, TrendingUp, TrendingDown, Activity, Trash2, Zap, Plus, X, ArrowRight, CheckCircle, AlertCircle, Globe, Monitor, Smartphone, Tablet, Eye } from 'lucide-react';
+import { Star, Mail, Send, Megaphone, ChevronDown, ChevronUp, LogOut, Shield, Building2, Users, FileText, Receipt, Quote, TrendingUp, TrendingDown, Activity, Trash2, Zap, Plus, X, ArrowRight, CheckCircle, AlertCircle, Globe, Monitor, Smartphone, Tablet, Eye, ChevronRight, Phone, ExternalLink, UserCheck, Clock, BarChart2 } from 'lucide-react';
 import { LogoMark } from '../components/Logo';
 import { cn } from '../utils/cn';
 
@@ -51,6 +51,12 @@ export default function Admin() {
   const [viewsData, setViewsData] = useState<{ views: any[]; total: number } | null>(null);
   const [viewsLoading, setViewsLoading] = useState(false);
 
+  // Org detail drill-down
+  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
+  const [orgDetail, setOrgDetail] = useState<any | null>(null);
+  const [orgDetailLoading, setOrgDetailLoading] = useState(false);
+  const [orgDetailTab, setOrgDetailTab] = useState<'overview' | 'documents' | 'clients' | 'team'>('overview');
+
   const loadData = useCallback(async (t: string, d = 30) => {
     const [fb, subs, bcs, users, cl, analytics] = await Promise.all([
       adminFetch<any>('/feedback', t),
@@ -77,6 +83,19 @@ export default function Admin() {
       setAnalyticsData(data);
     } catch {} finally { setAnalyticsLoading(false); }
   };
+
+  const openOrgDetail = async (id: string) => {
+    setSelectedOrgId(id);
+    setOrgDetail(null);
+    setOrgDetailTab('overview');
+    setOrgDetailLoading(true);
+    try {
+      const data = await adminFetch<any>(`/admin/orgs/${id}`, token);
+      setOrgDetail(data);
+    } catch {} finally { setOrgDetailLoading(false); }
+  };
+
+  const closeOrgDetail = () => { setSelectedOrgId(null); setOrgDetail(null); };
 
   // Validate stored token on mount
   useEffect(() => {
@@ -390,9 +409,12 @@ export default function Admin() {
                     const lastSeen = org.last_active_at ? new Date(org.last_active_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—';
                     const fmt = (n: number) => n > 0 ? n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : '—';
                     return (
-                      <tr key={org.id} className="hover:bg-slate-50/50 transition-colors">
+                      <tr key={org.id} onClick={() => openOrgDetail(org.id)} className="hover:bg-indigo-50/40 transition-colors cursor-pointer group">
                         <td className="px-5 py-3">
-                          <div className="font-bold text-slate-800 truncate max-w-[180px]">{org.name || '—'}</div>
+                          <div className="flex items-center gap-1.5">
+                            <div className="font-bold text-slate-800 truncate max-w-[170px]">{org.name || '—'}</div>
+                            <ChevronRight className="w-3 h-3 text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                          </div>
                           {org.email && <div className="text-[10px] text-slate-400 truncate max-w-[180px]">{org.email}</div>}
                           <div className="text-[10px] text-slate-300 mt-0.5">
                             {org.country || ''} · Joined {new Date(org.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
@@ -1504,6 +1526,254 @@ export default function Admin() {
                 </>
               )}
 
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Org Detail Slide-over ─────────────────────────────── */}
+      {selectedOrgId && (
+        <div className="fixed inset-0 z-50 flex">
+          {/* Backdrop */}
+          <div className="flex-1 bg-black/30 backdrop-blur-[2px]" onClick={closeOrgDetail} />
+
+          {/* Panel */}
+          <div className="w-full max-w-2xl bg-white shadow-2xl flex flex-col overflow-hidden">
+
+            {/* Panel header */}
+            <div className="px-6 py-4 border-b border-slate-100 flex items-start justify-between gap-4 bg-gradient-to-r from-indigo-600 to-violet-600">
+              <div className="min-w-0">
+                {orgDetail ? (
+                  <>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full', orgDetail.org.account_type === 'team' ? 'bg-white/20 text-white' : 'bg-white/15 text-white/80')}>
+                        {orgDetail.org.account_type === 'team' ? '👥 Team' : '👤 Solo'}
+                      </span>
+                      {orgDetail.org.country && <span className="text-[10px] text-white/60">{orgDetail.org.country}</span>}
+                    </div>
+                    <h2 className="text-lg font-black text-white truncate">{orgDetail.org.name}</h2>
+                    <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+                      {orgDetail.org.email && <span className="text-xs text-white/70 flex items-center gap-1"><Mail className="w-3 h-3" />{orgDetail.org.email}</span>}
+                      {orgDetail.org.phone && <span className="text-xs text-white/70 flex items-center gap-1"><Phone className="w-3 h-3" />{orgDetail.org.phone}</span>}
+                      {orgDetail.org.website && <a href={orgDetail.org.website} target="_blank" rel="noopener noreferrer" className="text-xs text-white/70 flex items-center gap-1 hover:text-white"><ExternalLink className="w-3 h-3" />{orgDetail.org.website}</a>}
+                    </div>
+                    <p className="text-[10px] text-white/50 mt-1">
+                      Joined {new Date(orgDetail.org.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                      {orgDetail.org.last_active_at && ` · Last active ${new Date(orgDetail.org.last_active_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
+                    </p>
+                  </>
+                ) : (
+                  <div className="h-14 flex items-center">
+                    <div className="w-48 h-5 bg-white/20 rounded animate-pulse" />
+                  </div>
+                )}
+              </div>
+              <button onClick={closeOrgDetail} className="text-white/70 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors shrink-0 mt-1">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex border-b border-slate-100 bg-slate-50/50">
+              {(['overview','documents','clients','team'] as const).map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setOrgDetailTab(tab)}
+                  className={cn('flex-1 py-3 text-xs font-bold capitalize transition-colors', orgDetailTab === tab ? 'text-indigo-600 border-b-2 border-indigo-600 bg-white' : 'text-slate-400 hover:text-slate-600')}
+                >
+                  {tab === 'overview' && <BarChart2 className="w-3.5 h-3.5 inline mr-1" />}
+                  {tab === 'documents' && <FileText className="w-3.5 h-3.5 inline mr-1" />}
+                  {tab === 'clients' && <Users className="w-3.5 h-3.5 inline mr-1" />}
+                  {tab === 'team' && <UserCheck className="w-3.5 h-3.5 inline mr-1" />}
+                  {tab}
+                </button>
+              ))}
+            </div>
+
+            {/* Tab content */}
+            <div className="flex-1 overflow-y-auto">
+              {orgDetailLoading && (
+                <div className="flex items-center justify-center h-48">
+                  <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                </div>
+              )}
+
+              {!orgDetailLoading && orgDetail && orgDetailTab === 'overview' && (() => {
+                const o = orgDetail.org;
+                const sym = o.currency_symbol || '$';
+                const fmt = (n: number) => `${sym}${Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+                const totalInvoiced = orgDetail.recentDocs.filter((d:any)=>d.type==='invoice').reduce((s:number,d:any)=>s+d.total,0);
+                const totalCollected = orgDetail.recentDocs.filter((d:any)=>d.type==='invoice').reduce((s:number,d:any)=>s+d.amount_paid,0);
+                const outstanding = orgDetail.recentDocs.filter((d:any)=>d.type==='invoice'&&d.status==='sent'||d.status==='overdue').reduce((s:number,d:any)=>s+d.balance_due,0);
+                const overdue = orgDetail.recentDocs.filter((d:any)=>d.status==='overdue').length;
+                return (
+                  <div className="p-5 space-y-5">
+                    {/* KPI row */}
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        { label: 'Collected', value: fmt(totalCollected), color: 'text-emerald-600', bg: 'bg-emerald-50' },
+                        { label: 'Outstanding', value: fmt(outstanding), color: outstanding > 0 ? 'text-amber-600' : 'text-slate-400', bg: 'bg-amber-50' },
+                        { label: 'Overdue', value: String(overdue), color: overdue > 0 ? 'text-red-500' : 'text-slate-400', bg: 'bg-red-50' },
+                        { label: 'Clients', value: String(orgDetail.clients.length), color: 'text-indigo-600', bg: 'bg-indigo-50' },
+                      ].map(s => (
+                        <div key={s.label} className={`${s.bg} rounded-xl p-4`}>
+                          <div className={`text-2xl font-black ${s.color}`}>{s.value}</div>
+                          <div className="text-[11px] text-slate-500 mt-0.5">{s.label}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Monthly revenue mini chart */}
+                    {orgDetail.monthly.length > 0 && (
+                      <div>
+                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3">Monthly Activity</p>
+                        <div className="space-y-2">
+                          {[...orgDetail.monthly].reverse().map((m: any) => {
+                            const maxInvoiced = Math.max(...orgDetail.monthly.map((x:any) => x.invoiced), 1);
+                            return (
+                              <div key={m.month} className="flex items-center gap-3">
+                                <span className="text-[10px] text-slate-400 w-14 shrink-0">{m.month}</span>
+                                <div className="flex-1 bg-slate-100 rounded-full h-2 relative overflow-hidden">
+                                  <div className="absolute inset-y-0 left-0 bg-indigo-400 rounded-full" style={{ width: `${(m.invoiced / maxInvoiced) * 100}%` }} />
+                                  <div className="absolute inset-y-0 left-0 bg-emerald-500 rounded-full" style={{ width: `${(m.collected / maxInvoiced) * 100}%` }} />
+                                </div>
+                                <span className="text-[10px] font-bold text-slate-600 shrink-0">{fmt(m.collected)}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div className="flex items-center gap-4 mt-2 text-[10px] text-slate-400">
+                          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-indigo-400 inline-block" />Invoiced</span>
+                          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />Collected</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Org details */}
+                    <div>
+                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3">Business Details</p>
+                      <div className="space-y-2 text-xs text-slate-600">
+                        {o.address && <div className="flex gap-2"><span className="text-slate-400 w-20 shrink-0">Address</span><span>{[o.address, o.city, o.state, o.zip, o.country].filter(Boolean).join(', ')}</span></div>}
+                        {o.currency && <div className="flex gap-2"><span className="text-slate-400 w-20 shrink-0">Currency</span><span>{o.currency} ({o.currency_symbol})</span></div>}
+                        {o.tax_name && o.tax_rate > 0 && <div className="flex gap-2"><span className="text-slate-400 w-20 shrink-0">Tax</span><span>{o.tax_name} {o.tax_rate}%</span></div>}
+                        {o.invoice_prefix && <div className="flex gap-2"><span className="text-slate-400 w-20 shrink-0">Prefixes</span><span>{o.invoice_prefix} / {o.receipt_prefix} / {o.quote_prefix}</span></div>}
+                        {o.bank_name && <div className="flex gap-2"><span className="text-slate-400 w-20 shrink-0">Bank</span><span>{o.bank_name}{o.bank_account ? ` · ${o.bank_account}` : ''}</span></div>}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {!orgDetailLoading && orgDetail && orgDetailTab === 'documents' && (
+                <div>
+                  {orgDetail.recentDocs.length === 0 ? (
+                    <div className="py-12 text-center text-slate-300 text-sm">No documents yet</div>
+                  ) : (
+                    <div className="divide-y divide-slate-50">
+                      {orgDetail.recentDocs.map((doc: any) => {
+                        const statusColor: Record<string,string> = { paid: 'text-emerald-600 bg-emerald-50', sent: 'text-blue-600 bg-blue-50', overdue: 'text-red-500 bg-red-50', draft: 'text-slate-400 bg-slate-100', cancelled: 'text-slate-300 bg-slate-50', none: 'text-slate-400 bg-slate-100' };
+                        const sym = doc.currency_symbol || '$';
+                        return (
+                          <div key={doc.id} className="px-5 py-3 flex items-center justify-between gap-3 hover:bg-slate-50/50">
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase">{doc.type}</span>
+                                <span className="text-xs font-bold text-slate-700">{doc.number}</span>
+                                <span className={cn('text-[10px] font-bold px-1.5 py-0.5 rounded-full', statusColor[doc.status] || 'text-slate-400 bg-slate-100')}>{doc.status}</span>
+                              </div>
+                              <div className="text-[10px] text-slate-400 mt-0.5">{doc.client_name || '—'} · {doc.issue_date}</div>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <div className="text-sm font-black text-slate-800">{sym}{Number(doc.total||0).toLocaleString()}</div>
+                              {doc.type === 'invoice' && doc.amount_paid > 0 && doc.amount_paid < doc.total && (
+                                <div className="text-[10px] text-emerald-600">{sym}{Number(doc.amount_paid).toLocaleString()} paid</div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {orgDetail.recentQuotes.length > 0 && (
+                    <>
+                      <div className="px-5 py-2 bg-slate-50 border-y border-slate-100">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Quotes</p>
+                      </div>
+                      <div className="divide-y divide-slate-50">
+                        {orgDetail.recentQuotes.map((q: any) => {
+                          const statusColor: Record<string,string> = { accepted: 'text-emerald-600 bg-emerald-50', declined: 'text-red-500 bg-red-50', sent: 'text-blue-600 bg-blue-50', invoiced: 'text-indigo-600 bg-indigo-50', draft: 'text-slate-400 bg-slate-100', expired: 'text-slate-300 bg-slate-50' };
+                          return (
+                            <div key={q.id} className="px-5 py-3 flex items-center justify-between gap-3 hover:bg-slate-50/50">
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-bold text-slate-700">{q.number}</span>
+                                  <span className={cn('text-[10px] font-bold px-1.5 py-0.5 rounded-full', statusColor[q.status] || 'text-slate-400 bg-slate-100')}>{q.status}</span>
+                                </div>
+                                <div className="text-[10px] text-slate-400 mt-0.5">{q.client_name || '—'} · {q.issue_date}</div>
+                              </div>
+                              <div className="text-sm font-black text-slate-800 shrink-0">{q.currency_symbol||'$'}{Number(q.total||0).toLocaleString()}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {!orgDetailLoading && orgDetail && orgDetailTab === 'clients' && (
+                <div>
+                  {orgDetail.clients.length === 0 ? (
+                    <div className="py-12 text-center text-slate-300 text-sm">No clients yet</div>
+                  ) : (
+                    <div className="divide-y divide-slate-50">
+                      {orgDetail.clients.map((c: any) => (
+                        <div key={c.id} className="px-5 py-3 flex items-center justify-between gap-3 hover:bg-slate-50/50">
+                          <div className="min-w-0">
+                            <div className="text-sm font-bold text-slate-800 truncate">{c.name}</div>
+                            <div className="text-[10px] text-slate-400 truncate">{c.company ? `${c.company} · ` : ''}{c.email || c.phone || '—'}</div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <div className="text-xs font-bold text-slate-600">{c.doc_count} doc{c.doc_count !== 1 ? 's' : ''}</div>
+                            {c.total_paid > 0 && <div className="text-[10px] text-emerald-600">{Number(c.total_paid).toLocaleString()} paid</div>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {!orgDetailLoading && orgDetail && orgDetailTab === 'team' && (
+                <div>
+                  <div className="px-5 py-3 bg-slate-50/50 border-b border-slate-100">
+                    <p className="text-xs text-slate-500">{orgDetail.team.length} member{orgDetail.team.length !== 1 ? 's' : ''} · {orgDetail.team.filter((t:any) => t.invite_accepted).length} active</p>
+                  </div>
+                  {orgDetail.team.length === 0 ? (
+                    <div className="py-12 text-center text-slate-300 text-sm">Solo account — no team members</div>
+                  ) : (
+                    <div className="divide-y divide-slate-50">
+                      {orgDetail.team.map((m: any) => (
+                        <div key={m.id} className="px-5 py-3 flex items-center justify-between gap-3 hover:bg-slate-50/50">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <div className="text-sm font-bold text-slate-800 truncate">{m.name || m.email}</div>
+                              <span className={cn('text-[10px] font-bold px-1.5 py-0.5 rounded-full', m.invite_accepted ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600')}>
+                                {m.invite_accepted ? 'Active' : 'Pending'}
+                              </span>
+                            </div>
+                            <div className="text-[10px] text-slate-400">{m.email} · <span className="capitalize">{m.role}</span></div>
+                          </div>
+                          <div className="flex items-center gap-1 text-[10px] text-slate-300 shrink-0">
+                            <Clock className="w-3 h-3" />
+                            {new Date(m.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

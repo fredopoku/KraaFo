@@ -71,6 +71,53 @@ router.get('/users', adminAuth, (_req: Request, res: Response) => {
   res.json({ orgs, summary: { ...summary, active_orgs, new_this_week: newThisWeek }, recentPayments });
 });
 
+router.get('/orgs/:id', adminAuth, (req: Request, res: Response) => {
+  const org = db.prepare('SELECT * FROM organizations WHERE id = ?').get(req.params.id) as any;
+  if (!org) return res.status(404).json({ error: 'Not found' });
+
+  const recentDocs = db.prepare(`
+    SELECT id, number, type, status, client_name, total, amount_paid, balance_due,
+           issue_date, due_date, paid_date, currency_symbol, created_at
+    FROM invoices WHERE org_id = ? ORDER BY created_at DESC LIMIT 25
+  `).all(req.params.id) as any[];
+
+  const recentQuotes = db.prepare(`
+    SELECT id, number, status, client_name, total, issue_date, expiry_date, currency_symbol
+    FROM quotes WHERE org_id = ? ORDER BY created_at DESC LIMIT 15
+  `).all(req.params.id) as any[];
+
+  const clients = db.prepare(`
+    SELECT c.id, c.name, c.email, c.company, c.phone, c.country,
+           COUNT(i.id) as doc_count,
+           COALESCE(SUM(CASE WHEN i.type='invoice' THEN i.amount_paid ELSE 0 END), 0) as total_paid
+    FROM clients c
+    LEFT JOIN invoices i ON i.client_id = c.id
+    WHERE c.org_id = ?
+    GROUP BY c.id ORDER BY doc_count DESC LIMIT 20
+  `).all(req.params.id) as any[];
+
+  const team = db.prepare(`
+    SELECT id, name, email, role, invite_accepted, created_at
+    FROM team_members WHERE org_id = ? ORDER BY created_at ASC
+  `).all(req.params.id) as any[];
+
+  const monthly = db.prepare(`
+    SELECT strftime('%Y-%m', issue_date) as month,
+           COALESCE(SUM(CASE WHEN type='invoice' THEN total ELSE 0 END),0) as invoiced,
+           COALESCE(SUM(CASE WHEN type='invoice' THEN amount_paid ELSE 0 END),0) as collected,
+           COALESCE(SUM(CASE WHEN type='receipt' THEN total ELSE 0 END),0) as receipts,
+           COUNT(CASE WHEN type='invoice' THEN 1 END) as invoice_count,
+           COUNT(CASE WHEN type='receipt' THEN 1 END) as receipt_count
+    FROM invoices WHERE org_id = ?
+    GROUP BY month ORDER BY month DESC LIMIT 6
+  `).all(req.params.id) as any[];
+
+  // strip sensitive fields before sending
+  const { password_hash, smtp_pass, dkim_private_key, ...safeOrg } = org;
+
+  res.json({ org: safeOrg, recentDocs, recentQuotes, clients, team, monthly });
+});
+
 router.get('/analytics', adminAuth, (req: Request, res: Response) => {
   // days param: 7 | 30 | 90 | 0 (all time)
   const days = Number(req.query.days) || 30;
