@@ -255,7 +255,7 @@ addCol('organizations', 'day4_email_sent', 'INTEGER DEFAULT 0');
 addCol('organizations', 'day7_email_sent', 'INTEGER DEFAULT 0');
 addCol('organizations', 'email_unsubscribed', 'INTEGER DEFAULT 0');
 addCol('organizations', 'password_hash', 'TEXT');
-addCol('organizations', 'last_active_at', 'TEXT DEFAULT (datetime(\'now\'))');
+addCol('organizations', 'last_active_at', 'TEXT');
 addCol('organizations', 'account_type', "TEXT DEFAULT 'solo'");
 addCol('invoices', 'reminder_1_sent', 'INTEGER DEFAULT 0');
 addCol('invoices', 'reminder_7_sent', 'INTEGER DEFAULT 0');

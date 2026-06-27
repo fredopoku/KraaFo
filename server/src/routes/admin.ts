@@ -7,7 +7,7 @@ const router = Router();
 router.get('/users', adminAuth, (_req: Request, res: Response) => {
   const orgs = db.prepare(`
     SELECT
-      o.id, o.name, o.email, o.country, o.account_type, o.created_at, o.last_active_at,
+      o.id, o.name, o.email, o.country, o.account_type, o.created_at, COALESCE(o.last_active_at, o.created_at) as last_active_at,
       -- Document counts
       (SELECT COUNT(*) FROM invoices WHERE org_id = o.id AND type = 'invoice') as invoice_count,
       (SELECT COUNT(*) FROM invoices WHERE org_id = o.id AND type = 'receipt') as receipt_count,
@@ -28,7 +28,7 @@ router.get('/users', adminAuth, (_req: Request, res: Response) => {
       (SELECT COUNT(*) FROM quotes WHERE org_id = o.id AND status = 'declined') as declined_quotes,
       (SELECT COUNT(*) FROM quotes WHERE org_id = o.id AND status IN ('draft','sent')) as pending_quotes
     FROM organizations o
-    ORDER BY o.last_active_at DESC
+    ORDER BY COALESCE(o.last_active_at, o.created_at) DESC
   `).all() as any[];
 
   const summary = db.prepare(`
