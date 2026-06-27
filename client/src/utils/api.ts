@@ -145,6 +145,12 @@ export const api = {
     get: (orgId: string) => request<any>(`/analytics?org_id=${orgId}`),
   },
 
+  statement: {
+    get: (clientId: string, orgId: string) => request<any>(`/clients/${clientId}/statement?org_id=${orgId}`),
+    download: (clientId: string, orgId: string) => pdfOpen(`${BASE}/pdf/statement/${clientId}?org_id=${orgId}`, 'statement.pdf'),
+    preview: (clientId: string, orgId: string) => pdfOpen(`${BASE}/pdf/statement/${clientId}?org_id=${orgId}&inline=true`, 'statement.pdf'),
+  },
+
   stats: {
     get: () => request<{ documents: number; countries: number; avgRating: number | null; ratingCount: number }>('/stats'),
   },

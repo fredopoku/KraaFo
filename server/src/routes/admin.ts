@@ -7,15 +7,28 @@ const router = Router();
 router.get('/users', adminAuth, (_req: Request, res: Response) => {
   const orgs = db.prepare(`
     SELECT
-      o.id, o.name, o.email, o.country, o.created_at,
+      o.id, o.name, o.email, o.country, o.account_type, o.created_at, o.last_active_at,
+      -- Document counts
       (SELECT COUNT(*) FROM invoices WHERE org_id = o.id AND type = 'invoice') as invoice_count,
       (SELECT COUNT(*) FROM invoices WHERE org_id = o.id AND type = 'receipt') as receipt_count,
       (SELECT COUNT(*) FROM quotes WHERE org_id = o.id) as quote_count,
       (SELECT COUNT(*) FROM clients WHERE org_id = o.id) as client_count,
-      (SELECT COALESCE(SUM(total), 0) FROM invoices WHERE org_id = o.id AND status = 'paid') as total_revenue,
-      (SELECT MAX(created_at) FROM invoices WHERE org_id = o.id) as last_active
+      -- Team
+      (SELECT COUNT(*) FROM team_members WHERE org_id = o.id AND invite_accepted = 1) as team_member_count,
+      (SELECT COUNT(*) FROM team_members WHERE org_id = o.id AND invite_accepted = 0) as pending_invites,
+      -- Financials
+      (SELECT COALESCE(SUM(total),0) FROM invoices WHERE org_id = o.id AND type = 'invoice') as total_invoiced,
+      (SELECT COALESCE(SUM(amount_paid),0) FROM invoices WHERE org_id = o.id AND type = 'invoice') as total_collected,
+      (SELECT COALESCE(SUM(total),0) FROM invoices WHERE org_id = o.id AND type = 'invoice' AND status = 'paid') as total_paid_invoices,
+      (SELECT COALESCE(SUM(total - amount_paid),0) FROM invoices WHERE org_id = o.id AND type = 'invoice' AND status IN ('sent','overdue')) as outstanding,
+      (SELECT COUNT(*) FROM invoices WHERE org_id = o.id AND type = 'invoice' AND status = 'overdue') as overdue_count,
+      (SELECT COALESCE(SUM(total),0) FROM invoices WHERE org_id = o.id AND type = 'receipt') as receipt_revenue,
+      -- Quote pipeline
+      (SELECT COUNT(*) FROM quotes WHERE org_id = o.id AND status IN ('accepted','invoiced')) as accepted_quotes,
+      (SELECT COUNT(*) FROM quotes WHERE org_id = o.id AND status = 'declined') as declined_quotes,
+      (SELECT COUNT(*) FROM quotes WHERE org_id = o.id AND status IN ('draft','sent')) as pending_quotes
     FROM organizations o
-    ORDER BY o.created_at DESC
+    ORDER BY o.last_active_at DESC
   `).all() as any[];
 
   const summary = db.prepare(`
@@ -24,14 +37,38 @@ router.get('/users', adminAuth, (_req: Request, res: Response) => {
       (SELECT COUNT(*) FROM invoices WHERE type = 'invoice') as total_invoices,
       (SELECT COUNT(*) FROM invoices WHERE type = 'receipt') as total_receipts,
       (SELECT COUNT(*) FROM quotes) as total_quotes,
-      (SELECT COALESCE(SUM(total), 0) FROM invoices WHERE status = 'paid') as total_revenue
+      (SELECT COALESCE(SUM(amount_paid),0) FROM invoices WHERE type = 'invoice') as total_collected,
+      (SELECT COALESCE(SUM(total),0) FROM invoices WHERE type = 'invoice') as total_invoiced,
+      (SELECT COALESCE(SUM(total - amount_paid),0) FROM invoices WHERE type = 'invoice' AND status IN ('sent','overdue')) as total_outstanding,
+      (SELECT COUNT(*) FROM invoices WHERE type = 'invoice' AND status = 'overdue') as total_overdue,
+      (SELECT COUNT(*) FROM team_members WHERE invite_accepted = 1) as total_team_members,
+      (SELECT COUNT(*) FROM organizations WHERE account_type = 'team') as team_accounts,
+      (SELECT COUNT(*) FROM organizations WHERE account_type = 'solo' OR account_type IS NULL) as solo_accounts
     FROM organizations
   `).get() as any;
 
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-  const active_orgs = orgs.filter(o => o.last_active && o.last_active >= thirtyDaysAgo).length;
+  // Active in last 30 days (by last_active_at API timestamp)
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const active_orgs = orgs.filter(o => o.last_active_at && o.last_active_at >= thirtyDaysAgo).length;
 
-  res.json({ orgs, summary: { ...summary, active_orgs } });
+  // Recent payments across all orgs (last 20 paid invoices)
+  const recentPayments = db.prepare(`
+    SELECT i.id, i.number, i.client_name, i.total, i.amount_paid, i.paid_date, i.status, i.type,
+           o.name as org_name, o.currency_symbol
+    FROM invoices i
+    JOIN organizations o ON o.id = i.org_id
+    WHERE i.status = 'paid' AND i.paid_date IS NOT NULL
+    ORDER BY i.paid_date DESC, i.updated_at DESC
+    LIMIT 20
+  `).all() as any[];
+
+  // New signups last 7 days
+  const newThisWeek = orgs.filter(o => {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    return o.created_at >= sevenDaysAgo;
+  }).length;
+
+  res.json({ orgs, summary: { ...summary, active_orgs, new_this_week: newThisWeek }, recentPayments });
 });
 
 router.get('/analytics', adminAuth, (req: Request, res: Response) => {

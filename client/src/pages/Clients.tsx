@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Trash2, Edit2, Users, ArrowLeft, Mail, Phone, Building2, X, Check, FileText, Receipt, Download, Eye, ExternalLink, ChevronRight, Loader2 } from 'lucide-react';
+import { Plus, Search, Trash2, Edit2, Users, ArrowLeft, Mail, Phone, Building2, X, Check, FileText, Receipt, Download, Eye, ExternalLink, ChevronRight, Loader2, FileBarChart } from 'lucide-react';
 import { useOrg } from '../hooks/useOrg';
 import { api, formatCurrency } from '../utils/api';
 import { Client, Invoice } from '../types';
@@ -328,19 +328,27 @@ export default function Clients() {
             </div>
 
             {/* Panel footer actions */}
-            <div className="px-6 py-4 border-t border-slate-100 flex gap-2">
+            <div className="px-6 py-4 border-t border-slate-100 space-y-2">
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setSelected(null); setEditing({ ...selected }); }}
+                  className="flex-1 py-2 rounded-xl border border-slate-200 text-sm font-bold text-slate-500 hover:bg-slate-50 transition-all flex items-center justify-center gap-1.5"
+                >
+                  <Edit2 className="w-3.5 h-3.5" /> Edit Client
+                </button>
+                <button
+                  onClick={() => navigate('/generator', { state: { client: selected } })}
+                  className="flex-1 py-2 rounded-xl text-sm font-bold text-white btn-glow flex items-center justify-center gap-1.5"
+                  style={{ background: primary }}
+                >
+                  <Plus className="w-3.5 h-3.5" /> New Invoice
+                </button>
+              </div>
               <button
-                onClick={() => { setSelected(null); setEditing({ ...selected }); }}
-                className="flex-1 py-2 rounded-xl border border-slate-200 text-sm font-bold text-slate-500 hover:bg-slate-50 transition-all flex items-center justify-center gap-1.5"
+                onClick={() => api.statement.download(selected!.id, org!.id).catch(() => {})}
+                className="w-full py-2 rounded-xl border border-slate-200 text-sm font-bold text-indigo-600 hover:bg-indigo-50 hover:border-indigo-300 transition-all flex items-center justify-center gap-1.5"
               >
-                <Edit2 className="w-3.5 h-3.5" /> Edit Client
-              </button>
-              <button
-                onClick={() => navigate('/generator', { state: { client: selected } })}
-                className="flex-1 py-2 rounded-xl text-sm font-bold text-white btn-glow flex items-center justify-center gap-1.5"
-                style={{ background: primary }}
-              >
-                <Plus className="w-3.5 h-3.5" /> New Invoice
+                <FileBarChart className="w-3.5 h-3.5" /> Download Statement of Account
               </button>
             </div>
           </div>

@@ -33,6 +33,9 @@ interface FormState {
   notes: string;
   terms: string;
   footer_text: string;
+  is_recurring: number;
+  recurring_interval: string;
+  recurring_end_date: string;
 }
 
 const STATUS_META: Record<string, { label: string; cls: string }> = {
@@ -114,6 +117,7 @@ export default function Generator() {
     client_address: '', client_city: '', client_state: '', client_zip: '', client_company: '',
     discount_type: 'none', discount_value: 0, tax_rate: 0,
     amount_paid: 0, notes: '', terms: '', footer_text: '',
+    is_recurring: 0, recurring_interval: 'monthly', recurring_end_date: '',
   });
 
   const showToast = (msg: string, type: 'success' | 'error' | 'info' = 'info') => {
@@ -308,6 +312,9 @@ export default function Generator() {
         discount_type: full.discount_type, discount_value: full.discount_value,
         tax_rate: full.tax_rate, amount_paid: (full as any).amount_paid || 0,
         notes: full.notes || '', terms: full.terms || '', footer_text: (full as any).footer_text || '',
+        is_recurring: (full as any).is_recurring ? 1 : 0,
+        recurring_interval: (full as any).recurring_interval || 'monthly',
+        recurring_end_date: (full as any).recurring_end_date || '',
       });
       setItems((full as any).items?.length ? (full as any).items : [{ description: '', quantity: 1, unit: 'session', unit_price: 0, amount: 0 }]);
       setSavedInvoice(full as any);
@@ -1215,6 +1222,40 @@ export default function Generator() {
                 </div>
               )}
             </div>
+
+            {/* Recurring — invoice only */}
+            {form.type === 'invoice' && (
+              <div className="mt-4 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setField('is_recurring', form.is_recurring ? 0 : 1)}
+                  className="flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-indigo-600 transition-colors group"
+                >
+                  <div className={cn('w-9 h-5 rounded-full transition-colors relative flex-shrink-0', form.is_recurring ? 'bg-indigo-600' : 'bg-slate-200')}>
+                    <div className={cn('absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform', form.is_recurring ? 'translate-x-4' : '')} />
+                  </div>
+                  Recurring Invoice
+                  <span className="text-[10px] font-normal text-slate-400">{form.is_recurring ? 'Auto-creates a new invoice on schedule' : 'Repeat this invoice automatically'}</span>
+                </button>
+                {form.is_recurring && (
+                  <div className="mt-3 grid grid-cols-2 gap-3">
+                    <div>
+                      <label className={LABEL}>Repeat Every</label>
+                      <select value={form.recurring_interval} onChange={e => setField('recurring_interval', e.target.value as any)} className={INPUT}>
+                        <option value="weekly">Weekly</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="quarterly">Every 3 Months</option>
+                        <option value="yearly">Yearly</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className={LABEL}>End Date (optional)</label>
+                      <input value={form.recurring_end_date} onChange={e => setField('recurring_end_date', e.target.value)} type="date" className={INPUT} placeholder="No end date" />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Client Details */}
@@ -1591,6 +1632,11 @@ export default function Generator() {
                     <CheckCircle className="w-3.5 h-3.5" />
                     Saved as {savedInvoice.number}
                   </div>
+                  {(savedInvoice as any).is_recurring && (
+                    <div className="flex items-center justify-center gap-1 text-[10px] font-bold text-indigo-600 bg-indigo-50 py-1 rounded-xl">
+                      🔄 Recurring · {(savedInvoice as any).recurring_interval} · Next: {(savedInvoice as any).recurring_next_date || '—'}
+                    </div>
+                  )}
                   {/* Invoice / Receipt — Mark as Paid */}
                   {(form.type === 'invoice') && !['paid', 'cancelled'].includes(form.status) && (
                     <button

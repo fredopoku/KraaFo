@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TrendingUp, Clock, AlertCircle, FileText, Receipt, Users, Quote, Plus, Settings, ArrowRight, CheckCircle, Zap, X } from 'lucide-react';
+import { Clock, AlertCircle, FileText, Receipt, Users, Quote, Plus, Settings, ArrowRight, CheckCircle, Zap, X, DollarSign, BarChart2 } from 'lucide-react';
 import { useOrg } from '../hooks/useOrg';
 import { api, formatCurrency } from '../utils/api';
 import { LogoMark, Logo } from '../components/Logo';
@@ -49,10 +49,10 @@ export default function Dashboard() {
   const s = data?.summary || {};
 
   const statCards = [
-    { label: 'Total Revenue',  value: formatCurrency(s.totalRevenue || 0, sym), sub: `${s.paidInvoices || 0} paid invoices`,                                           icon: TrendingUp,  color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'Outstanding',    value: formatCurrency(s.outstanding  || 0, sym), sub: 'Awaiting payment',                                                               icon: Clock,       color: 'text-amber-600',  bg: 'bg-amber-50'   },
-    { label: 'Overdue',        value: formatCurrency(s.overdue      || 0, sym), sub: `${s.overdueCount || 0} overdue invoice${s.overdueCount !== 1 ? 's' : ''}`,       icon: AlertCircle, color: 'text-red-600',    bg: 'bg-red-50'     },
-    { label: 'Total Invoices', value: s.totalInvoices || 0,                     sub: `${s.totalReceipts || 0} receipts · ${s.totalQuotes || 0} quotes`,                 icon: FileText,    color: 'text-indigo-600', bg: 'bg-indigo-50'  },
+    { label: 'Collected',   value: formatCurrency(s.totalCollected || 0, sym), sub: `${s.collectionRate ?? 0}% collection rate`,                                    icon: DollarSign,  color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: 'Outstanding', value: formatCurrency(s.outstanding    || 0, sym), sub: 'Awaiting payment',                                                             icon: Clock,       color: 'text-amber-600',  bg: 'bg-amber-50'   },
+    { label: 'Overdue',     value: formatCurrency(s.overdue        || 0, sym), sub: `${s.overdueCount || 0} invoice${s.overdueCount !== 1 ? 's' : ''} overdue`,    icon: AlertCircle, color: 'text-red-600',    bg: 'bg-red-50'     },
+    { label: 'Documents',   value: (s.totalInvoices || 0) + (s.totalReceipts || 0) + (s.totalQuotes || 0), sub: `${s.totalInvoices || 0}inv · ${s.totalReceipts || 0}rec · ${s.totalQuotes || 0}qte`, icon: BarChart2, color: 'text-indigo-600', bg: 'bg-indigo-50' },
   ];
 
   const maxRevenue = Math.max(...(data?.monthly || []).map((m: any) => m.revenue || 0), 1);
@@ -193,6 +193,74 @@ export default function Dashboard() {
             )}
           </div>
         </div>
+
+        {/* Overdue invoices alert + Receipt/Quote stats */}
+        {(data?.overdueList?.length > 0 || s.totalReceipts > 0 || s.totalQuotes > 0) && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+
+            {/* Overdue list */}
+            {data?.overdueList?.length > 0 && (
+              <div className="lg:col-span-2 bg-white rounded-2xl border border-red-100 shadow-sm overflow-hidden animate-fade-up delay-100">
+                <div className="px-5 py-3.5 border-b border-red-50 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-red-500" />
+                    <h2 className="text-sm font-black text-slate-700">Overdue Invoices</h2>
+                  </div>
+                  <span className="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-full">{data.overdueList.length} overdue</span>
+                </div>
+                <div className="divide-y divide-slate-50">
+                  {data.overdueList.map((inv: any) => {
+                    const daysOverdue = Math.floor((Date.now() - new Date(inv.due_date).getTime()) / 86400000);
+                    const balance = inv.total - (inv.amount_paid || 0);
+                    return (
+                      <button
+                        key={inv.id}
+                        onClick={() => navigate('/generator', { state: { loadId: inv.id } })}
+                        className="w-full px-5 py-3 flex items-center justify-between hover:bg-slate-50/80 transition-colors text-left"
+                      >
+                        <div className="min-w-0">
+                          <div className="text-xs font-bold text-slate-800">{inv.number}</div>
+                          <div className="text-[10px] text-slate-400 truncate">{inv.client_name} · {daysOverdue}d overdue</div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0 ml-2">
+                          <span className="text-xs font-black text-red-600">{formatCurrency(balance, sym)}</span>
+                          <ArrowRight className="w-3.5 h-3.5 text-slate-300" />
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Receipt + Quote mini stats */}
+            <div className="flex flex-col gap-3">
+              {s.totalReceipts > 0 && (
+                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 animate-fade-up delay-150">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Receipt className="w-4 h-4 text-emerald-600" />
+                    <span className="text-xs font-black text-slate-700">Receipts</span>
+                  </div>
+                  <div className="text-lg font-black text-slate-900">{formatCurrency(s.receiptRevenue || 0, sym)}</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">{s.totalReceipts} receipt{s.totalReceipts !== 1 ? 's' : ''} issued</div>
+                </div>
+              )}
+              {s.totalQuotes > 0 && (
+                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 animate-fade-up delay-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Quote className="w-4 h-4 text-indigo-600" />
+                    <span className="text-xs font-black text-slate-700">Quotes</span>
+                  </div>
+                  <div className="text-lg font-black text-slate-900">
+                    {s.totalQuotes > 0 ? Math.round((s.acceptedQuotes / s.totalQuotes) * 100) : 0}%
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">{s.acceptedQuotes} of {s.totalQuotes} accepted · {s.pendingQuotes || 0} pending</div>
+                </div>
+              )}
+            </div>
+
+          </div>
+        )}
 
         {/* Recent activity */}
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm animate-fade-up delay-200">

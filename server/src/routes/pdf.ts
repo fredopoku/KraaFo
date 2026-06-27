@@ -185,6 +185,165 @@ router.get('/quote/:quoteId', async (req: Request, res: Response) => {
   }
 });
 
+router.get('/statement/:clientId', async (req: Request, res: Response) => {
+  const { org_id } = req.query;
+  if (!org_id) return res.status(400).json({ error: 'org_id required' });
+
+  const client = db.prepare('SELECT * FROM clients WHERE id = ? AND org_id = ?').get(req.params.clientId, org_id) as any;
+  if (!client) return res.status(404).json({ error: 'Client not found' });
+
+  const org = db.prepare('SELECT * FROM organizations WHERE id = ?').get(org_id) as any;
+  const logoBase64 = org?.logo_url ? getLogoBase64(org.logo_url) ?? undefined : undefined;
+
+  const invoices = db.prepare(`
+    SELECT id, number, type, status, issue_date, due_date, total, amount_paid, paid_date
+    FROM invoices
+    WHERE org_id = ? AND (client_id = ? OR (client_name = ? AND client_id IS NULL))
+    ORDER BY issue_date ASC
+  `).all(org_id, req.params.clientId, client.name) as any[];
+
+  const quotes = db.prepare(`
+    SELECT id, number, status, issue_date, total
+    FROM quotes
+    WHERE org_id = ? AND (client_id = ? OR (client_name = ? AND client_id IS NULL))
+    ORDER BY issue_date ASC
+  `).all(org_id, req.params.clientId, client.name) as any[];
+
+  const sym = org?.currency_symbol || '$';
+  const primary = org?.primary_color || '#6366f1';
+
+  const totalInvoiced = invoices.filter(i => i.type === 'invoice').reduce((s, i) => s + (i.total || 0), 0);
+  const totalCollected = invoices.filter(i => i.type === 'invoice').reduce((s, i) => s + (i.amount_paid || 0), 0);
+  const totalOutstanding = totalInvoiced - totalCollected;
+  const totalReceipts = invoices.filter(i => i.type === 'receipt').reduce((s, i) => s + (i.total || 0), 0);
+
+  const fmt = (n: number) => `${sym}${Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const statusBadge = (s: string) => {
+    const map: Record<string, string> = { paid: '#10b981', overdue: '#ef4444', sent: '#3b82f6', draft: '#94a3b8', accepted: '#10b981', declined: '#ef4444' };
+    return `<span style="background:${map[s] || '#94a3b8'}22;color:${map[s] || '#94a3b8'};padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700;text-transform:capitalize">${s}</span>`;
+  };
+
+  const logoHtml = logoBase64
+    ? `<img src="${logoBase64}" style="height:48px;object-fit:contain;border-radius:6px" />`
+    : `<div style="width:40px;height:40px;background:${primary};border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;font-weight:900;font-size:18px">${(org?.name || 'K')[0]}</div>`;
+
+  const invoiceRows = invoices.map(inv => `
+    <tr style="border-bottom:1px solid #f1f5f9">
+      <td style="padding:10px 12px;font-weight:700;color:#1e293b">${inv.number}</td>
+      <td style="padding:10px 12px;color:#64748b;text-transform:capitalize">${inv.type}</td>
+      <td style="padding:10px 12px;color:#64748b">${inv.issue_date}</td>
+      <td style="padding:10px 12px;color:#64748b">${inv.due_date || '—'}</td>
+      <td style="padding:10px 12px;text-align:right;font-weight:700;color:#1e293b">${fmt(inv.total)}</td>
+      <td style="padding:10px 12px;text-align:right;color:#10b981;font-weight:700">${fmt(inv.amount_paid || 0)}</td>
+      <td style="padding:10px 12px;text-align:right;color:${(inv.total - (inv.amount_paid || 0)) > 0 ? '#ef4444' : '#10b981'};font-weight:700">${fmt(inv.total - (inv.amount_paid || 0))}</td>
+      <td style="padding:10px 12px;text-align:center">${statusBadge(inv.status)}</td>
+    </tr>
+  `).join('');
+
+  const quoteRows = quotes.length > 0 ? `
+    <h3 style="font-size:14px;font-weight:800;color:#1e293b;margin:28px 0 12px">Quotes</h3>
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead>
+        <tr style="background:#f8fafc">
+          <th style="padding:8px 12px;text-align:left;color:#94a3b8;font-size:10px;text-transform:uppercase;letter-spacing:.05em">Quote #</th>
+          <th style="padding:8px 12px;text-align:left;color:#94a3b8;font-size:10px;text-transform:uppercase;letter-spacing:.05em">Date</th>
+          <th style="padding:8px 12px;text-align:right;color:#94a3b8;font-size:10px;text-transform:uppercase;letter-spacing:.05em">Value</th>
+          <th style="padding:8px 12px;text-align:center;color:#94a3b8;font-size:10px;text-transform:uppercase;letter-spacing:.05em">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${quotes.map(q => `
+          <tr style="border-bottom:1px solid #f1f5f9">
+            <td style="padding:10px 12px;font-weight:700;color:#1e293b">${q.number}</td>
+            <td style="padding:10px 12px;color:#64748b">${q.issue_date}</td>
+            <td style="padding:10px 12px;text-align:right;font-weight:700;color:#1e293b">${fmt(q.total)}</td>
+            <td style="padding:10px 12px;text-align:center">${statusBadge(q.status)}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  ` : '';
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+  <style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin:0;padding:0;color:#1e293b}*{box-sizing:border-box}</style>
+  </head><body style="padding:40px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px">
+      ${logoHtml}
+      <div style="text-align:right">
+        <div style="font-size:22px;font-weight:900;color:#1e293b">Statement of Account</div>
+        <div style="color:#64748b;font-size:12px;margin-top:4px">Generated ${new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})}</div>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;margin-bottom:28px">
+      <div>
+        <div style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Prepared by</div>
+        <div style="font-weight:800;color:#1e293b">${org?.name || ''}</div>
+        ${org?.email ? `<div style="color:#64748b;font-size:12px">${org.email}</div>` : ''}
+        ${org?.phone ? `<div style="color:#64748b;font-size:12px">${org.phone}</div>` : ''}
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Prepared for</div>
+        <div style="font-weight:800;color:#1e293b">${client.name}</div>
+        ${client.company ? `<div style="color:#64748b;font-size:12px">${client.company}</div>` : ''}
+        ${client.email ? `<div style="color:#64748b;font-size:12px">${client.email}</div>` : ''}
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px">
+      ${[
+        { label: 'Total Invoiced', value: fmt(totalInvoiced), color: '#1e293b' },
+        { label: 'Amount Collected', value: fmt(totalCollected), color: '#10b981' },
+        { label: 'Balance Due', value: fmt(totalOutstanding), color: totalOutstanding > 0 ? '#ef4444' : '#10b981' },
+        { label: 'Receipts Issued', value: fmt(totalReceipts), color: '#6366f1' },
+      ].map(s => `
+        <div style="background:#f8fafc;border-radius:10px;padding:14px">
+          <div style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">${s.label}</div>
+          <div style="font-size:18px;font-weight:900;color:${s.color}">${s.value}</div>
+        </div>
+      `).join('')}
+    </div>
+
+    <h3 style="font-size:14px;font-weight:800;color:#1e293b;margin:0 0 12px">Invoices & Receipts</h3>
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead>
+        <tr style="background:#f8fafc">
+          <th style="padding:8px 12px;text-align:left;color:#94a3b8;font-size:10px;text-transform:uppercase;letter-spacing:.05em">Number</th>
+          <th style="padding:8px 12px;text-align:left;color:#94a3b8;font-size:10px;text-transform:uppercase;letter-spacing:.05em">Type</th>
+          <th style="padding:8px 12px;text-align:left;color:#94a3b8;font-size:10px;text-transform:uppercase;letter-spacing:.05em">Date</th>
+          <th style="padding:8px 12px;text-align:left;color:#94a3b8;font-size:10px;text-transform:uppercase;letter-spacing:.05em">Due</th>
+          <th style="padding:8px 12px;text-align:right;color:#94a3b8;font-size:10px;text-transform:uppercase;letter-spacing:.05em">Amount</th>
+          <th style="padding:8px 12px;text-align:right;color:#94a3b8;font-size:10px;text-transform:uppercase;letter-spacing:.05em">Paid</th>
+          <th style="padding:8px 12px;text-align:right;color:#94a3b8;font-size:10px;text-transform:uppercase;letter-spacing:.05em">Balance</th>
+          <th style="padding:8px 12px;text-align:center;color:#94a3b8;font-size:10px;text-transform:uppercase;letter-spacing:.05em">Status</th>
+        </tr>
+      </thead>
+      <tbody>${invoiceRows || '<tr><td colspan="8" style="padding:20px;text-align:center;color:#94a3b8">No documents</td></tr>'}</tbody>
+    </table>
+
+    ${quoteRows}
+
+    <div style="margin-top:40px;padding-top:20px;border-top:2px solid ${primary};display:flex;justify-content:space-between;align-items:center">
+      <div style="font-size:11px;color:#94a3b8">Generated by KraaFo · kraafo.com</div>
+      <div style="font-size:16px;font-weight:900;color:${totalOutstanding > 0 ? '#ef4444' : '#10b981'}">
+        Balance Due: ${fmt(totalOutstanding)}
+      </div>
+    </div>
+  </body></html>`;
+
+  try {
+    const { generatePDFFromHTML } = await import('../services/pdfService');
+    const pdfBuffer = await generatePDFFromHTML(html);
+    const inline = req.query.inline === 'true';
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `${inline ? 'inline' : 'attachment'}; filename="statement-${client.name.replace(/\s+/g, '-')}.pdf"`);
+    res.send(pdfBuffer);
+  } catch (err) {
+    console.error('Statement PDF error:', err);
+    res.status(500).json({ error: 'Failed to generate statement PDF' });
+  }
+});
+
 router.post('/preview', async (req: Request, res: Response) => {
   const { invoiceData } = req.body;
   if (!invoiceData) return res.status(400).json({ error: 'invoiceData required' });

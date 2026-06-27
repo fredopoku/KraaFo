@@ -278,9 +278,30 @@ db.exec(`
   CREATE UNIQUE INDEX IF NOT EXISTS idx_team_members_email_org ON team_members(email, org_id);
 `);
 
+// Recurring invoices
+addCol('invoices', 'is_recurring', 'INTEGER DEFAULT 0');
+addCol('invoices', 'recurring_interval', 'TEXT'); // 'weekly' | 'monthly' | 'quarterly' | 'yearly'
+addCol('invoices', 'recurring_next_date', 'TEXT');
+addCol('invoices', 'recurring_end_date', 'TEXT');
+addCol('invoices', 'recurring_parent_id', 'TEXT'); // points to original template invoice
+
 // Seed initial changelog entries (INSERT OR IGNORE — safe to run on every boot)
 db.exec(`
   INSERT OR IGNORE INTO changelog (id, title, description, tag, published_at) VALUES
+  (
+    'cl-recurring-invoices-2026',
+    'Recurring Invoices',
+    'Set any invoice to repeat automatically — weekly, monthly, quarterly, or yearly. The system generates a fresh invoice on schedule, copies all line items, and marks the original as your billing template. Set an optional end date or let it run indefinitely.',
+    'New',
+    '2026-06-01 00:00:00'
+  ),
+  (
+    'cl-statement-of-account-2026',
+    'Client Statement of Account',
+    'Download a full Statement of Account for any client in one click. The PDF shows every invoice, receipt, and quote in chronological order — with amounts invoiced, collected, and the outstanding balance at a glance.',
+    'New',
+    '2026-06-15 00:00:00'
+  ),
   (
     'cl-bot-protection-2025',
     'Bot Protection with Cloudflare Turnstile',

@@ -1,4 +1,5 @@
 import db from '../db/schema';
+import { v4 as uuidv4 } from 'uuid';
 import { sendDay2Email, sendDay4Email, sendDay7Email, sendPaymentReminder } from './emailService';
 
 async function runOnboardingSequence(): Promise<void> {
@@ -114,11 +115,95 @@ async function runOverdueAndReminders(): Promise<void> {
   }
 }
 
+function nextDateAfter(baseDate: string, interval: string): string {
+  const d = new Date(baseDate);
+  switch (interval) {
+    case 'weekly':    d.setDate(d.getDate() + 7); break;
+    case 'monthly':   d.setMonth(d.getMonth() + 1); break;
+    case 'quarterly': d.setMonth(d.getMonth() + 3); break;
+    case 'yearly':    d.setFullYear(d.getFullYear() + 1); break;
+  }
+  return d.toISOString().split('T')[0];
+}
+
+function daysOffset(dateStr: string, days: number): string {
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + days);
+  return d.toISOString().split('T')[0];
+}
+
+async function runRecurringInvoices(): Promise<void> {
+  const today = new Date().toISOString().split('T')[0];
+
+  // Find recurring template invoices due today or overdue
+  const due = db.prepare(`
+    SELECT i.*, o.invoice_prefix, o.next_invoice_number
+    FROM invoices i
+    JOIN organizations o ON o.id = i.org_id
+    WHERE i.is_recurring = 1
+      AND i.type = 'invoice'
+      AND i.recurring_next_date IS NOT NULL
+      AND i.recurring_next_date <= ?
+      AND (i.recurring_end_date IS NULL OR i.recurring_end_date >= ?)
+  `).all(today, today) as any[];
+
+  for (const tmpl of due) {
+    // Clone the template invoice as a new sent invoice
+    const items = db.prepare('SELECT * FROM invoice_items WHERE invoice_id = ? ORDER BY sort_order').all(tmpl.id) as any[];
+
+    const org = db.prepare('SELECT * FROM organizations WHERE id = ?').get(tmpl.org_id) as any;
+    const num = `${org.invoice_prefix || 'INV'}-${new Date().getFullYear()}-${String((org.next_invoice_number || 1)).padStart(4, '0')}`;
+
+    const newId = uuidv4();
+    const issueDate = tmpl.recurring_next_date;
+    // Calculate due date from original gap (issue_date → due_date)
+    let dueDays = 30;
+    if (tmpl.issue_date && tmpl.due_date) {
+      dueDays = Math.round((new Date(tmpl.due_date).getTime() - new Date(tmpl.issue_date).getTime()) / 86400000);
+    }
+    const dueDate = daysOffset(issueDate, dueDays);
+
+    db.prepare(`
+      INSERT INTO invoices (id, org_id, type, number, status, issue_date, due_date,
+        client_id, client_name, client_email, client_phone, client_address, client_city,
+        client_state, client_zip, client_company,
+        subtotal, discount_type, discount_value, discount_amount, tax_rate, tax_amount, total,
+        amount_paid, notes, terms, footer_text, currency_symbol,
+        is_recurring, recurring_parent_id, created_at, updated_at)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,?,?,?,0,?,datetime('now'),datetime('now'))
+    `).run(
+      newId, tmpl.org_id, 'invoice', num, 'sent', issueDate, dueDate,
+      tmpl.client_id, tmpl.client_name, tmpl.client_email, tmpl.client_phone, tmpl.client_address,
+      tmpl.client_city, tmpl.client_state, tmpl.client_zip, tmpl.client_company,
+      tmpl.subtotal, tmpl.discount_type, tmpl.discount_value, tmpl.discount_amount,
+      tmpl.tax_rate, tmpl.tax_amount, tmpl.total,
+      tmpl.notes, tmpl.terms, tmpl.footer_text, tmpl.currency_symbol, tmpl.id,
+    );
+
+    // Copy line items
+    for (const item of items) {
+      db.prepare(`INSERT INTO invoice_items (id, invoice_id, description, quantity, unit_price, amount, sort_order)
+        VALUES (?,?,?,?,?,?,?)`).run(uuidv4(), newId, item.description, item.quantity, item.unit_price, item.amount, item.sort_order);
+    }
+
+    // Bump org invoice counter
+    db.prepare('UPDATE organizations SET next_invoice_number = COALESCE(next_invoice_number, 0) + 1 WHERE id = ?').run(tmpl.org_id);
+
+    // Advance recurring_next_date on the template
+    const nextDate = nextDateAfter(tmpl.recurring_next_date, tmpl.recurring_interval);
+    const stillActive = !tmpl.recurring_end_date || nextDate <= tmpl.recurring_end_date;
+    db.prepare('UPDATE invoices SET recurring_next_date = ?, is_recurring = ? WHERE id = ?')
+      .run(stillActive ? nextDate : null, stillActive ? 1 : 0, tmpl.id);
+  }
+}
+
 export function startScheduler(): void {
   runOnboardingSequence().catch(console.error);
   runOverdueAndReminders().catch(console.error);
+  runRecurringInvoices().catch(console.error);
   setInterval(() => {
     runOnboardingSequence().catch(console.error);
     runOverdueAndReminders().catch(console.error);
+    runRecurringInvoices().catch(console.error);
   }, 60 * 60 * 1000);
 }

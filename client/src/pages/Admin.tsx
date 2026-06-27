@@ -31,7 +31,7 @@ export default function Admin() {
   const [showAllFeedback, setShowAllFeedback] = useState(false);
   const [broadcastForm, setBroadcastForm] = useState({ subject: '', body: '' });
   const [sending, setSending] = useState(false);
-  const [usersData, setUsersData] = useState<{ orgs: any[]; summary: any } | null>(null);
+  const [usersData, setUsersData] = useState<{ orgs: any[]; summary: any; recentPayments?: any[] } | null>(null);
   const [showAllOrgs, setShowAllOrgs] = useState(false);
   const [changelogEntries, setChangelogEntries] = useState<any[]>([]);
   const [clForm, setClForm] = useState({ title: '', description: '', tag: 'New' });
@@ -373,45 +373,59 @@ export default function Admin() {
                 <thead>
                   <tr className="border-b border-slate-50 bg-slate-50/50">
                     <th className="px-5 py-2.5 text-left font-bold text-slate-400 uppercase tracking-wider text-[10px]">Business</th>
-                    <th className="px-3 py-2.5 text-left font-bold text-slate-400 uppercase tracking-wider text-[10px] hidden md:table-cell">Country</th>
-                    <th className="px-3 py-2.5 text-right font-bold text-slate-400 uppercase tracking-wider text-[10px]">Invoices</th>
-                    <th className="px-3 py-2.5 text-right font-bold text-slate-400 uppercase tracking-wider text-[10px] hidden sm:table-cell">Receipts</th>
-                    <th className="px-3 py-2.5 text-right font-bold text-slate-400 uppercase tracking-wider text-[10px] hidden sm:table-cell">Quotes</th>
-                    <th className="px-3 py-2.5 text-right font-bold text-slate-400 uppercase tracking-wider text-[10px] hidden lg:table-cell">Clients</th>
-                    <th className="px-3 py-2.5 text-right font-bold text-slate-400 uppercase tracking-wider text-[10px]">Revenue</th>
-                    <th className="px-3 py-2.5 text-center font-bold text-slate-400 uppercase tracking-wider text-[10px] hidden md:table-cell">Status</th>
+                    <th className="px-3 py-2.5 text-left font-bold text-slate-400 uppercase tracking-wider text-[10px] hidden md:table-cell">Type</th>
+                    <th className="px-3 py-2.5 text-right font-bold text-slate-400 uppercase tracking-wider text-[10px]">Docs</th>
+                    <th className="px-3 py-2.5 text-right font-bold text-slate-400 uppercase tracking-wider text-[10px] hidden sm:table-cell">Team</th>
+                    <th className="px-3 py-2.5 text-right font-bold text-slate-400 uppercase tracking-wider text-[10px] hidden lg:table-cell">Collected</th>
+                    <th className="px-3 py-2.5 text-right font-bold text-slate-400 uppercase tracking-wider text-[10px] hidden lg:table-cell">Outstanding</th>
+                    <th className="px-3 py-2.5 text-right font-bold text-slate-400 uppercase tracking-wider text-[10px] hidden sm:table-cell">Overdue</th>
+                    <th className="px-3 py-2.5 text-center font-bold text-slate-400 uppercase tracking-wider text-[10px] hidden md:table-cell">Last Seen</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {(showAllOrgs ? usersData.orgs : usersData.orgs.slice(0, 8)).map((org: any) => {
-                    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-                    const isActive = org.last_active && org.last_active >= thirtyDaysAgo;
+                  {(showAllOrgs ? usersData.orgs : usersData.orgs.slice(0, 15)).map((org: any) => {
+                    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+                    const isActive = org.last_active_at && org.last_active_at >= thirtyDaysAgo;
                     const totalDocs = (org.invoice_count || 0) + (org.receipt_count || 0) + (org.quote_count || 0);
+                    const lastSeen = org.last_active_at ? new Date(org.last_active_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—';
+                    const fmt = (n: number) => n > 0 ? n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : '—';
                     return (
                       <tr key={org.id} className="hover:bg-slate-50/50 transition-colors">
                         <td className="px-5 py-3">
-                          <div className="font-bold text-slate-800 truncate max-w-[160px]">{org.name || '—'}</div>
-                          {org.email && <div className="text-[10px] text-slate-400 truncate max-w-[160px]">{org.email}</div>}
+                          <div className="font-bold text-slate-800 truncate max-w-[180px]">{org.name || '—'}</div>
+                          {org.email && <div className="text-[10px] text-slate-400 truncate max-w-[180px]">{org.email}</div>}
                           <div className="text-[10px] text-slate-300 mt-0.5">
-                            Joined {new Date(org.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })}
+                            {org.country || ''} · Joined {new Date(org.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                           </div>
                         </td>
-                        <td className="px-3 py-3 text-slate-500 hidden md:table-cell">{org.country || '—'}</td>
-                        <td className="px-3 py-3 text-right font-bold text-slate-700">{org.invoice_count || 0}</td>
-                        <td className="px-3 py-3 text-right text-slate-500 hidden sm:table-cell">{org.receipt_count || 0}</td>
-                        <td className="px-3 py-3 text-right text-slate-500 hidden sm:table-cell">{org.quote_count || 0}</td>
-                        <td className="px-3 py-3 text-right text-slate-500 hidden lg:table-cell">{org.client_count || 0}</td>
-                        <td className="px-3 py-3 text-right font-bold text-slate-700">
-                          {org.total_revenue > 0
-                            ? `${Number(org.total_revenue).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
-                            : totalDocs > 0 ? <span className="text-slate-300 font-normal">$0</span> : <span className="text-slate-200 font-normal">—</span>}
+                        <td className="px-3 py-3 hidden md:table-cell">
+                          <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full', org.account_type === 'team' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-500')}>
+                            {org.account_type === 'team' ? '👥 Team' : '👤 Solo'}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 text-right">
+                          <div className="font-bold text-slate-700">{totalDocs}</div>
+                          <div className="text-[10px] text-slate-400">{org.invoice_count}i · {org.receipt_count}r · {org.quote_count}q</div>
+                        </td>
+                        <td className="px-3 py-3 text-right hidden sm:table-cell">
+                          {org.account_type === 'team'
+                            ? <span className="font-bold text-indigo-600">{org.team_member_count || 0}</span>
+                            : <span className="text-slate-300">—</span>}
+                          {org.pending_invites > 0 && <div className="text-[10px] text-amber-500">{org.pending_invites} pending</div>}
+                        </td>
+                        <td className="px-3 py-3 text-right hidden lg:table-cell">
+                          <span className="font-bold text-emerald-700">{fmt(org.total_collected)}</span>
+                        </td>
+                        <td className="px-3 py-3 text-right hidden lg:table-cell">
+                          <span className={cn('font-bold', org.outstanding > 0 ? 'text-amber-600' : 'text-slate-300')}>{fmt(org.outstanding)}</span>
+                        </td>
+                        <td className="px-3 py-3 text-right hidden sm:table-cell">
+                          {org.overdue_count > 0
+                            ? <span className="text-[10px] font-black text-red-500 bg-red-50 px-2 py-0.5 rounded-full">{org.overdue_count}</span>
+                            : <span className="text-slate-200">—</span>}
                         </td>
                         <td className="px-3 py-3 text-center hidden md:table-cell">
-                          {totalDocs === 0
-                            ? <span className="text-[10px] text-slate-300 font-medium">No docs</span>
-                            : isActive
-                              ? <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">● Active</span>
-                              : <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">● Idle</span>}
+                          <div className={cn('text-[10px] font-bold', isActive ? 'text-emerald-600' : 'text-slate-400')}>{isActive ? '● ' : '○ '}{lastSeen}</div>
                         </td>
                       </tr>
                     );
@@ -419,7 +433,7 @@ export default function Admin() {
                 </tbody>
               </table>
 
-              {usersData.orgs.length > 8 && (
+              {usersData.orgs.length > 15 && (
                 <button
                   onClick={() => setShowAllOrgs(v => !v)}
                   className="w-full px-5 py-3 flex items-center justify-center gap-1.5 text-xs font-bold text-indigo-500 hover:bg-slate-50 transition-colors border-t border-slate-50"
@@ -433,21 +447,48 @@ export default function Admin() {
           )}
         </div>
 
-        {/* ── Revenue overview row ─────────────────────────────── */}
-        {usersData && usersData.summary.total_revenue > 0 && (
-          <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 rounded-2xl px-6 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <TrendingUp className="w-5 h-5 text-indigo-200" />
-              <div>
-                <p className="text-indigo-200 text-[11px] font-bold uppercase tracking-wider">Total Revenue Processed</p>
-                <p className="text-white text-xl font-black mt-0.5">
-                  {Number(usersData.summary.total_revenue).toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                </p>
+        {/* ── Platform financials + activity ───────────────────── */}
+        {usersData && (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {[
+              { label: 'Total Collected', value: usersData.summary.total_collected, sub: `of ${Number(usersData.summary.total_invoiced || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} invoiced`, color: 'from-emerald-500 to-emerald-600', icon: TrendingUp, raw: false },
+              { label: 'Outstanding', value: usersData.summary.total_outstanding, sub: `${usersData.summary.total_overdue || 0} overdue`, color: 'from-amber-500 to-amber-600', icon: Activity, raw: false },
+              { label: 'Active Accounts', value: usersData.summary.active_orgs, sub: `${usersData.summary.new_this_week || 0} new this week`, color: 'from-indigo-500 to-indigo-600', icon: Users, raw: true },
+              { label: 'Account Mix', value: `${usersData.summary.team_accounts || 0}T / ${usersData.summary.solo_accounts || 0}S`, sub: `${usersData.summary.total_team_members || 0} team members`, color: 'from-violet-500 to-violet-600', icon: Building2, raw: true },
+            ].map(card => (
+              <div key={card.label} className={`bg-gradient-to-br ${card.color} rounded-2xl px-4 py-4 text-white`}>
+                <div className="flex items-center gap-2 mb-2 opacity-80">
+                  <card.icon className="w-3.5 h-3.5" />
+                  <span className="text-[10px] font-bold uppercase tracking-wider">{card.label}</span>
+                </div>
+                <div className="text-xl font-black">
+                  {card.raw ? card.value : Number(card.value).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                </div>
+                <div className="text-[10px] mt-0.5 opacity-70">{card.sub}</div>
               </div>
+            ))}
+          </div>
+        )}
+
+        {/* ── Recent payments across all orgs ──────────────────── */}
+        {(usersData?.recentPayments ?? []).length > 0 && (
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-50 flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-emerald-500" />
+              <h2 className="text-sm font-black text-slate-700">Recent Payments (Platform-wide)</h2>
             </div>
-            <div className="text-right">
-              <p className="text-indigo-300 text-[11px]">across {usersData.summary.total_orgs} org{usersData.summary.total_orgs !== 1 ? 's' : ''}</p>
-              <p className="text-indigo-200 text-[11px] mt-0.5">{usersData.summary.active_orgs} active in last 30 days</p>
+            <div className="divide-y divide-slate-50">
+              {(usersData?.recentPayments ?? []).slice(0, 10).map((p: any) => (
+                <div key={p.id} className="px-5 py-2.5 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
+                  <div className="min-w-0">
+                    <div className="text-xs font-bold text-slate-800 truncate">{p.number} · {p.client_name || '—'}</div>
+                    <div className="text-[10px] text-slate-400">{p.org_name} · Paid {p.paid_date || '—'}</div>
+                  </div>
+                  <div className="text-xs font-black text-emerald-700 shrink-0 ml-4">
+                    {p.currency_symbol || '$'}{Number(p.amount_paid).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}

@@ -53,6 +53,7 @@ router.post('/', (req: Request, res: Response) => {
     discount_type, discount_value, tax_rate, amount_paid, notes, terms, footer_text,
     client_name, client_email, client_phone, client_address, client_city,
     client_state, client_zip, client_company, items = [],
+    is_recurring, recurring_interval, recurring_end_date,
   } = req.body;
 
   if (!org_id || !type || !issue_date) {
@@ -79,13 +80,25 @@ router.post('/', (req: Request, res: Response) => {
   const total = taxableAmount + taxAmount;
   const balanceDue = Math.max(0, total - (amount_paid || 0));
 
+  // Compute first recurrence date (= issue_date + interval)
+  let recurringNextDate: string | null = null;
+  if (is_recurring && type === 'invoice' && recurring_interval && issue_date) {
+    const d = new Date(issue_date);
+    if (recurring_interval === 'weekly')    d.setDate(d.getDate() + 7);
+    else if (recurring_interval === 'monthly')   d.setMonth(d.getMonth() + 1);
+    else if (recurring_interval === 'quarterly') d.setMonth(d.getMonth() + 3);
+    else if (recurring_interval === 'yearly')    d.setFullYear(d.getFullYear() + 1);
+    recurringNextDate = d.toISOString().split('T')[0];
+  }
+
   db.prepare(`
     INSERT INTO invoices (
       id, org_id, client_id, type, number, status, issue_date, due_date, paid_date,
       subtotal, discount_type, discount_value, discount_amount, tax_rate, tax_amount,
       total, amount_paid, balance_due, currency, currency_symbol, notes, terms, footer_text,
-      client_name, client_email, client_phone, client_address, client_city, client_state, client_zip, client_company
-    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+      client_name, client_email, client_phone, client_address, client_city, client_state, client_zip, client_company,
+      is_recurring, recurring_interval, recurring_next_date, recurring_end_date
+    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
   `).run(
     id, org_id, client_id || null, type, number, safeStatus || 'draft', issue_date,
     due_date || null, paid_date || null, subtotal, discount_type || 'none',
@@ -93,6 +106,7 @@ router.post('/', (req: Request, res: Response) => {
     amount_paid || 0, balanceDue, org.currency, org.currency_symbol, notes, terms,
     footer_text, client_name, client_email, client_phone, client_address,
     client_city, client_state, client_zip, client_company,
+    is_recurring ? 1 : 0, recurring_interval || null, recurringNextDate, recurring_end_date || null,
   );
 
   const insertItem = db.prepare(`
@@ -145,10 +159,29 @@ router.put('/:id', (req: Request, res: Response) => {
     Object.assign(updateFields, { subtotal, discount_amount: discountAmount, tax_amount: taxAmount, total, balance_due: balanceDue });
   }
 
+  // Recompute recurring_next_date if is_recurring or recurring_interval changed
+  if (updateFields.is_recurring !== undefined || updateFields.recurring_interval !== undefined) {
+    const isRec = updateFields.is_recurring !== undefined ? !!updateFields.is_recurring : !!existing.is_recurring;
+    const interval = updateFields.recurring_interval || existing.recurring_interval || 'monthly';
+    const baseDate = updateFields.issue_date || existing.issue_date;
+    if (isRec && baseDate) {
+      const d = new Date(baseDate);
+      if (interval === 'weekly')    d.setDate(d.getDate() + 7);
+      else if (interval === 'monthly')   d.setMonth(d.getMonth() + 1);
+      else if (interval === 'quarterly') d.setMonth(d.getMonth() + 3);
+      else if (interval === 'yearly')    d.setFullYear(d.getFullYear() + 1);
+      updateFields.recurring_next_date = d.toISOString().split('T')[0];
+    } else {
+      updateFields.recurring_next_date = null;
+    }
+    updateFields.is_recurring = isRec ? 1 : 0;
+  }
+
   const fields = Object.keys(updateFields).filter(k => ['status','due_date','paid_date','notes','terms',
     'footer_text','discount_type','discount_value','discount_amount','tax_rate','tax_amount',
     'total','subtotal','amount_paid','balance_due','client_name','client_email','client_phone',
-    'client_address','client_city','client_state','client_zip','client_company'].includes(k));
+    'client_address','client_city','client_state','client_zip','client_company',
+    'is_recurring','recurring_interval','recurring_next_date','recurring_end_date'].includes(k));
 
   if (fields.length > 0) {
     const setClauses = [...fields.map(f => `${f} = ?`), "updated_at = datetime('now')"].join(', ');
