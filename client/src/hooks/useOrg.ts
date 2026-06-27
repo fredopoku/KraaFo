@@ -2,32 +2,54 @@ import { useState, useEffect } from 'react';
 import { Organization } from '../types';
 import { api } from '../utils/api';
 
-const ORG_KEY = 'krafo_org_id';
+const TOKEN_KEY = 'krafo_token';
+
+export function getToken(): string | null {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+export function setToken(token: string): void {
+  localStorage.setItem(TOKEN_KEY, token);
+}
+
+export function clearToken(): void {
+  localStorage.removeItem(TOKEN_KEY);
+}
+
+function decodeOrgId(token: string): string | null {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.orgId || null;
+  } catch {
+    return null;
+  }
+}
 
 export function useOrg() {
-  const [org, setOrg] = useState<Organization | null>(null);
+  const [org, setOrgState] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const savedId = localStorage.getItem(ORG_KEY);
+  const token = getToken();
+  const orgId = token ? decodeOrgId(token) : null;
 
   useEffect(() => {
-    if (!savedId) { setLoading(false); return; }
-    api.organizations.get(savedId)
-      .then(setOrg)
-      .catch(() => localStorage.removeItem(ORG_KEY))
+    if (!orgId) { setLoading(false); return; }
+    api.organizations.get(orgId)
+      .then(setOrgState)
+      .catch(() => { clearToken(); })
       .finally(() => setLoading(false));
-  }, [savedId]);
+  }, [orgId]);
 
-  const saveOrg = (o: Organization) => {
-    localStorage.setItem(ORG_KEY, o.id);
-    setOrg(o);
+  const saveOrg = (o: Organization, token?: string) => {
+    if (token) setToken(token);
+    setOrgState(o);
     setError(null);
   };
 
   const clearOrg = () => {
-    localStorage.removeItem(ORG_KEY);
-    setOrg(null);
+    clearToken();
+    setOrgState(null);
   };
 
   return { org, setOrg: saveOrg, clearOrg, loading, error, setError };

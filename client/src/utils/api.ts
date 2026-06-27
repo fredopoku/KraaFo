@@ -2,13 +2,20 @@ import { Organization, Invoice, AISuggestion, BrandColors } from '../types';
 
 const BASE = '/api';
 
+function authHeader(): Record<string, string> {
+  const token = localStorage.getItem('krafo_token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...(options?.headers || {}) },
+    headers: { 'Content-Type': 'application/json', ...authHeader(), ...(options?.headers || {}) },
     ...options,
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
+    // Token expired — clear it so the app redirects to login
+    if (res.status === 401) localStorage.removeItem('krafo_token');
     throw new Error(err.error || 'Request failed');
   }
   return res.json();
@@ -164,7 +171,12 @@ export const api = {
   },
 
   auth: {
-    login: (email: string) => request<any>('/auth/login', { method: 'POST', body: JSON.stringify({ email }) }),
+    login: (email: string, password: string) =>
+      request<{ org: any; token: string }>('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
+    setPassword: (orgId: string, password: string) =>
+      request<{ org: any; token: string }>('/auth/set-password', { method: 'POST', body: JSON.stringify({ orgId, password }) }),
+    reset: (email: string, password: string) =>
+      request<{ org: any; token: string }>('/auth/reset', { method: 'POST', body: JSON.stringify({ email, password }) }),
   },
 
   pdf: {

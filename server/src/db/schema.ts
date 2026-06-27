@@ -254,6 +254,8 @@ addCol('organizations', 'day2_email_sent', 'INTEGER DEFAULT 0');
 addCol('organizations', 'day4_email_sent', 'INTEGER DEFAULT 0');
 addCol('organizations', 'day7_email_sent', 'INTEGER DEFAULT 0');
 addCol('organizations', 'email_unsubscribed', 'INTEGER DEFAULT 0');
+addCol('organizations', 'password_hash', 'TEXT');
+addCol('organizations', 'last_active_at', 'TEXT DEFAULT (datetime(\'now\'))');
 
 // Seed initial changelog entries (INSERT OR IGNORE — safe to run on every boot)
 db.exec(`

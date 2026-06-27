@@ -21,6 +21,7 @@ import changelogRouter from './routes/changelog';
 import trackRouter from './routes/track';
 import statsRouter from './routes/stats';
 import authRouter from './routes/auth';
+import { requireAuth } from './middleware/auth';
 import { startScheduler } from './services/scheduler';
 
 const app = express();
@@ -54,6 +55,9 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/uploads', express.static(path.resolve(UPLOAD_DIR)));
+
+// Global auth — public routes are whitelisted inside requireAuth
+app.use(requireAuth);
 
 // API routes
 app.use('/api/organizations', organizationsRouter);

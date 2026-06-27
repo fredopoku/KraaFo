@@ -930,7 +930,7 @@ export default function Landing() {
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center animate-hero delay-300">
             <Link to="/setup" className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3.5 rounded-xl font-bold text-base transition-all shadow-lg shadow-indigo-200 btn-glow">
-              Start Free — No Card <ArrowRight className="w-4 h-4" />
+              Create Free Account <ArrowRight className="w-4 h-4" />
             </Link>
             <Link to="/generator?demo=true" className="flex items-center justify-center gap-2 text-slate-600 px-8 py-3.5 rounded-xl font-bold text-base border border-slate-200 bg-white/80 hover:bg-white hover:border-slate-300 transition-all shadow-sm">
               See it in action
@@ -958,7 +958,7 @@ export default function Landing() {
               </div>
             )}
             {(!stats || (stats.documents === 0 && stats.countries === 0)) && (
-              ['No account needed', 'Works worldwide', '12+ industries'].map(t => (
+              ['Free to use', 'Works worldwide', '12+ industries'].map(t => (
                 <div key={t} className="flex items-center gap-1.5 text-slate-500 text-sm">
                   <CheckCircle className="w-3.5 h-3.5 text-indigo-500 shrink-0" /> {t}
                 </div>
@@ -1194,7 +1194,7 @@ export default function Landing() {
         <div className="max-w-lg mx-auto">
           <LogoMark size={96} className="mx-auto mb-6 animate-float" />
           <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Ready to send your first document?</h2>
-          <p className="text-slate-500 mb-7 leading-relaxed">Takes under 2 minutes to set up. No account, no credit card.</p>
+          <p className="text-slate-500 mb-7 leading-relaxed">Takes under 2 minutes to set up. Free to use — no credit card needed.</p>
           <Link to="/setup" className="inline-flex items-center gap-2.5 bg-indigo-600 hover:bg-indigo-700 text-white px-10 py-3.5 rounded-xl font-bold text-base transition-all shadow-2xl shadow-indigo-200 btn-glow">
             Get Started Free <ArrowRight className="w-4 h-4" />
           </Link>
