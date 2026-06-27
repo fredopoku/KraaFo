@@ -186,8 +186,8 @@ router.get('/quote/:quoteId', async (req: Request, res: Response) => {
 });
 
 router.get('/statement/:clientId', async (req: Request, res: Response) => {
-  const { org_id } = req.query;
-  if (!org_id) return res.status(400).json({ error: 'org_id required' });
+  if (!req.auth) return res.status(401).json({ error: 'Authentication required' });
+  const org_id = req.auth.orgId;
 
   const client = db.prepare('SELECT * FROM clients WHERE id = ? AND org_id = ?').get(req.params.clientId, org_id) as any;
   if (!client) return res.status(404).json({ error: 'Client not found' });

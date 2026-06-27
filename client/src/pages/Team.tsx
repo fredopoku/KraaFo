@@ -107,7 +107,7 @@ export default function Team() {
     }
   };
 
-  if (!org) return null;
+  if (!org) { navigate('/login'); return null; }
 
   return (
     <div className="min-h-screen bg-slate-50">

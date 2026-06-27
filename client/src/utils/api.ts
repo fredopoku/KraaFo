@@ -137,8 +137,8 @@ export const api = {
     paymentLinks: (invoiceId: string) => request<any>(`/deliver/payment-links/${invoiceId}`),
     generateDKIM: (domain: string, selector?: string) =>
       request<{ privateKey: string; publicKey: string; dnsRecord: string; dnsName: string }>('/deliver/generate-dkim', { method: 'POST', body: JSON.stringify({ domain, selector }) }),
-    testEmail: (org_id: string, to: string) =>
-      request<{ success: boolean }>('/deliver/test-email', { method: 'POST', body: JSON.stringify({ org_id, to }) }),
+    testEmail: (_org_id: string, to: string) =>
+      request<{ success: boolean }>('/deliver/test-email', { method: 'POST', body: JSON.stringify({ to }) }),
   },
 
   analytics: {
@@ -146,9 +146,27 @@ export const api = {
   },
 
   statement: {
-    get: (clientId: string, orgId: string) => request<any>(`/clients/${clientId}/statement?org_id=${orgId}`),
-    download: (clientId: string, orgId: string) => pdfOpen(`${BASE}/pdf/statement/${clientId}?org_id=${orgId}`, 'statement.pdf'),
-    preview: (clientId: string, orgId: string) => pdfOpen(`${BASE}/pdf/statement/${clientId}?org_id=${orgId}&inline=true`, 'statement.pdf'),
+    get: (clientId: string, _orgId: string) => request<any>(`/clients/${clientId}/statement`),
+    download: (clientId: string, _orgId: string) => {
+      const token = localStorage.getItem('krafo_token');
+      const url = `${BASE}/pdf/statement/${clientId}`;
+      return fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+        .then(r => r.ok ? r.blob() : Promise.reject(new Error('Failed to fetch statement')))
+        .then(blob => {
+          const objectUrl = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = objectUrl; a.download = 'statement.pdf';
+          document.body.appendChild(a); a.click(); document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+        });
+    },
+    preview: (clientId: string, _orgId: string) => {
+      const token = localStorage.getItem('krafo_token');
+      const url = `${BASE}/pdf/statement/${clientId}?inline=true`;
+      return fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+        .then(r => r.ok ? r.blob() : Promise.reject(new Error('Failed to fetch statement')))
+        .then(blob => { window.open(URL.createObjectURL(blob), '_blank'); });
+    },
   },
 
   stats: {

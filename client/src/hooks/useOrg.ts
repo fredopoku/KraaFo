@@ -52,7 +52,13 @@ export function useOrg() {
     if (!orgId) { setLoading(false); return; }
     api.organizations.get(orgId)
       .then(setOrgState)
-      .catch(() => { clearToken(); })
+      .catch((err: Error) => {
+        // Only clear the token when the server explicitly rejects it (401/403).
+        // Network errors or server downtime should not log the user out.
+        if (err.message.includes('401') || err.message.includes('403') || err.message.includes('Forbidden') || err.message.includes('Unauthorized')) {
+          clearToken();
+        }
+      })
       .finally(() => setLoading(false));
   }, [orgId]);
 

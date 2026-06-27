@@ -23,7 +23,9 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function Clients() {
   const navigate = useNavigate();
-  const { org } = useOrg();
+  const { org, loading } = useOrg();
+
+  if (!loading && !org) { navigate('/login'); return null; }
   const [clients, setClients] = useState<Client[]>([]);
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState<Partial<Client> | null>(null);

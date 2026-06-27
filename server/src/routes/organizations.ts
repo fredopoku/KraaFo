@@ -13,6 +13,7 @@ const stripSensitive = (org: any) => {
 };
 
 router.get('/:id', (req: Request, res: Response) => {
+  if (req.params.id !== req.auth!.orgId) return res.status(403).json({ error: 'Forbidden' });
   const org = db.prepare('SELECT * FROM organizations WHERE id = ?').get(req.params.id);
   if (!org) return res.status(404).json({ error: 'Organization not found' });
   res.json(stripSensitive(org));
@@ -57,6 +58,7 @@ router.post('/', (req: Request, res: Response) => {
 });
 
 router.put('/:id', (req: Request, res: Response) => {
+  if (req.params.id !== req.auth!.orgId) return res.status(403).json({ error: 'Forbidden' });
   const existing = db.prepare('SELECT id FROM organizations WHERE id = ?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Organization not found' });
 

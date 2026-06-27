@@ -18,7 +18,9 @@ const STATUS_META: Record<string, { label: string; cls: string }> = {
 
 export default function Quotes() {
   const navigate = useNavigate();
-  const { org } = useOrg();
+  const { org, loading } = useOrg();
+
+  if (!loading && !org) { navigate('/login'); return null; }
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [converting, setConverting] = useState<string | null>(null);
   const [toast, setToast] = useState('');

@@ -10,6 +10,10 @@ router.post('/email/:invoiceId', async (req: Request, res: Response) => {
   const { to, message } = req.body;
   if (!to) return res.status(400).json({ error: 'Recipient email required' });
 
+  const doc = (db.prepare('SELECT org_id FROM invoices WHERE id = ?').get(req.params.invoiceId)
+    ?? db.prepare('SELECT org_id FROM quotes WHERE id = ?').get(req.params.invoiceId)) as any;
+  if (!doc || doc.org_id !== req.auth!.orgId) return res.status(404).json({ error: 'Document not found' });
+
   try {
     await sendInvoiceEmail(req.params.invoiceId, to, message);
     // Update whichever table owns this document
@@ -29,7 +33,7 @@ router.post('/email/:invoiceId', async (req: Request, res: Response) => {
 router.get('/whatsapp/:invoiceId', (req: Request, res: Response) => {
   const invoice = (db.prepare('SELECT * FROM invoices WHERE id = ?').get(req.params.invoiceId)
     ?? db.prepare('SELECT * FROM quotes WHERE id = ?').get(req.params.invoiceId)) as any;
-  if (!invoice) return res.status(404).json({ error: 'Document not found' });
+  if (!invoice || invoice.org_id !== req.auth!.orgId) return res.status(404).json({ error: 'Document not found' });
 
   const isQuote = !invoice.type || invoice.type === 'quote';
   const org = db.prepare('SELECT * FROM organizations WHERE id = ?').get(invoice.org_id) as any;
@@ -59,7 +63,7 @@ router.get('/whatsapp/:invoiceId', (req: Request, res: Response) => {
 router.get('/payment-links/:invoiceId', (req: Request, res: Response) => {
   const invoice = (db.prepare('SELECT * FROM invoices WHERE id = ?').get(req.params.invoiceId)
     ?? db.prepare('SELECT * FROM quotes WHERE id = ?').get(req.params.invoiceId)) as any;
-  if (!invoice) return res.status(404).json({ error: 'Document not found' });
+  if (!invoice || invoice.org_id !== req.auth!.orgId) return res.status(404).json({ error: 'Document not found' });
 
   const org = db.prepare('SELECT * FROM organizations WHERE id = ?').get(invoice.org_id) as any;
   const sym = org.currency_symbol || '$';
@@ -110,9 +114,10 @@ router.post('/generate-dkim', (req: Request, res: Response) => {
 
 // Send a test email to verify SMTP + DKIM config
 router.post('/test-email', async (req: Request, res: Response) => {
-  const { org_id, to } = req.body;
-  if (!org_id || !to) return res.status(400).json({ error: 'org_id and to are required' });
+  const { to } = req.body;
+  if (!to) return res.status(400).json({ error: 'to is required' });
 
+  const org_id = req.auth!.orgId;
   const org = db.prepare('SELECT * FROM organizations WHERE id = ?').get(org_id) as any;
   if (!org) return res.status(404).json({ error: 'Organization not found' });
   if (!org.smtp_host || !org.smtp_user) return res.status(400).json({ error: 'SMTP not configured' });
