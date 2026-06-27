@@ -98,7 +98,7 @@ export default function Generator() {
   const [checklistDismissed, setChecklistDismissed] = useState(() => !!localStorage.getItem('krafo_checklist_done'));
   const [hasSent, setHasSent] = useState(() => !!localStorage.getItem('krafo_first_sent'));
   const location = useLocation();
-  const isDemo = new URLSearchParams(location.search).get('demo') === 'true';
+  const isDemo = new URLSearchParams(location.search).get('demo') === 'true' || !org;
   const effectiveOrg = isDemo ? DEMO_ORG : org;
 
   const [form, setForm] = useState<FormState>({
@@ -214,7 +214,7 @@ export default function Generator() {
   };
 
   const handleSave = async (): Promise<Invoice | null> => {
-    if (isDemo) { showToast('Create your free account to save documents', 'info'); setTimeout(() => navigate('/setup'), 1200); return null; }
+    if (isDemo) { showToast('Sign up free to save and access this document anytime', 'info'); setTimeout(() => navigate('/setup'), 1200); return null; }
     if (!org || !form.client_name) return null;
     setSaving(true);
     try {
@@ -254,7 +254,7 @@ export default function Generator() {
   };
 
   const handleDownload = async () => {
-    if (isDemo) { showToast('Create your free account to download PDFs', 'info'); setTimeout(() => navigate('/setup'), 1200); return; }
+    if (isDemo) { showToast('Sign up free to download and send this as a PDF', 'info'); setTimeout(() => navigate('/setup'), 1200); return; }
     let invoice = savedInvoice;
     if (!invoice) {
       invoice = await handleSave();
@@ -496,7 +496,7 @@ export default function Generator() {
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (isDemo) { showToast('Create your free account to use Import', 'info'); setTimeout(() => navigate('/setup'), 1200); return; }
+    if (isDemo) { showToast('Sign up free to import and scan documents', 'info'); setTimeout(() => navigate('/setup'), 1200); return; }
     if (!org) return;
     e.target.value = '';
     setImporting(true);
@@ -595,27 +595,6 @@ export default function Generator() {
     </div>
   );
 
-  if (!effectiveOrg) return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-      <div className="text-center max-w-sm animate-fade-up">
-        <LogoMark size={96} className="mx-auto mb-6 animate-float" />
-        <h2 className="text-2xl font-black text-slate-900 mb-2 tracking-tight">Welcome to KraaFo</h2>
-        <p className="text-slate-400 mb-6 text-sm leading-relaxed">Sign in to access your invoices, clients and documents.</p>
-        <button
-          onClick={() => navigate('/login')}
-          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-xl font-bold text-sm transition-all btn-glow mb-3"
-        >
-          Sign in
-        </button>
-        <button
-          onClick={() => navigate('/setup')}
-          className="w-full border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-600 px-8 py-3 rounded-xl font-bold text-sm transition-all"
-        >
-          Create an account
-        </button>
-      </div>
-    </div>
-  );
 
   const primary = effectiveOrg.primary_color;
   const sym = effectiveOrg.currency_symbol;
@@ -702,9 +681,14 @@ export default function Generator() {
             <input ref={importRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif,application/pdf" className="hidden" onChange={handleImport} />
 
             {isDemo ? (
-              <button onClick={() => navigate('/setup')} className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold text-white transition-all btn-glow" style={{ background: primary }}>
-                <Lock className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Get Started Free</span><span className="sm:hidden">Start</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button onClick={() => navigate('/login')} className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-600 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-all">
+                  Sign in
+                </button>
+                <button onClick={() => navigate('/setup')} className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold text-white transition-all btn-glow" style={{ background: primary }}>
+                  <Lock className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Create Free Account</span><span className="sm:hidden">Sign up</span>
+                </button>
+              </div>
             ) : (
               /* Desktop action buttons — hidden on mobile (mobile uses bottom bar) */
               <div className="hidden lg:flex items-center gap-1.5">
