@@ -1,7 +1,9 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import db from '../db/schema';
 import { signToken, UserRole } from '../middleware/auth';
+import { sendPasswordReset } from '../services/emailService';
 
 const router = Router();
 
@@ -39,6 +41,7 @@ router.post('/login', async (req: Request, res: Response) => {
   res.json({ org: safeOrg, token, role: member.role, memberName: member.name });
 });
 
+// First-time password set (during setup — org has no password yet)
 router.post('/set-password', async (req: Request, res: Response) => {
   const { orgId, password } = req.body;
   if (!orgId || !password) return res.status(400).json({ error: 'orgId and password required' });
@@ -55,19 +58,48 @@ router.post('/set-password', async (req: Request, res: Response) => {
   res.json({ org: safeOrg, token, role: 'owner' });
 });
 
+// Step 1: request a reset code (sends 6-digit code to email)
+router.post('/forgot', async (req: Request, res: Response) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email required' });
+
+  const org = db.prepare('SELECT * FROM organizations WHERE LOWER(email) = LOWER(?) LIMIT 1').get(email.trim()) as any;
+  // Always return success — don't reveal whether account exists
+  if (!org) return res.json({ sent: true });
+
+  const code = String(Math.floor(100000 + Math.random() * 900000));
+  const hash = await bcrypt.hash(code, 10);
+  const expires = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour
+
+  db.prepare('UPDATE organizations SET reset_token = ?, reset_token_expires = ? WHERE id = ?').run(hash, expires, org.id);
+
+  await sendPasswordReset(org, code).catch(() => {}); // fire-and-forget; don't expose send errors
+  res.json({ sent: true });
+});
+
+// Step 2: verify code + set new password
 router.post('/reset', async (req: Request, res: Response) => {
-  const { email, password } = req.body;
-  if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+  const { email, code, password } = req.body;
+  if (!email || !code || !password) return res.status(400).json({ error: 'Email, code and new password are required' });
   if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
 
   const org = db.prepare('SELECT * FROM organizations WHERE LOWER(email) = LOWER(?) LIMIT 1').get(email.trim()) as any;
-  if (!org) return res.status(404).json({ error: 'No account found with that email' });
+  if (!org || !org.reset_token || !org.reset_token_expires) {
+    return res.status(400).json({ error: 'Reset code is invalid or has expired. Please request a new one.' });
+  }
+
+  if (new Date(org.reset_token_expires) < new Date()) {
+    return res.status(400).json({ error: 'Reset code has expired. Please request a new one.' });
+  }
+
+  const codeValid = await bcrypt.compare(String(code).trim(), org.reset_token);
+  if (!codeValid) return res.status(400).json({ error: 'Incorrect reset code. Please check your email.' });
 
   const hash = await bcrypt.hash(password, 12);
-  db.prepare('UPDATE organizations SET password_hash = ? WHERE id = ?').run(hash, org.id);
+  db.prepare('UPDATE organizations SET password_hash = ?, reset_token = NULL, reset_token_expires = NULL WHERE id = ?').run(hash, org.id);
 
   const token = signToken({ orgId: org.id, userId: org.id, role: 'owner', email: org.email });
-  const { password_hash: _, ...safeOrg } = { ...org, password_hash: hash };
+  const { password_hash: _, reset_token: _r, reset_token_expires: _e, ...safeOrg } = { ...org, password_hash: hash };
   res.json({ org: safeOrg, token, role: 'owner' });
 });
 

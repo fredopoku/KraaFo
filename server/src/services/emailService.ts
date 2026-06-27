@@ -199,17 +199,20 @@ function emailShell(headerBg: string, headerText: string, headerSub: string, bod
   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f1f5f9;padding:32px 16px">
     <tr><td align="center">
       <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08)">
-        <tr><td style="background:#ffffff;padding:20px 40px;text-align:center;border-bottom:1px solid #f3f4f6">
-          <img src="https://kraafo.com/krafo-logo.png" alt="KraaFo" width="32" height="32" style="display:inline-block;height:32px;width:auto;vertical-align:middle;margin-right:8px">
-          <span style="vertical-align:middle;font-size:18px;font-weight:900;color:#111827;letter-spacing:-0.5px">KraaFo</span>
+        <tr><td style="background:#ffffff;padding:18px 40px;text-align:center;border-bottom:1px solid #f3f4f6">
+          <img src="https://kraafo.com/krafo-logo.png" alt="KraaFo" width="28" height="28" style="display:inline-block;height:28px;width:auto;vertical-align:middle;margin-right:8px">
+          <span style="vertical-align:middle;font-size:19px;font-weight:900;color:#111827;letter-spacing:-0.5px">Kraa<span style="color:#4f46e5">Fo</span></span>
         </td></tr>
         <tr><td style="background:${headerBg};padding:28px 40px;text-align:center">
           <p style="margin:0;color:#fff;font-size:21px;font-weight:800;letter-spacing:-0.5px">${headerText}</p>
           <p style="margin:6px 0 0;color:rgba(255,255,255,0.75);font-size:13px">${headerSub}</p>
         </td></tr>
         <tr><td style="padding:36px 40px">${body}</td></tr>
-        <tr><td style="padding:20px 40px;background:#f9fafb;border-top:1px solid #f3f4f6;text-align:center">
-          <p style="margin:0;color:#9ca3af;font-size:12px">${footer}</p>
+        <tr><td style="padding:24px 40px;background:#f9fafb;border-top:1px solid #f3f4f6">
+          <p style="margin:0 0 12px;color:#6b7280;font-size:13px;line-height:1.6">— The KraaFo Team<br>
+            <a href="${FRONTEND_URL}" style="color:#4f46e5;text-decoration:none;font-weight:600">kraafo.com</a>
+          </p>
+          <p style="margin:0;color:#9ca3af;font-size:11px">${footer}</p>
         </td></tr>
       </table>
     </td></tr>
@@ -263,7 +266,7 @@ export async function sendOrgWelcome(org: any): Promise<void> {
     <h2 style="margin:0 0 12px;color:#111827;font-size:19px;font-weight:800">Your KraaFo account is live, ${name}!</h2>
     <p style="margin:0 0 24px;color:#6b7280;font-size:15px;line-height:1.7">You're set up and ready to go. Here's how to send your first invoice in the next 2 minutes:</p>
     ${step('1', 'Open the Generator', 'Click the button below — you\'re already logged in.')}
-    ${step('2', 'Use Smart Fill', 'Pick your industry, click Smart Fill — line items and pricing fill automatically.')}
+    ${step('2', 'Build your invoice your way', 'Type in your own services and prices, or hit Smart Fill to auto-fill line items for your industry. Either way works.')}
     ${step('3', 'Send it', 'Download the PDF, or send directly by WhatsApp or email — right from the app.')}
     ${cta(`${FRONTEND_URL}/generator`, 'Create my first invoice →')}
     <p style="margin:20px 0 0;color:#9ca3af;font-size:13px;text-align:center">Free to use. No card required.</p>
@@ -551,6 +554,33 @@ function buildEmailHtml(invoice: any, org: any, message: string, docType: string
   </table>
 </body>
 </html>`;
+}
+
+export async function sendPasswordReset(org: any, code: string): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return;
+  const resend = new Resend(apiKey);
+  const body = `
+    <p style="margin:0 0 16px;color:#374151;font-size:15px">Hi ${org.name || 'there'},</p>
+    <p style="margin:0 0 20px;color:#374151;font-size:15px;line-height:1.7">
+      We received a request to reset your KraaFo password. Use the code below — it expires in <strong>1 hour</strong>.
+    </p>
+    <div style="text-align:center;margin:28px 0">
+      <div style="display:inline-block;background:#f3f4f6;border:2px dashed #d1d5db;border-radius:12px;padding:20px 36px">
+        <p style="margin:0 0 4px;color:#6b7280;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase">Your reset code</p>
+        <p style="margin:0;color:#111827;font-size:36px;font-weight:900;letter-spacing:8px">${code}</p>
+      </div>
+    </div>
+    <p style="margin:0 0 8px;color:#6b7280;font-size:13px;text-align:center">Enter this code on the KraaFo sign-in page along with your new password.</p>
+    <p style="margin:24px 0 0;color:#9ca3af;font-size:12px;text-align:center">If you didn't request this, you can safely ignore this email. Your password won't change.</p>
+  `;
+  await resend.emails.send({
+    from: `KraaFo <${FROM_ADDRESS}>`,
+    to: [org.email],
+    subject: `Your KraaFo reset code: ${code}`,
+    html: emailShell('#111827', 'Password reset requested', 'KraaFo · Account Security', body,
+      `This email was sent to ${org.email} because a password reset was requested.`),
+  });
 }
 
 export async function sendTeamInvite(member: any, org: any, inviteToken: string): Promise<void> {

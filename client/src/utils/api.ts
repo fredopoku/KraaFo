@@ -187,8 +187,10 @@ export const api = {
       request<{ org: any; token: string }>('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
     setPassword: (orgId: string, password: string) =>
       request<{ org: any; token: string }>('/auth/set-password', { method: 'POST', body: JSON.stringify({ orgId, password }) }),
-    reset: (email: string, password: string) =>
-      request<{ org: any; token: string }>('/auth/reset', { method: 'POST', body: JSON.stringify({ email, password }) }),
+    forgot: (email: string) =>
+      request<{ sent: boolean }>('/auth/forgot', { method: 'POST', body: JSON.stringify({ email }) }),
+    reset: (email: string, code: string, password: string) =>
+      request<{ org: any; token: string }>('/auth/reset', { method: 'POST', body: JSON.stringify({ email, code, password }) }),
     getInvite: (token: string) =>
       request<{ email: string; orgName: string; role: string }>(`/auth/join/${token}`),
     acceptInvite: (token: string, name: string, password: string) =>

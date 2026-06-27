@@ -261,6 +261,8 @@ addCol('organizations', 'account_type', "TEXT DEFAULT 'solo'");
 addCol('invoices', 'reminder_1_sent', 'INTEGER DEFAULT 0');
 addCol('invoices', 'reminder_7_sent', 'INTEGER DEFAULT 0');
 addCol('invoices', 'reminder_14_sent', 'INTEGER DEFAULT 0');
+addCol('organizations', 'reset_token', 'TEXT');
+addCol('organizations', 'reset_token_expires', 'TEXT');
 
 // Team members table
 db.exec(`
