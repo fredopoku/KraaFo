@@ -961,7 +961,7 @@ export default function Landing() {
               </h1>
 
               <p className="text-lg text-slate-500 mb-8 leading-relaxed max-w-lg animate-hero delay-200">
-                Professional invoices, receipts and quotes in under 2 minutes. Branded to your business. Sent by WhatsApp, email or SMS. <strong className="text-slate-700 font-semibold">Free forever.</strong>
+                Professional invoices, receipts and quotes in under 2 minutes. Branded to your business. Sent by WhatsApp, email or SMS. <strong className="text-slate-700 font-semibold">Free to use.</strong>
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 mb-8 animate-hero delay-300">
@@ -974,7 +974,7 @@ export default function Landing() {
               </div>
 
               <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm animate-hero delay-400">
-                {['Free forever', 'No credit card', '12+ industries', 'Works worldwide'].map(t => (
+                {['Free to use', 'No credit card', '12+ industries', 'Works worldwide'].map(t => (
                   <div key={t} className="flex items-center gap-1.5 text-slate-500">
                     <CheckCircle className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
                     {t}
@@ -1078,7 +1078,7 @@ export default function Landing() {
             )}
             <div className="flex items-center gap-2 text-slate-600 text-sm font-semibold">
               <Zap className="w-4 h-4 text-violet-500 shrink-0" />
-              Free forever · No credit card needed
+              Free to use · No credit card needed
             </div>
             <div className="flex items-center gap-2 text-slate-600 text-sm font-semibold">
               <MessageSquare className="w-4 h-4 text-emerald-500 shrink-0" />
@@ -1387,7 +1387,7 @@ export default function Landing() {
             <Link to="/setup" className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3.5 rounded-xl font-bold text-base transition-all shadow-lg shadow-indigo-900/50 btn-glow">
               Start sending smarter <ArrowRight className="w-4 h-4" />
             </Link>
-            <p className="text-slate-600 text-xs mt-3 font-semibold">Free forever · No credit card · 2-minute setup</p>
+            <p className="text-slate-600 text-xs mt-3 font-semibold">Free to use · No credit card · 2-minute setup</p>
           </div>
 
         </div>
