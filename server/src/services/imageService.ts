@@ -132,8 +132,20 @@ export function getLogoBase64(logoPath: string): string | null {
   try {
     if (!logoPath || !fs.existsSync(logoPath)) return null;
     const data = fs.readFileSync(logoPath);
-    const ext = path.extname(logoPath).toLowerCase().replace('.', '');
-    const mime = ext === 'svg' ? 'image/svg+xml' : `image/${ext === 'jpg' ? 'jpeg' : ext}`;
+    // Detect actual format from magic bytes — thumbnails are always PNG regardless of extension
+    let mime: string;
+    if (data[0] === 0x89 && data[1] === 0x50) {
+      mime = 'image/png';
+    } else if (data[0] === 0xFF && data[1] === 0xD8) {
+      mime = 'image/jpeg';
+    } else if (data.slice(0, 4).toString('ascii') === 'GIF8') {
+      mime = 'image/gif';
+    } else if (data.slice(0, 4).toString('ascii') === 'RIFF') {
+      mime = 'image/webp';
+    } else {
+      const ext = path.extname(logoPath).toLowerCase().replace('.', '');
+      mime = ext === 'svg' ? 'image/svg+xml' : `image/${ext === 'jpg' ? 'jpeg' : ext}`;
+    }
     return `data:${mime};base64,${data.toString('base64')}`;
   } catch {
     return null;
