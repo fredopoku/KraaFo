@@ -474,8 +474,11 @@ function buildEmailHtml(invoice: any, org: any, message: string, docType: string
               </tr>
             </table>
 
-            <p style="margin:24px 0 0;color:#9ca3af;font-size:12px;text-align:center">
-              The full ${docType.toLowerCase()} PDF is attached to this email for your records.
+            <div style="margin:24px 0 0;text-align:center">
+              <a href="${FRONTEND_URL}/view/${invoice.id}" style="display:inline-block;background:#4f46e5;color:#ffffff;padding:11px 24px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;letter-spacing:-0.1px">View ${docType} Online →</a>
+            </div>
+            <p style="margin:12px 0 0;color:#9ca3af;font-size:12px;text-align:center">
+              The full PDF is also attached for your records.
             </p>
           </td>
         </tr>
@@ -483,8 +486,7 @@ function buildEmailHtml(invoice: any, org: any, message: string, docType: string
         <!-- Footer -->
         <tr>
           <td style="padding:20px 40px;background:#f9fafb;border-top:1px solid #f3f4f6;text-align:center">
-            <img src="https://kraafo.com/krafo-logo.png" alt="KraaFo" width="20" height="20" style="display:inline-block;height:20px;width:auto;vertical-align:middle;margin-right:6px;opacity:0.6">
-            <span style="color:#6b7280;font-size:12px;vertical-align:middle">${docType} generated &amp; delivered via <strong style="color:#111827">KraaFo</strong> &mdash; Professional Invoicing</span>
+            <span style="color:#9ca3af;font-size:11px">Sent via <a href="${FRONTEND_URL}" style="color:#6b7280;text-decoration:none;font-weight:700">KraaFo</a> &mdash; Professional Invoicing</span>
           </td>
         </tr>
 
