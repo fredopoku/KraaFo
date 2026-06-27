@@ -14,9 +14,13 @@ services:
       - key: UPLOAD_DIR
         value: /data/uploads
 
-      # Frontend URL — used in unsubscribe links inside broadcast emails
+      # Frontend URL — used in email links (invites, unsubscribe, onboarding)
       - key: FRONTEND_URL
-        value: https://kraafo.onrender.com
+        value: https://kraafo.com
+
+      # JWT signing secret — set a strong random value in the Render dashboard
+      - key: JWT_SECRET
+        sync: false
 
       # Admin panel password — set a strong secret in the Render dashboard
       - key: ADMIN_TOKEN
