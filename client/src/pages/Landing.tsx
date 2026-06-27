@@ -756,6 +756,8 @@ function EmailCapturePopup() {
   const [done, setDone] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [cfToken, setCfToken] = useState('');
+  const [resetKey, setResetKey] = useState(0);
   const shown = useRef(false);
 
   useEffect(() => {
@@ -778,16 +780,17 @@ function EmailCapturePopup() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) return;
+    if (TURNSTILE_ENABLED && !cfToken) { setError('Please complete the security check.'); return; }
     setSubmitting(true); setError('');
     try {
       const res = await fetch('/api/subscribers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim() }),
+        body: JSON.stringify({ email: email.trim(), cf_turnstile_response: cfToken }),
       });
       if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Failed'); }
       setDone(true);
-    } catch (err: any) { setError('Something went wrong. Try again.'); }
+    } catch (err: any) { setError(err.message || 'Something went wrong. Try again.'); setResetKey(k => k + 1); setCfToken(''); }
     finally { setSubmitting(false); }
   };
 
@@ -830,10 +833,11 @@ function EmailCapturePopup() {
                 placeholder="Your email address"
                 className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
               />
+              <TurnstileWidget onVerify={setCfToken} onExpire={() => setCfToken('')} resetKey={resetKey} />
               {error && <p className="text-[11px] text-red-500">{error}</p>}
               <button
                 type="submit"
-                disabled={submitting}
+                disabled={submitting || (TURNSTILE_ENABLED && !cfToken)}
                 className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm transition-all disabled:opacity-60"
               >
                 {submitting ? 'Joining…' : 'Get updates — it\'s free'}

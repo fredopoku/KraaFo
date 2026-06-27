@@ -35,7 +35,9 @@ services:
         sync: false
 
       # Cloudflare Turnstile — bot protection on signup, feedback, subscribe forms
-      - key: CLOUDFLARE_TURNSTILE_SECRET
+      - key: TURNSTILE_SECRET
+        sync: false
+      - key: VITE_TURNSTILE_SITEKEY
         sync: false
 
       # Email via Resend (recommended — invoice delivery, welcome & broadcast emails)
