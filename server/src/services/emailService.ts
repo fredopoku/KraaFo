@@ -432,8 +432,8 @@ function buildBroadcastHtml(body: string, unsubToken: string): string {
     <tr><td align="center">
       <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08)">
         <tr><td style="background:#ffffff;padding:20px 40px;text-align:center;border-bottom:1px solid #f3f4f6">
-          <img src="https://kraafo.com/krafo-logo.png" alt="KraaFo" width="36" height="36" style="display:inline-block;height:36px;width:auto;vertical-align:middle;margin-right:10px">
-          <span style="vertical-align:middle;font-size:20px;font-weight:900;color:#111827;letter-spacing:-0.5px">KraaFo</span>
+          <img src="https://kraafo.com/krafo-logo.png" alt="KraaFo" width="28" height="28" style="display:inline-block;height:28px;width:auto;vertical-align:middle;margin-right:8px">
+          <span style="vertical-align:middle;font-size:19px;font-weight:900;color:#111827;letter-spacing:-0.5px">Kraa<span style="color:#4f46e5">Fo</span></span>
         </td></tr>
         <tr><td style="background:#4f46e5;padding:24px 40px">
           <p style="margin:0;color:#fff;font-size:20px;font-weight:800;letter-spacing:-0.5px">Platform Update</p>
@@ -471,6 +471,16 @@ function buildEmailHtml(invoice: any, org: any, message: string, docType: string
   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f1f5f9;padding:32px 16px">
     <tr><td align="center">
       <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08)">
+
+        <!-- KraaFo brand strip -->
+        <tr>
+          <td style="background:#ffffff;padding:14px 40px;text-align:center;border-bottom:1px solid #f3f4f6">
+            <img src="https://kraafo.com/krafo-logo.png" alt="KraaFo" width="22" height="22" style="display:inline-block;height:22px;width:auto;vertical-align:middle;margin-right:6px">
+            <span style="vertical-align:middle;font-size:15px;font-weight:900;color:#111827;letter-spacing:-0.3px">Kraa<span style="color:#4f46e5">Fo</span></span>
+            <span style="vertical-align:middle;color:#d1d5db;margin:0 8px">·</span>
+            <span style="vertical-align:middle;color:#9ca3af;font-size:12px">Professional Invoicing</span>
+          </td>
+        </tr>
 
         <!-- Header -->
         <tr>
@@ -545,7 +555,17 @@ function buildEmailHtml(invoice: any, org: any, message: string, docType: string
         <!-- Footer -->
         <tr>
           <td style="padding:20px 40px;background:#f9fafb;border-top:1px solid #f3f4f6;text-align:center">
-            <span style="color:#9ca3af;font-size:11px">Sent via <a href="${FRONTEND_URL}" style="color:#6b7280;text-decoration:none;font-weight:700">KraaFo</a> &mdash; Professional Invoicing</span>
+            <table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 10px">
+              <tr>
+                <td style="padding-right:8px;vertical-align:middle">
+                  <img src="https://kraafo.com/krafo-logo.png" alt="KraaFo" width="22" height="22" style="display:block;width:22px;height:22px;border-radius:4px">
+                </td>
+                <td style="vertical-align:middle">
+                  <span style="font-size:14px;font-weight:900;color:#374151;letter-spacing:-0.3px">Kraa<span style="color:#4f46e5">Fo</span></span>
+                </td>
+              </tr>
+            </table>
+            <p style="margin:0;color:#9ca3af;font-size:11px;line-height:1.6">Professional Invoicing &mdash; <a href="${FRONTEND_URL}" style="color:#6b7280;text-decoration:none">kraafo.com</a></p>
           </td>
         </tr>
 
