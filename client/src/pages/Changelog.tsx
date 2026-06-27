@@ -98,7 +98,7 @@ export default function Changelog() {
 
       <footer className="border-t border-slate-100 py-8 text-center text-xs text-slate-400 mt-16">
         <button onClick={() => navigate('/')} className="hover:text-indigo-600 transition-colors font-semibold">KraaFo</button>
-        {' · '}Built for service professionals worldwide
+        {' · '}Professional invoicing for businesses worldwide
       </footer>
     </div>
   );

@@ -343,7 +343,7 @@ export async function sendDay7Email(org: any): Promise<void> {
   const body = `
     <p style="margin:0 0 12px;color:#6b7280;font-size:15px;line-height:1.7">Hey ${name},</p>
     <p style="margin:0 0 20px;color:#374151;font-size:15px;line-height:1.7">It's been a week since you joined KraaFo. Life gets busy — we get it. That's exactly why KraaFo exists.</p>
-    <p style="margin:0 0 12px;color:#374151;font-size:14px;font-weight:700">Service professionals using KraaFo are:</p>
+    <p style="margin:0 0 12px;color:#374151;font-size:14px;font-weight:700">Businesses using KraaFo are:</p>
     <ul style="margin:0 0 24px;padding-left:20px;color:#6b7280;font-size:14px;line-height:2.2">
       <li>Sending invoices by <strong style="color:#374151">WhatsApp in under 60 seconds</strong></li>
       <li>Getting paid faster — clients open WhatsApp, they don't open email</li>

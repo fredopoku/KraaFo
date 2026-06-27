@@ -841,7 +841,7 @@ export default function Generator() {
             </nav>
 
             <div className="px-5 py-4 border-t border-slate-100 text-center">
-              <p className="text-[10px] text-slate-300 font-semibold tracking-wide">KraaFo — Free Professional Invoicing</p>
+              <p className="text-[10px] text-slate-300 font-semibold tracking-wide">KraaFo — Professional Invoicing</p>
             </div>
           </div>
         </div>
@@ -1029,7 +1029,7 @@ export default function Generator() {
         const handleNativeShare = async () => {
           try {
             // Pass text and url as separate fields — WhatsApp and all apps combine them correctly
-            await navigator.share({ title: 'KraaFo — Free Professional Invoicing', text: SHARE_MSG, url: SHARE_URL });
+            await navigator.share({ title: 'KraaFo — Professional Invoicing', text: SHARE_MSG, url: SHARE_URL });
           } catch {}
         };
 

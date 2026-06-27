@@ -926,7 +926,7 @@ export default function Landing() {
             <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #4f46e5, #7c3aed)' }}>Invoice by WhatsApp, Email or SMS.</span>
           </h1>
           <p className="text-lg text-slate-500 mb-8 max-w-2xl mx-auto leading-relaxed animate-hero delay-200">
-            Send professional invoices, receipts and quotes in under 2 minutes — with your logo, your brand colors, your currency. Works in every market, on any device.
+            Create, send and track professional invoices, receipts and quotes in under 2 minutes — fully branded, multi-currency, delivered by WhatsApp, email or SMS. Built for businesses that move fast.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center animate-hero delay-300">
             <Link to="/setup" className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3.5 rounded-xl font-bold text-base transition-all shadow-lg shadow-indigo-200 btn-glow">
@@ -1163,7 +1163,7 @@ export default function Landing() {
             <div className="flex justify-center gap-1 mb-3">
               {[0,1,2,3,4].map(i => <Star key={i} className="w-4 h-4 text-amber-400 fill-amber-400" />)}
             </div>
-            <h2 className="text-3xl font-black text-white tracking-tight">Loved by service professionals worldwide</h2>
+            <h2 className="text-3xl font-black text-white tracking-tight">Trusted by businesses worldwide</h2>
             {stats?.avgRating && stats.ratingCount > 0 ? (
               <p className="text-slate-400 text-sm mt-2 font-semibold">{stats.avgRating} out of 5 · {stats.ratingCount} verified review{stats.ratingCount !== 1 ? 's' : ''}</p>
             ) : liveReviews.length > 0 ? (
@@ -1241,7 +1241,7 @@ export default function Landing() {
           <div className="flex items-center gap-4">
             <Link to="/changelog" className="text-xs text-slate-400 hover:text-indigo-600 transition-colors font-medium">What's New</Link>
             <span className="text-slate-200">·</span>
-            <p className="text-sm text-slate-400">Professional invoices &amp; receipts for every service business.</p>
+            <p className="text-sm text-slate-400">Professional invoicing for businesses of every size.</p>
           </div>
         </div>
       </footer>
