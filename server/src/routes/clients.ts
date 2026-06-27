@@ -22,8 +22,9 @@ router.get('/:id', (req: Request, res: Response) => {
 });
 
 router.post('/', (req: Request, res: Response) => {
-  const { org_id, name, email, phone, address, city, state, zip, country, company, notes } = req.body;
-  if (!org_id || !name) return res.status(400).json({ error: 'org_id and name required' });
+  const org_id = req.auth!.orgId;
+  const { name, email, phone, address, city, state, zip, country, company, notes } = req.body;
+  if (!name) return res.status(400).json({ error: 'name required' });
   const id = uuidv4();
   db.prepare(`
     INSERT INTO clients (id, org_id, name, email, phone, address, city, state, zip, country, company, notes)
@@ -44,8 +45,7 @@ router.put('/:id', (req: Request, res: Response) => {
 });
 
 router.get('/:id/statement', (req: Request, res: Response) => {
-  const { org_id } = req.query;
-  if (!org_id) return res.status(400).json({ error: 'org_id required' });
+  const org_id = req.auth!.orgId;
 
   const client = db.prepare('SELECT * FROM clients WHERE id = ? AND org_id = ?').get(req.params.id, org_id) as any;
   if (!client) return res.status(404).json({ error: 'Client not found' });

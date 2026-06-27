@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import path from 'path';
 import fs from 'fs';
@@ -43,13 +44,18 @@ const allowedOrigins = [
 ];
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.some(o => origin === o || origin.startsWith(o))) {
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error(`CORS: origin ${origin} not allowed`));
     }
   },
   credentials: true,
+}));
+
+app.use(helmet({
+  crossOriginEmbedderPolicy: false, // allow PDF/image embeds
+  contentSecurityPolicy: false,     // handled by Cloudflare; inline styles in React would break with strict CSP
 }));
 
 // Rate limiting — protect auth endpoints from brute force

@@ -354,6 +354,20 @@ db.exec(`
     'The admin analytics panel now works like a real analytics product: choose a date range (7d / 30d / 90d / all-time), see trend arrows comparing the current period to the previous one, a live-visitor badge, session quality metrics (avg pages per session, avg duration, bounce rate), a 24-hour traffic heatmap, entry and exit pages, and all existing breakdowns — countries, cities, devices, browsers, top pages, and referrers — filtered to the selected period.',
     'Improved',
     '2025-12-01 00:00:00'
+  ),
+  (
+    'cl-triple-channel-delivery-2026',
+    'Send on WhatsApp, SMS & Email — All at Once',
+    'One tap now delivers your invoice or receipt across three channels simultaneously: WhatsApp opens a pre-composed message to your client, SMS fires a summary to their phone, and a branded PDF lands in their inbox — all in under 30 seconds. No other invoicing app does this.',
+    'New',
+    '2026-06-20 00:00:00'
+  ),
+  (
+    'cl-security-hardening-2026',
+    'Security Hardening',
+    'Full security audit applied before this release. Every API endpoint now derives the organisation ID from the verified login token — not from request parameters — so one account cannot access another''s data. HTTP security headers (X-Frame-Options, Strict-Transport-Security, X-Content-Type-Options, Referrer-Policy) now ship on every response. CORS origin matching switched to exact-match only.',
+    'Improved',
+    '2026-06-27 00:00:00'
   );
 `);
 

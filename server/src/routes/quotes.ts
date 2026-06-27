@@ -20,8 +20,8 @@ router.get('/:id', (req: Request, res: Response) => {
 const VALID_QUOTE_STATUSES = ['draft', 'sent', 'accepted', 'declined', 'expired', 'invoiced'];
 
 router.post('/', (req: Request, res: Response) => {
-  const { org_id, items = [], ...data } = req.body;
-  if (!org_id) return res.status(400).json({ error: 'org_id required' });
+  const org_id = req.auth!.orgId;
+  const { items = [], ...data } = req.body;
   if (data.status && !VALID_QUOTE_STATUSES.includes(data.status)) data.status = 'draft';
 
   const id = uuidv4();

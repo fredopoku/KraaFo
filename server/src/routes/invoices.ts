@@ -48,16 +48,17 @@ router.get('/:id', (req: Request, res: Response) => {
 
 router.post('/', (req: Request, res: Response) => {
   const id = uuidv4();
+  const org_id = req.auth!.orgId;
   const {
-    org_id, client_id, type, number, status, issue_date, due_date, paid_date,
+    client_id, type, number, status, issue_date, due_date, paid_date,
     discount_type, discount_value, tax_rate, amount_paid, notes, terms, footer_text,
     client_name, client_email, client_phone, client_address, client_city,
     client_state, client_zip, client_company, items = [],
     is_recurring, recurring_interval, recurring_end_date,
   } = req.body;
 
-  if (!org_id || !type || !issue_date) {
-    return res.status(400).json({ error: 'org_id, type, and issue_date are required' });
+  if (!type || !issue_date) {
+    return res.status(400).json({ error: 'type and issue_date are required' });
   }
   const VALID_INVOICE_STATUSES = ['draft', 'sent', 'paid', 'overdue', 'cancelled', 'none'];
   const safeStatus = VALID_INVOICE_STATUSES.includes(status) ? status : 'draft';

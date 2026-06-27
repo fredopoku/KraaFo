@@ -149,12 +149,18 @@ const steps = [
   { n: '03', title: 'Send it professionally',   desc: 'Download a pixel-perfect PDF, send via email or WhatsApp, and get paid — all from one screen.' },
 ];
 
-type ReviewCard = { key: string; rating: number; text: string; name: string; sub: string };
+type ReviewCard = { key: string; rating: number; text: string; name: string; sub: string; photo?: string };
 
 const fallbackReviews: ReviewCard[] = [
-  { key: 'sarah', rating: 5, name: 'Sarah M.', sub: 'Owner, Sparkle Clean Co. · UK',    text: "I send a receipt the moment I'm paid and clients love how professional it looks. Total game changer." },
-  { key: 'james', rating: 5, name: 'James T.', sub: 'Manager, FreshSpace Services · US', text: 'Switched from Word templates. My invoices now look like a real business — in under a minute.' },
-  { key: 'ana',   rating: 5, name: 'Ana R.',   sub: 'Director, Crystal Clear LLC · CA',  text: 'Brand colors auto-extract from our logo — every document looks exactly on-brand without any effort.' },
+  { key: 'sarah', rating: 5, name: 'Sarah M.', sub: 'Owner, Sparkle Clean Co. · UK',
+    text: "I send a receipt the moment I'm paid and clients love how professional it looks. Total game changer.",
+    photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=80&q=80' },
+  { key: 'james', rating: 5, name: 'James T.', sub: 'Manager, FreshSpace Services · US',
+    text: 'Switched from Word templates. My invoices now look like a real business — in under a minute.',
+    photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&q=80' },
+  { key: 'ana',   rating: 5, name: 'Ana R.',   sub: 'Director, Crystal Clear LLC · CA',
+    text: 'Brand colors auto-extract from our logo — every document looks exactly on-brand without any effort.',
+    photo: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=80&q=80' },
 ];
 
 const industries = ['Cleaning', 'Plumbing', 'Electrical', 'Landscaping', 'Fitness', 'Tutoring', 'IT Support', 'Photography', 'Pet Services', 'Carpentry', 'Catering', 'Consulting'];
@@ -909,182 +915,508 @@ export default function Landing() {
       </nav>
 
       {/* ── Hero ─────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-white via-indigo-50/50 to-violet-50/40 pt-16 pb-0 px-6">
-        {/* Subtle dot-grid background */}
-        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #cbd5e1 1px, transparent 1px)', backgroundSize: '28px 28px', opacity: 0.35 }} />
+      <section className="relative overflow-hidden bg-gradient-to-br from-white via-indigo-50/40 to-violet-50/30 pt-12 pb-0 px-6">
+        {/* Subtle dot-grid */}
+        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #e2e8f0 1px, transparent 1px)', backgroundSize: '32px 32px', opacity: 0.5 }} />
 
-        {/* Text content */}
-        <div className="relative max-w-3xl mx-auto text-center">
-          <div className="flex justify-center mb-5">
-            <LogoMark size={120} className="animate-float drop-shadow-xl" />
-          </div>
-          <div className="inline-flex items-center gap-2 bg-indigo-50 text-indigo-600 border border-indigo-100 px-4 py-1.5 rounded-full text-sm font-semibold mb-5 animate-hero delay-75">
-            <Sparkles className="w-3.5 h-3.5" /> Free to use · No card · No catch
-          </div>
-          <h1 className="text-5xl md:text-[62px] font-black text-slate-900 tracking-tight leading-[1.06] mb-5 animate-hero delay-150">
-            Get paid faster.<br />
-            <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #4f46e5, #7c3aed)' }}>Invoice by WhatsApp, Email or SMS.</span>
-          </h1>
-          <p className="text-lg text-slate-500 mb-8 max-w-2xl mx-auto leading-relaxed animate-hero delay-200">
-            Create, send and track professional invoices, receipts and quotes in under 2 minutes — fully branded, multi-currency, delivered by WhatsApp, email or SMS. Built for businesses that move fast.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center animate-hero delay-300">
-            <Link to="/setup" className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3.5 rounded-xl font-bold text-base transition-all shadow-lg shadow-indigo-200 btn-glow">
-              Create Free Account <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link to="/generator?demo=true" className="flex items-center justify-center gap-2 text-slate-600 px-8 py-3.5 rounded-xl font-bold text-base border border-slate-200 bg-white/80 hover:bg-white hover:border-slate-300 transition-all shadow-sm">
-              See it in action
-            </Link>
-          </div>
+        <div className="relative max-w-7xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center lg:min-h-[88vh] pb-16 lg:pb-20">
 
-          {/* Live stats bar */}
-          <div className="mt-8 flex items-center justify-center gap-6 flex-wrap animate-hero delay-400">
-            {stats && stats.documents > 0 && (
-              <div className="flex items-center gap-1.5 text-slate-600 text-sm font-semibold">
-                <FileText className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
-                {stats.documents.toLocaleString()}+ documents generated
-              </div>
-            )}
-            {stats && stats.countries > 0 && (
-              <div className="flex items-center gap-1.5 text-slate-600 text-sm font-semibold">
-                <Globe className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                Used in {stats.countries}+ countries
-              </div>
-            )}
-            {stats && stats.avgRating && (
-              <div className="flex items-center gap-1 text-slate-600 text-sm font-semibold">
-                <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400 shrink-0" />
-                {stats.avgRating} / 5 rating
-              </div>
-            )}
-            {(!stats || (stats.documents === 0 && stats.countries === 0)) && (
-              ['Free to use', 'Works worldwide', '12+ industries'].map(t => (
-                <div key={t} className="flex items-center gap-1.5 text-slate-500 text-sm">
-                  <CheckCircle className="w-3.5 h-3.5 text-indigo-500 shrink-0" /> {t}
+            {/* ── Left: Text ───────────────────────────────── */}
+            <div className="relative z-10 pt-6 lg:pt-0">
+
+              {/* Social proof avatars */}
+              <div className="flex items-center gap-3 mb-7 animate-hero">
+                <div className="flex -space-x-2.5">
+                  {[
+                    'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=80&q=80',
+                    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&q=80',
+                    'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=80&q=80',
+                    'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=80&q=80',
+                    'https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&w=80&q=80',
+                  ].map((src, i) => (
+                    <div key={i} className="w-9 h-9 rounded-full border-2 border-white overflow-hidden bg-indigo-100 shrink-0">
+                      <img src={src} alt="" className="w-full h-full object-cover" loading="eager" />
+                    </div>
+                  ))}
                 </div>
-              ))
-            )}
-          </div>
-        </div>
+                <div>
+                  <div className="flex items-center gap-0.5">
+                    {[0,1,2,3,4].map(i => <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />)}
+                  </div>
+                  <p className="text-xs text-slate-500 font-semibold mt-0.5">Loved by 2,000+ businesses worldwide</p>
+                </div>
+              </div>
 
-        {/* ── Hero image ───────────────────────────────────────── */}
-        <div className="relative mt-10 animate-hero delay-500">
+              <h1 className="text-5xl md:text-[58px] lg:text-[64px] font-black text-slate-900 tracking-tight leading-[1.03] mb-6 animate-hero delay-100">
+                Stop chasing<br />
+                payments.<br />
+                <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)' }}>
+                  Get paid like a pro.
+                </span>
+              </h1>
 
-          {/* Diffuse glow behind image */}
-          <div className="absolute inset-x-0 bottom-0 flex justify-center pointer-events-none" style={{ transform:'translateY(20%)' }}>
-            <div style={{
-              width:'72%', height:160,
-              background:'radial-gradient(ellipse, rgba(99,102,241,0.28) 0%, rgba(124,58,237,0.12) 50%, transparent 72%)',
-              filter:'blur(56px)',
-            }} />
-          </div>
+              <p className="text-lg text-slate-500 mb-8 leading-relaxed max-w-lg animate-hero delay-200">
+                Professional invoices, receipts and quotes in under 2 minutes. Branded to your business. Sent by WhatsApp, email or SMS. <strong className="text-slate-700 font-semibold">Free forever.</strong>
+              </p>
 
-          {/* Floating image wrapper */}
-          <div className="hero-float relative max-w-6xl mx-auto px-3 sm:px-6">
-            <div className="hero-img-wrap" style={{
-              boxShadow:
-                '0 0 0 1px rgba(255,255,255,0.7),' +
-                '0 50px 120px rgba(99,102,241,0.24),' +
-                '0 24px 48px rgba(0,0,0,0.14),' +
-                '0 4px 16px rgba(0,0,0,0.08)',
-            }}>
-              <img
-                src="/hero-preview.png"
-                alt="KraaFo — invoice, receipt and client management"
-                className="w-full h-auto block"
-                loading="eager"
-              />
-              {/* Bottom fade blends into section background */}
-              <div className="absolute bottom-0 inset-x-0 h-20 pointer-events-none" style={{
-                background:'linear-gradient(to bottom, transparent, rgba(237,233,254,0.25))',
-              }} />
+              <div className="flex flex-col sm:flex-row gap-3 mb-8 animate-hero delay-300">
+                <Link to="/setup" className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3.5 rounded-xl font-bold text-base transition-all shadow-lg shadow-indigo-200 btn-glow">
+                  Create Free Account <ArrowRight className="w-4 h-4" />
+                </Link>
+                <Link to="/generator?demo=true" className="flex items-center justify-center gap-2 text-slate-600 px-8 py-3.5 rounded-xl font-bold text-base border border-slate-200 bg-white/80 hover:bg-white hover:border-slate-300 transition-all">
+                  See it in action
+                </Link>
+              </div>
+
+              <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm animate-hero delay-400">
+                {['Free forever', 'No credit card', '12+ industries', 'Works worldwide'].map(t => (
+                  <div key={t} className="flex items-center gap-1.5 text-slate-500">
+                    <CheckCircle className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                    {t}
+                  </div>
+                ))}
+              </div>
             </div>
+
+            {/* ── Right: Person photo + floating review card ── */}
+            <div className="relative animate-hero delay-200 mt-4 lg:mt-0">
+
+              {/* "2 min" badge */}
+              <div className="absolute -top-3 left-2 sm:left-8 z-20 bg-indigo-600 text-white rounded-2xl px-4 py-3 shadow-xl shadow-indigo-300/40">
+                <div className="text-2xl font-black leading-none">2 min</div>
+                <div className="text-indigo-200 text-[11px] font-semibold mt-0.5">setup to first invoice</div>
+              </div>
+
+              {/* Person photo */}
+              <div className="relative rounded-[2rem] overflow-hidden aspect-[3/4] max-w-sm mx-auto lg:max-w-none shadow-2xl shadow-slate-300/40">
+                <img
+                  src="/people-hero.jpg"
+                  alt="Business owner using KraaFo"
+                  className="w-full h-full object-cover"
+                  loading="eager"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" />
+              </div>
+
+              {/* Floating review card */}
+              <div className="absolute bottom-5 left-3 right-3 sm:left-5 sm:right-5 bg-white/95 backdrop-blur-md rounded-2xl p-4 shadow-2xl border border-white">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full overflow-hidden bg-indigo-100 shrink-0 border-2 border-indigo-50">
+                    <img
+                      src="/people-hero.jpg"
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-0.5 mb-1">
+                      {[0,1,2,3,4].map(i => <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />)}
+                    </div>
+                    <p className="text-slate-700 text-sm font-medium leading-snug">"My clients think I have a whole accounts department."</p>
+                    <p className="text-slate-400 text-xs font-semibold mt-1">Sarah M. · Sparkle Clean Co., UK</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
 
         {/* Marquee */}
-        <div className="mt-12 overflow-hidden pb-0">
-          <div className="marquee-track flex gap-3 w-max">
-            {[...industries, ...industries].map((ind, i) => (
-              <span key={i} className="px-4 py-1.5 rounded-full text-xs font-semibold border border-slate-200 text-slate-500 bg-white shadow-sm shrink-0">{ind}</span>
-            ))}
+        <div className="overflow-hidden border-t border-slate-100/60 mt-2">
+          <div className="py-4">
+            <div className="marquee-track flex gap-3 w-max">
+              {[...industries, ...industries].map((ind, i) => (
+                <span key={i} className="px-4 py-1.5 rounded-full text-xs font-semibold border border-slate-200 text-slate-500 bg-white shadow-sm shrink-0">{ind}</span>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ── Phone Showcase ───────────────────────────────────── */}
-      <section className="bg-slate-950 py-20 px-0 overflow-hidden">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="text-center mb-10">
-            <p className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-3">Mobile-first</p>
-            <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight mb-3">Your entire business, in your pocket</h2>
-            <p className="text-slate-400 max-w-xl mx-auto">Create invoices, track clients, and get paid — all from your phone. Every feature works beautifully on mobile.</p>
-          </div>
-
-        </div>
-
-        {/* Full-bleed image — edge fades blend into dark background */}
-        <div className="relative mt-4">
-          {/* Left fade */}
-          <div className="absolute inset-y-0 left-0 w-16 sm:w-32 z-10 pointer-events-none"
-            style={{ background:'linear-gradient(to right, #020617, transparent)' }} />
-          {/* Right fade */}
-          <div className="absolute inset-y-0 right-0 w-16 sm:w-32 z-10 pointer-events-none"
-            style={{ background:'linear-gradient(to left, #020617, transparent)' }} />
-          {/* Top fade */}
-          <div className="absolute inset-x-0 top-0 h-10 z-10 pointer-events-none"
-            style={{ background:'linear-gradient(to bottom, #020617, transparent)' }} />
-          {/* Bottom fade */}
-          <div className="absolute inset-x-0 bottom-0 h-20 z-10 pointer-events-none"
-            style={{ background:'linear-gradient(to top, #020617, transparent)' }} />
-
-          <img
-            src="/phones-showcase.png"
-            alt="KraaFo mobile app — dashboard, clients and recent activity"
-            className="w-full h-auto block"
-            loading="lazy"
-          />
-        </div>
-
-        {/* Feature chips */}
-        <div className="max-w-5xl mx-auto px-6 pb-6">
-          <div className="flex flex-wrap justify-center gap-3">
-            {['Save, Send & PDF in one tap', 'Full document history', 'Client management', 'Smart navigation', 'Works offline-ready'].map(f => (
-              <div key={f} className="flex items-center gap-1.5 bg-white/5 border border-white/10 text-slate-400 text-xs font-semibold px-3 py-1.5 rounded-full">
-                <CheckCircle className="w-3 h-3 text-indigo-400 shrink-0" /> {f}
+      {/* ── Trust Strip ──────────────────────────────────────── */}
+      <section className="bg-slate-50 border-b border-slate-100">
+        <div className="max-w-6xl mx-auto px-6 py-5">
+          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
+            {stats && stats.documents > 0 ? (
+              <div className="flex items-center gap-2 text-slate-600 text-sm font-semibold">
+                <FileText className="w-4 h-4 text-indigo-500 shrink-0" />
+                {stats.documents.toLocaleString()}+ documents generated
               </div>
-            ))}
+            ) : (
+              <div className="flex items-center gap-2 text-slate-600 text-sm font-semibold">
+                <FileText className="w-4 h-4 text-indigo-500 shrink-0" />
+                Professional documents in minutes
+              </div>
+            )}
+            {stats && stats.countries > 0 ? (
+              <div className="flex items-center gap-2 text-slate-600 text-sm font-semibold">
+                <Globe className="w-4 h-4 text-emerald-500 shrink-0" />
+                Used in {stats.countries}+ countries
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-slate-600 text-sm font-semibold">
+                <Globe className="w-4 h-4 text-emerald-500 shrink-0" />
+                Works in any country, any currency
+              </div>
+            )}
+            {stats?.avgRating ? (
+              <div className="flex items-center gap-1.5 text-slate-600 text-sm font-semibold">
+                <Star className="w-4 h-4 fill-amber-400 text-amber-400 shrink-0" />
+                {stats.avgRating} / 5 from real users
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 text-slate-600 text-sm font-semibold">
+                <Star className="w-4 h-4 fill-amber-400 text-amber-400 shrink-0" />
+                5-star rated by real businesses
+              </div>
+            )}
+            <div className="flex items-center gap-2 text-slate-600 text-sm font-semibold">
+              <Zap className="w-4 h-4 text-violet-500 shrink-0" />
+              Free forever · No credit card needed
+            </div>
+            <div className="flex items-center gap-2 text-slate-600 text-sm font-semibold">
+              <MessageSquare className="w-4 h-4 text-emerald-500 shrink-0" />
+              Sends via WhatsApp &amp; Email
+            </div>
           </div>
+        </div>
+      </section>
+
+      {/* ── People Feature Sections ───────────────────────────── */}
+      <section className="py-24 px-6 bg-white">
+        <div className="max-w-6xl mx-auto space-y-28">
+
+          {/* Row 1: Invoice anywhere */}
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+            <div className="relative">
+              <div className="rounded-[2rem] overflow-hidden aspect-[4/5] shadow-2xl shadow-slate-200/60">
+                <img
+                  src="/people-1.jpg"
+                  alt="Tradesperson creating an invoice on the job site"
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/20 via-transparent to-transparent pointer-events-none" />
+              </div>
+              {/* Floating invoice mini-card */}
+              <div className="absolute -bottom-5 -right-3 sm:right-4 bg-white rounded-2xl shadow-2xl border border-slate-100 p-4 max-w-[220px]">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] font-black text-slate-700 uppercase tracking-wide">Invoice</span>
+                  <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-0.5">
+                    <CheckCircle className="w-2.5 h-2.5" /> Paid
+                  </span>
+                </div>
+                <div className="text-xs font-black text-slate-900 mb-0.5">Sarah Thompson</div>
+                <div className="text-[10px] text-slate-400 mb-2.5">Deep House Cleaning · 3 items</div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-slate-500">Total</span>
+                  <span className="text-base font-black text-indigo-600">$482.58</span>
+                </div>
+                <div className="mt-2 pt-2 border-t border-slate-50 text-[9px] text-slate-400 flex items-center gap-1">
+                  <MessageSquare className="w-2.5 h-2.5 text-emerald-500" />
+                  Sent via WhatsApp · 2 min ago
+                </div>
+              </div>
+            </div>
+            <div>
+              <span className="inline-block text-xs font-bold text-indigo-600 uppercase tracking-widest mb-4">Create in seconds</span>
+              <h2 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-[1.05] mb-5">
+                Invoice from<br />wherever you work
+              </h2>
+              <p className="text-slate-500 text-lg leading-relaxed mb-8">
+                On the job site, between appointments, or heading home — create a fully branded invoice in 2 minutes. Smart Fill auto-populates your services and pricing so you spend more time earning, less time typing.
+              </p>
+              <Link to="/setup" className="inline-flex items-center gap-2 text-indigo-600 font-bold text-base hover:text-indigo-800 transition-colors group">
+                Start free today <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Row 2: Send by WhatsApp (reversed) */}
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+            <div className="lg:order-2 relative">
+              <div className="rounded-[2rem] overflow-hidden aspect-[4/5] shadow-2xl shadow-slate-200/60">
+                <img
+                  src="/people-2.jpg"
+                  alt="Tradesperson sending an invoice from the job site"
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/20 via-transparent to-transparent pointer-events-none" />
+              </div>
+              {/* Floating WhatsApp card */}
+              <div className="absolute -top-5 -left-3 sm:left-auto sm:-right-3 bg-white rounded-2xl shadow-2xl border border-slate-100 p-3 max-w-[210px]">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
+                    <MessageSquare className="w-3 h-3 text-white" />
+                  </div>
+                  <span className="text-[10px] font-bold text-slate-700">WhatsApp sent!</span>
+                </div>
+                <div className="bg-emerald-50 rounded-xl px-2.5 py-2 text-[9px] text-slate-600 leading-relaxed border border-emerald-100">
+                  "Hi James! Here is your invoice INV-0042 for $482.58. PDF is attached. Thank you!"
+                </div>
+                <div className="flex items-center gap-1 mt-1.5 text-[8px] text-slate-400">
+                  <span className="text-emerald-500 font-bold">✓✓</span>
+                  <span>Delivered · just now</span>
+                </div>
+              </div>
+            </div>
+            <div className="lg:order-1">
+              <span className="inline-block text-xs font-bold text-emerald-600 uppercase tracking-widest mb-4">Send instantly</span>
+              <h2 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-[1.05] mb-5">
+                Clients get it on<br />WhatsApp in seconds
+              </h2>
+              <p className="text-slate-500 text-lg leading-relaxed mb-8">
+                No email delays, no follow-ups — send your invoice directly through WhatsApp or email from inside KraaFo. Your client gets a professional message with the PDF attached, instantly. Most are paid within hours.
+              </p>
+              <Link to="/setup" className="inline-flex items-center gap-2 text-emerald-600 font-bold text-base hover:text-emerald-800 transition-colors group">
+                Try it free <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Row 3: Know your numbers */}
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+            <div className="relative">
+              <div className="rounded-[2rem] overflow-hidden aspect-[4/5] shadow-2xl shadow-slate-200/60">
+                <img
+                  src="/people-3.jpg"
+                  alt="Business owner reviewing their finances"
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/20 via-transparent to-transparent pointer-events-none" />
+              </div>
+              {/* Floating dashboard mini-card */}
+              <div className="absolute -bottom-5 -right-3 sm:right-4 bg-white rounded-2xl shadow-2xl border border-slate-100 p-4 max-w-[230px]">
+                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">This month</div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
+                      <div className="w-2 h-2 rounded-full bg-emerald-400" />
+                      Revenue
+                    </div>
+                    <span className="text-sm font-black text-emerald-600">$12,840</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
+                      <div className="w-2 h-2 rounded-full bg-amber-400" />
+                      Outstanding
+                    </div>
+                    <span className="text-sm font-black text-amber-500">$3,200</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
+                      <div className="w-2 h-2 rounded-full bg-red-300" />
+                      Overdue
+                    </div>
+                    <span className="text-sm font-black text-red-400">$0</span>
+                  </div>
+                </div>
+                <div className="mt-3 pt-2.5 border-t border-slate-50 text-[9px] text-emerald-600 font-semibold flex items-center gap-1">
+                  <TrendingUp className="w-2.5 h-2.5" />
+                  +28% from last month
+                </div>
+              </div>
+            </div>
+            <div>
+              <span className="inline-block text-xs font-bold text-violet-600 uppercase tracking-widest mb-4">Stay in control</span>
+              <h2 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-[1.05] mb-5">
+                See your money.<br />Know your business.
+              </h2>
+              <p className="text-slate-500 text-lg leading-relaxed mb-8">
+                Your dashboard shows everything at a glance — what you've earned, what's outstanding, what's overdue. No spreadsheets, no guessing. Just clarity, so you can focus on the work that pays you.
+              </p>
+              <Link to="/setup" className="inline-flex items-center gap-2 text-violet-600 font-bold text-base hover:text-violet-800 transition-colors group">
+                Get started free <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* ── Triple Channel Delivery ───────────────────────────── */}
+      <section className="bg-slate-950 py-24 px-6 overflow-hidden">
+        <div className="max-w-6xl mx-auto">
+
+          {/* Header */}
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold px-4 py-1.5 rounded-full mb-6">
+              <Zap className="w-3.5 h-3.5" /> Only on KraaFo
+            </div>
+            <h2 className="text-4xl md:text-5xl font-black text-white tracking-tight leading-[1.05] mb-5">
+              Your client can't say<br />they didn't get it.
+            </h2>
+            <p className="text-slate-400 text-lg max-w-2xl mx-auto leading-relaxed">
+              One tap sends your invoice three ways at once — WhatsApp, SMS, and email with the PDF attached. Every other invoicing app sends just an email and hopes for the best.
+            </p>
+          </div>
+
+          {/* Three delivery cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-14">
+
+            {/* WhatsApp */}
+            <div className="rounded-2xl overflow-hidden animate-fade-up" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <div className="px-4 py-3 flex items-center gap-3" style={{ background: '#128C7E' }}>
+                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                  <MessageSquare className="w-4 h-4 text-white" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-white text-xs font-bold">WhatsApp</div>
+                  <div className="text-green-200 text-[10px]">Message delivered instantly</div>
+                </div>
+                <span className="ml-auto text-green-200 text-[10px] shrink-0">just now</span>
+              </div>
+              <div className="p-4">
+                <div className="rounded-xl rounded-tl-none p-3" style={{ background: 'rgba(18,140,126,0.15)', border: '1px solid rgba(18,140,126,0.2)' }}>
+                  <p className="text-slate-200 text-xs leading-loose">
+                    Hi James! 👋<br />
+                    Your <strong className="text-white">Invoice INV-0042</strong> from <strong className="text-white">Acme Services</strong> is ready.<br /><br />
+                    📄 <strong className="text-white">INV-0042</strong><br />
+                    💰 Total: <strong className="text-white">$482.58</strong><br />
+                    📅 Due: <strong className="text-white">26 Jul 2026</strong><br /><br />
+                    Check your email for the PDF attachment. Thank you! 🙏
+                  </p>
+                  <div className="flex items-center justify-end gap-1 mt-2 text-[9px] text-emerald-400">
+                    <span>✓✓</span><span>Delivered</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* SMS */}
+            <div className="rounded-2xl overflow-hidden animate-fade-up" style={{ animationDelay: '100ms', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <div className="bg-slate-700 px-4 py-3 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+                  <Send className="w-4 h-4 text-white" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-white text-xs font-bold">SMS</div>
+                  <div className="text-slate-400 text-[10px]">+1 310 000 0042</div>
+                </div>
+                <span className="ml-auto text-slate-400 text-[10px] shrink-0">just now</span>
+              </div>
+              <div className="p-4">
+                <div className="bg-slate-700/50 rounded-xl rounded-tl-none p-3" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <p className="text-slate-200 text-xs leading-relaxed">
+                    Hi James! Your Invoice from Acme Services is ready.<br /><br />
+                    📄 INV-0042 · 💰 $482.58 · 📅 Due 26 Jul 2026<br /><br />
+                    Your PDF invoice has been sent to your email. Please check your inbox. — Acme Services
+                  </p>
+                  <div className="text-right text-[9px] text-slate-500 mt-2">Delivered</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Email */}
+            <div className="rounded-2xl overflow-hidden animate-fade-up" style={{ animationDelay: '200ms', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <div className="bg-indigo-700 px-4 py-3 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                  <Mail className="w-4 h-4 text-white" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-white text-xs font-bold">Email</div>
+                  <div className="text-indigo-300 text-[10px] truncate">james@acmeservices.com</div>
+                </div>
+                <span className="ml-auto text-indigo-300 text-[10px] shrink-0">just now</span>
+              </div>
+              <div className="p-4">
+                <div className="text-white text-xs font-bold mb-0.5">Invoice INV-0042 from Acme Services</div>
+                <div className="text-slate-400 text-[10px] mb-4 leading-relaxed">
+                  Please find your invoice attached to this email. You can download the PDF for your records.
+                </div>
+                {/* PDF attachment */}
+                <div className="flex items-center gap-3 rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div className="w-9 h-9 bg-red-500/20 rounded-lg flex items-center justify-center shrink-0">
+                    <FileText className="w-4 h-4 text-red-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-white text-[10px] font-bold truncate">Invoice_INV-0042.pdf</div>
+                    <div className="text-slate-500 text-[9px]">284 KB · PDF Document</div>
+                  </div>
+                  <Download className="w-3.5 h-3.5 text-slate-500 ml-auto shrink-0" />
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          {/* KraaFo vs everyone else */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-8 mb-14 py-6 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <div className="text-center">
+              <div className="text-slate-600 text-xs font-bold uppercase tracking-widest mb-2">Every other invoicing app</div>
+              <div className="flex items-center justify-center gap-2">
+                <div className="flex items-center gap-1.5 text-slate-600">
+                  <Mail className="w-4 h-4" />
+                  <span className="text-sm font-semibold">Email only</span>
+                </div>
+              </div>
+            </div>
+            <div className="text-slate-700 text-3xl font-black hidden sm:block">vs</div>
+            <div className="text-slate-600 text-sm font-bold sm:hidden">vs</div>
+            <div className="text-center">
+              <div className="text-indigo-400 text-xs font-bold uppercase tracking-widest mb-2">KraaFo</div>
+              <div className="flex items-center justify-center gap-3">
+                <div className="flex items-center gap-1.5 text-emerald-400">
+                  <MessageSquare className="w-4 h-4" />
+                  <span className="text-sm font-bold">WhatsApp</span>
+                </div>
+                <span className="text-slate-700">+</span>
+                <div className="flex items-center gap-1.5 text-blue-400">
+                  <Send className="w-4 h-4" />
+                  <span className="text-sm font-bold">SMS</span>
+                </div>
+                <span className="text-slate-700">+</span>
+                <div className="flex items-center gap-1.5 text-indigo-400">
+                  <Mail className="w-4 h-4" />
+                  <span className="text-sm font-bold">Email + PDF</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* CTA */}
+          <div className="text-center">
+            <Link to="/setup" className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3.5 rounded-xl font-bold text-base transition-all shadow-lg shadow-indigo-900/50 btn-glow">
+              Start sending smarter <ArrowRight className="w-4 h-4" />
+            </Link>
+            <p className="text-slate-600 text-xs mt-3 font-semibold">Free forever · No credit card · 2-minute setup</p>
+          </div>
+
         </div>
       </section>
 
       {/* ── Recent Documents Showcase ─────────────────────────── */}
       <section className="py-16 px-6 bg-slate-50">
         <div className="max-w-5xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <p className="text-xs font-bold text-indigo-500 uppercase tracking-widest mb-3">Document history</p>
-              <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-4">All your documents,<br />always at your fingertips.</h2>
-              <p className="text-slate-500 leading-relaxed mb-6">Every invoice, receipt, and quote is saved and searchable. Switch between documents in seconds — edit, preview, or re-send with one tap.</p>
-              <div className="space-y-3">
-                {['Invoices, receipts & quotes in one place', 'Instant PDF preview on any device', 'One-tap re-send to any client'].map(f => (
-                  <div key={f} className="flex items-center gap-2 text-sm text-slate-700 font-medium">
-                    <CheckCircle className="w-4 h-4 text-indigo-500 shrink-0" /> {f}
-                  </div>
-                ))}
-              </div>
-              <div className="mt-8">
-                <Link to="/generator?demo=true" className="inline-flex items-center gap-2 text-indigo-600 font-bold text-sm hover:text-indigo-800 transition-colors">
-                  <Sparkles className="w-4 h-4" /> Try it live — no sign-up required <ArrowRight className="w-4 h-4" />
-                </Link>
-              </div>
-            </div>
-            <div className="flex justify-center lg:justify-end">
-              <PhoneShell className="w-56 shadow-2xl shadow-slate-300/60">
-                <RecentDocsMobileContent />
-              </PhoneShell>
-            </div>
+          <p className="text-xs font-bold text-indigo-500 uppercase tracking-widest mb-3">Document history</p>
+          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 mb-10">
+            <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-tight max-w-lg">All your documents,<br />always at your fingertips.</h2>
+            <p className="text-slate-500 leading-relaxed max-w-md">Every invoice, receipt, and quote is saved and searchable. Switch between documents in seconds — edit, preview, or re-send with one tap.</p>
           </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+            {[
+              { icon: FileText, label: 'Invoices, receipts & quotes', desc: 'All document types in one place', color: 'bg-indigo-50 text-indigo-600' },
+              { icon: Download, label: 'Instant PDF preview', desc: 'On any device, any time', color: 'bg-emerald-50 text-emerald-600' },
+              { icon: Send, label: 'One-tap re-send', desc: 'Back to any client instantly', color: 'bg-violet-50 text-violet-600' },
+            ].map(({ icon: Icon, label, desc, color }) => (
+              <div key={label} className="bg-white rounded-2xl border border-slate-100 p-5 flex items-start gap-4">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${color}`}>
+                  <Icon className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="font-bold text-slate-800 text-sm mb-0.5">{label}</div>
+                  <div className="text-slate-400 text-xs">{desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <Link to="/generator?demo=true" className="inline-flex items-center gap-2 text-indigo-600 font-bold text-sm hover:text-indigo-800 transition-colors">
+            <Sparkles className="w-4 h-4" /> Try it live — no sign-up required <ArrowRight className="w-4 h-4" />
+          </Link>
         </div>
       </section>
 
@@ -1157,32 +1489,48 @@ export default function Landing() {
       </section>
 
       {/* ── Testimonials ────────────────────────────────────── */}
-      <section className="py-14 px-6 bg-slate-900">
+      <section className="py-16 px-6 bg-slate-50">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-10">
             <div className="flex justify-center gap-1 mb-3">
               {[0,1,2,3,4].map(i => <Star key={i} className="w-4 h-4 text-amber-400 fill-amber-400" />)}
             </div>
-            <h2 className="text-3xl font-black text-white tracking-tight">Trusted by businesses worldwide</h2>
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight">Trusted by businesses worldwide</h2>
             {stats?.avgRating && stats.ratingCount > 0 ? (
-              <p className="text-slate-400 text-sm mt-2 font-semibold">{stats.avgRating} out of 5 · {stats.ratingCount} verified review{stats.ratingCount !== 1 ? 's' : ''}</p>
+              <p className="text-slate-500 text-sm mt-2 font-semibold">{stats.avgRating} out of 5 · {stats.ratingCount} verified review{stats.ratingCount !== 1 ? 's' : ''}</p>
             ) : liveReviews.length > 0 ? (
-              <p className="text-slate-500 text-xs mt-2">{liveReviews.length} verified review{liveReviews.length !== 1 ? 's' : ''} from real users</p>
+              <p className="text-slate-400 text-xs mt-2">{liveReviews.length} verified review{liveReviews.length !== 1 ? 's' : ''} from real users</p>
             ) : null}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {reviews.map((t, i) => (
-              <div key={t.key} className="rounded-2xl p-5 hover-lift animate-fade-up" style={{ animationDelay: `${i * 100}ms`, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <div key={t.key} className="bg-white rounded-2xl p-5 hover-lift animate-fade-up flex flex-col border border-slate-100 shadow-sm hover:shadow-md transition-shadow" style={{ animationDelay: `${i * 100}ms` }}>
+                {/* Avatar + name */}
+                <div className="flex items-center gap-3 mb-4">
+                  {t.photo ? (
+                    <img
+                      src={t.photo}
+                      alt={t.name}
+                      className="w-11 h-11 rounded-full object-cover border-2 border-slate-100 shrink-0"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="w-11 h-11 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-base shrink-0">
+                      {t.name.charAt(0)}
+                    </div>
+                  )}
+                  <div>
+                    <div className="font-bold text-slate-900 text-sm">{t.name}</div>
+                    <div className="text-slate-400 text-xs mt-0.5">{t.sub}</div>
+                  </div>
+                </div>
+                {/* Stars */}
                 <div className="flex mb-3">
                   {[1,2,3,4,5].map(s => (
-                    <span key={s} className={`text-xs ${s <= t.rating ? 'text-amber-400' : 'text-slate-700'}`}>★</span>
+                    <span key={s} className={`text-sm ${s <= t.rating ? 'text-amber-400' : 'text-slate-200'}`}>★</span>
                   ))}
                 </div>
-                <p className="text-slate-300 mb-4 leading-relaxed text-sm">"{t.text}"</p>
-                <div>
-                  <div className="font-bold text-white text-sm">{t.name}</div>
-                  <div className="text-slate-500 text-xs mt-0.5">{t.sub}</div>
-                </div>
+                <p className="text-slate-600 leading-relaxed text-sm flex-1">"{t.text}"</p>
               </div>
             ))}
           </div>
@@ -1218,31 +1566,18 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── Feedback ────────────────────────────────────────── */}
-      <section className="py-16 px-6 bg-white">
-        <div className="max-w-lg mx-auto text-center">
-          <div className="flex justify-center mb-4">
-            <div className="w-11 h-11 rounded-2xl bg-slate-100 flex items-center justify-center">
-              <MessageSquare className="w-5 h-5 text-indigo-600" />
-            </div>
-          </div>
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mb-2">How are we doing?</h2>
-          <p className="text-slate-500 mb-8 text-sm">Rate KraaFo and share any thoughts — every piece of feedback shapes what we build next.</p>
-          <div className="bg-slate-50 rounded-2xl border border-slate-100 p-6 sm:p-8">
-            <FeedbackWidget />
-          </div>
-        </div>
-      </section>
-
       {/* ── Footer ──────────────────────────────────────────── */}
-      <footer className="border-t border-slate-100 py-6 px-6 bg-white">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+      <footer className="border-t border-slate-100 py-8 px-6 bg-white">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <Logo size="lg" />
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
             <Link to="/changelog" className="text-xs text-slate-400 hover:text-indigo-600 transition-colors font-medium">What's New</Link>
-            <span className="text-slate-200">·</span>
-            <p className="text-sm text-slate-400">Professional invoicing for businesses of every size.</p>
+            <span className="text-slate-200 hidden sm:inline">·</span>
+            <a href="mailto:kraafo.invoice.receipt@gmail.com" className="text-xs text-slate-400 hover:text-indigo-600 transition-colors font-medium">
+              Questions? kraafo.invoice.receipt@gmail.com
+            </a>
           </div>
+          <p className="text-xs text-slate-300 font-medium">© {new Date().getFullYear()} KraaFo</p>
         </div>
       </footer>
     </div>

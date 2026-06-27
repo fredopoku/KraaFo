@@ -61,15 +61,20 @@
 
 ### Clients & Delivery
 - **Client Address Book** — save and reuse client details across documents
-- **Email Delivery** — send branded PDF invoices directly to clients via Resend (or custom SMTP); works for invoices, receipts, and quotes
-- **WhatsApp & SMS** — one-tap share to WhatsApp or open in Messages (mobile-ready); message text adapts based on whether email was also sent
+- **Triple-Channel Delivery** — send a document to a client on WhatsApp, SMS, and Email (with PDF attachment) simultaneously in one tap; clients receive the same document across all three channels so there is no excuse for not getting it
+- **Email Delivery** — branded PDF sent via Resend (or custom SMTP); works for invoices, receipts, and quotes
+- **WhatsApp** — opens the client's number directly in WhatsApp with a pre-composed message; the message tells the client to check their email for the PDF
+- **SMS** — opens the native Messages app with a pre-filled message containing the document summary
 - **Quotes Management** — dedicated quotes list, status tracking (Draft → Sent → Accepted → Declined)
 
 ### Payments
 - **Payment Details** — add bank account, PayPal, M-Pesa, MTN Mobile Money, Airtel Money, Telecel Cash
 - **QR Code** — auto-generated payment QR on invoices linking to PayPal or mobile money
 
-### Security & Bot Protection
+### Security
+- **HTTP Security Headers** — `helmet` sets `X-Frame-Options`, `Strict-Transport-Security`, `X-Content-Type-Options`, `X-DNS-Prefetch-Control`, and `Referrer-Policy` on every response; protects against clickjacking, MIME sniffing, and protocol downgrade attacks
+- **Org Isolation** — every API endpoint that creates or reads documents derives the organisation ID from the verified JWT, not from request body or query parameters; User A cannot read or write User B's data
+- **CORS Allowlist** — origin matching uses exact comparison only; wildcard and prefix patterns are not used
 - **Cloudflare Turnstile** — invisible/managed bot protection on the Setup page (new users), feedback form, and newsletter signup — no CAPTCHA friction for real users
 - **Graceful degradation** — if Turnstile keys are not configured the forms work normally; the verification gate is skipped in development
 
@@ -123,6 +128,7 @@
 | Email — Invoices | Resend API (primary) or Nodemailer (custom SMTP) |
 | Email — Broadcasts | Resend API (subscriber welcome + update emails) |
 | Mobile PDF | Web Share API (navigator.share) with blob-URL anchor fallback |
+| Security Headers | Helmet (X-Frame-Options, HSTS, X-Content-Type-Options, Referrer-Policy) |
 | Bot Protection | Cloudflare Turnstile (Managed mode — server-side verification) |
 | Analytics | Custom — `navigator.sendBeacon` + ip-api.com geo + SQLite |
 
@@ -411,11 +417,13 @@ Server-side verification uses the `TURNSTILE_SECRET` environment variable. If th
 - [x] Bot protection (Cloudflare Turnstile)
 - [x] Privacy-first website analytics
 - [x] Admin dashboard (users, analytics, feedback, subscribers, changelog)
-- [ ] Recurring invoice schedules
+- [x] Recurring invoice schedules
+- [x] Multi-user / team accounts
+- [x] Triple-channel delivery (WhatsApp + SMS + Email simultaneously)
+- [x] Security hardening (org isolation, CORS exact-match, HTTP security headers)
 - [ ] Cloud sync / multi-device
 - [ ] Stripe / PayPal payment link integration
 - [ ] Client portal (view & pay invoices online)
-- [ ] Multi-user / team accounts
 - [ ] Feature request voting board
 
 ---
