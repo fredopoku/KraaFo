@@ -2,7 +2,9 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import db from '../db/schema';
 
-export const JWT_SECRET = process.env.JWT_SECRET || 'krafo-dev-secret-change-in-prod';
+export const JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production'
+  ? (() => { throw new Error('JWT_SECRET environment variable must be set in production'); })()
+  : 'krafo-dev-secret-change-in-prod');
 export const JWT_EXPIRES = '30d';
 
 export type UserRole = 'owner' | 'admin' | 'staff' | 'accountant';

@@ -34,6 +34,10 @@ services:
       - key: GEMINI_API_KEY
         sync: false
 
+      # Cloudflare Turnstile — bot protection on signup, feedback, subscribe forms
+      - key: CLOUDFLARE_TURNSTILE_SECRET
+        sync: false
+
       # Email via Resend (recommended — invoice delivery, welcome & broadcast emails)
       - key: RESEND_API_KEY
         sync: false

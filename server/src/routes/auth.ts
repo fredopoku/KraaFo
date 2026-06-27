@@ -49,6 +49,7 @@ router.post('/set-password', async (req: Request, res: Response) => {
 
   const org = db.prepare('SELECT * FROM organizations WHERE id = ?').get(orgId) as any;
   if (!org) return res.status(404).json({ error: 'Account not found' });
+  if (org.password_hash) return res.status(409).json({ error: 'Password already set. Use forgot password to reset it.' });
 
   const hash = await bcrypt.hash(password, 12);
   db.prepare('UPDATE organizations SET password_hash = ? WHERE id = ?').run(hash, orgId);

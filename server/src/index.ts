@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import rateLimit from 'express-rate-limit';
 import path from 'path';
 import fs from 'fs';
 
@@ -32,18 +33,16 @@ const isProd = process.env.NODE_ENV === 'production';
 
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
-// CORS — allow configured frontend URL + localhost for dev
+// CORS — allow configured frontend URL + localhost for dev only
 const allowedOrigins = [
-  'http://localhost:5173',
-  'http://localhost:3000',
   'https://kraafo.com',
   'https://www.kraafo.com',
   'https://kraafo.onrender.com',
   ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
+  ...(!isProd ? ['http://localhost:5173', 'http://localhost:3000'] : []),
 ];
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow same-origin requests (no origin header) and configured origins
     if (!origin || allowedOrigins.some(o => origin === o || origin.startsWith(o))) {
       callback(null, true);
     } else {
@@ -52,6 +51,24 @@ app.use(cors({
   },
   credentials: true,
 }));
+
+// Rate limiting — protect auth endpoints from brute force
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,   // 15 minutes
+  max: 10,                      // 10 attempts per window per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many attempts. Please try again in 15 minutes.' },
+  skip: () => !isProd,          // disabled in dev
+});
+const forgotLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,   // 1 hour
+  max: 5,                       // 5 reset requests per hour per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many password reset requests. Please try again in 1 hour.' },
+  skip: () => !isProd,
+});
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -77,6 +94,9 @@ app.use('/api/admin', adminRouter);
 app.use('/api/changelog', changelogRouter);
 app.use('/api/track', trackRouter);
 app.use('/api/stats', statsRouter);
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/forgot', forgotLimiter);
+app.use('/api/auth/reset', authLimiter);
 app.use('/api/auth', authRouter);
 app.use('/api/team', teamRouter);
 
@@ -99,8 +119,9 @@ if (isProd && fs.existsSync(clientDist)) {
 
 // Global error handler
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  console.error(err.stack);
-  res.status(500).json({ error: err.message || 'Internal server error' });
+  if (!isProd) console.error(err.stack);
+  else console.error(`[error] ${err.message}`);
+  res.status(500).json({ error: isProd ? 'Internal server error' : (err.message || 'Internal server error') });
 });
 
 app.listen(PORT, () => {
