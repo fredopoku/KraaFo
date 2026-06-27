@@ -43,6 +43,7 @@ const PUBLIC_PREFIXES = [
   '/api/subscribers',
   '/api/feedback/highlights',
   '/api/team/join',
+  '/api/pdf/',
 ];
 
 function isPublic(req: Request): boolean {
