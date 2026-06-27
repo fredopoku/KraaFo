@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Upload, Check, ChevronRight, ChevronLeft, Loader2, Building2, Palette, CreditCard, FileText, ShieldCheck } from 'lucide-react';
+import { Upload, Check, ChevronRight, ChevronLeft, Loader2, Building2, Palette, CreditCard, FileText, ShieldCheck, Users, UserPlus, Mail, ChevronDown, Trash2 } from 'lucide-react';
 import { LogoMark } from '../components/Logo';
 import { api } from '../utils/api';
 import { Organization, BrandColors } from '../types';
@@ -26,6 +26,9 @@ const CURRENCIES = [
   { code: 'ZAR', symbol: 'R', name: 'South African Rand' },
 ];
 
+type InviteRole = 'admin' | 'staff' | 'accountant';
+interface PendingInvite { id: string; email: string; role: InviteRole; }
+
 export default function Setup() {
   const navigate = useNavigate();
   const { org, setOrg } = useOrg();
@@ -33,6 +36,18 @@ export default function Setup() {
   const [showPassword, setShowPassword] = useState(false);
   const [humanVerified, setHumanVerified] = useState(false);
   const [cfToken, setCfToken] = useState('');
+
+  // Account type selection (new accounts only)
+  const [accountType, setAccountType] = useState<'solo' | 'team'>('solo');
+  const [accountTypeChosen, setAccountTypeChosen] = useState(!!org);
+
+  // Team invite step (shown after org creation for team accounts)
+  const [inviteStep, setInviteStep] = useState(false);
+  const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState<InviteRole>('staff');
+  const [addingInvite, setAddingInvite] = useState(false);
+  const [sendingInvites, setSendingInvites] = useState(false);
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -158,12 +173,17 @@ export default function Setup() {
       if (org) {
         const saved = await api.organizations.update(org.id, form);
         setOrg(saved);
+        navigate('/generator');
       } else {
-        const created = await api.organizations.create(form);
+        const created = await api.organizations.create({ ...form, account_type: accountType });
         const { org: authedOrg, token } = await api.auth.setPassword(created.id, password);
         setOrg(authedOrg, token);
+        if (accountType === 'team') {
+          setInviteStep(true);
+        } else {
+          navigate('/generator');
+        }
       }
-      navigate('/generator');
     } catch (err) {
       console.error('Setup failed:', err);
       setSaveError((err as Error).message || 'Could not connect to server. Make sure the backend is running on port 3001.');
@@ -199,6 +219,173 @@ export default function Setup() {
               Continue to Setup <ChevronRight className="w-4 h-4" />
             </button>
             <p className="text-xs text-slate-300">Protected by Cloudflare Turnstile</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ── Account type selector — new accounts only ─────────────── */
+  if (!org && !accountTypeChosen) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="flex justify-center mb-6">
+            <LogoMark size={48} />
+          </div>
+          <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+            <div className="bg-indigo-600 px-8 py-6 text-white text-center">
+              <h1 className="text-xl font-black tracking-tight">How will you use KraaFo?</h1>
+              <p className="text-indigo-200 text-sm mt-1">Choose your account type to get started</p>
+            </div>
+            <div className="p-6 space-y-3">
+              <button
+                onClick={() => setAccountType('solo')}
+                className={cn(
+                  'w-full text-left rounded-2xl border-2 p-5 transition-all',
+                  accountType === 'solo' ? 'border-indigo-500 bg-indigo-50' : 'border-slate-100 bg-white hover:border-indigo-200'
+                )}
+              >
+                <div className="flex items-start gap-4">
+                  <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center shrink-0', accountType === 'solo' ? 'bg-indigo-500 text-white' : 'bg-slate-100 text-slate-500')}>
+                    <Building2 className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="font-black text-slate-900 text-sm">Solo</p>
+                    <p className="text-slate-500 text-xs mt-0.5 leading-relaxed">Just me — I handle invoicing for my business on my own. Streamlined and fast.</p>
+                  </div>
+                  {accountType === 'solo' && <Check className="w-5 h-5 text-indigo-500 shrink-0 ml-auto mt-0.5" />}
+                </div>
+              </button>
+
+              <button
+                onClick={() => setAccountType('team')}
+                className={cn(
+                  'w-full text-left rounded-2xl border-2 p-5 transition-all',
+                  accountType === 'team' ? 'border-indigo-500 bg-indigo-50' : 'border-slate-100 bg-white hover:border-indigo-200'
+                )}
+              >
+                <div className="flex items-start gap-4">
+                  <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center shrink-0', accountType === 'team' ? 'bg-indigo-500 text-white' : 'bg-slate-100 text-slate-500')}>
+                    <Users className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="font-black text-slate-900 text-sm">Business Team</p>
+                    <p className="text-slate-500 text-xs mt-0.5 leading-relaxed">Multiple people need access — staff, accountants, managers. Invite your team after setup.</p>
+                  </div>
+                  {accountType === 'team' && <Check className="w-5 h-5 text-indigo-500 shrink-0 ml-auto mt-0.5" />}
+                </div>
+              </button>
+
+              <button
+                onClick={() => setAccountTypeChosen(true)}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm transition-all mt-2"
+              >
+                Continue with {accountType === 'team' ? 'Business Team' : 'Solo'} setup <ChevronRight className="w-4 h-4" />
+              </button>
+              <p className="text-center text-xs text-slate-400">You can change this later in your settings</p>
+            </div>
+          </div>
+          <p className="text-center text-sm text-slate-400 mt-4">
+            Already have an account?{' '}
+            <Link to="/login" className="text-indigo-600 font-bold hover:underline">Sign in</Link>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  /* ── Team invite step — shown after org creation for team accounts ── */
+  if (inviteStep) {
+    const handleAddInvite = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!inviteEmail.trim()) return;
+      setAddingInvite(true);
+      try {
+        const m = await api.team.invite(inviteEmail.trim(), inviteRole);
+        setPendingInvites(prev => [...prev, { id: m.id, email: inviteEmail.trim(), role: inviteRole }]);
+        setInviteEmail('');
+      } catch (err) {
+        alert((err as Error).message);
+      } finally {
+        setAddingInvite(false);
+      }
+    };
+
+    const handleFinish = () => navigate('/generator');
+
+    const ROLE_LABELS: Record<InviteRole, string> = { admin: 'Admin', staff: 'Staff', accountant: 'Accountant' };
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="flex justify-center mb-6">
+            <LogoMark size={48} />
+          </div>
+          <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+            <div className="bg-indigo-600 px-8 py-6 text-white text-center">
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <Check className="w-5 h-5 text-emerald-300" />
+                <span className="text-sm text-indigo-200 font-semibold">Account created!</span>
+              </div>
+              <h1 className="text-xl font-black tracking-tight">Invite your team</h1>
+              <p className="text-indigo-200 text-sm mt-1">Add the people who'll work in this account</p>
+            </div>
+            <div className="p-6">
+              <form onSubmit={handleAddInvite} className="flex gap-2 mb-4">
+                <div className="relative flex-1">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                  <input
+                    type="email" value={inviteEmail}
+                    onChange={e => setInviteEmail(e.target.value)}
+                    placeholder="colleague@company.com" required
+                    className="w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                  />
+                </div>
+                <div className="relative">
+                  <select value={inviteRole} onChange={e => setInviteRole(e.target.value as InviteRole)}
+                    className="appearance-none pl-3 pr-7 py-2.5 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white">
+                    <option value="staff">Staff</option>
+                    <option value="admin">Admin</option>
+                    <option value="accountant">Accountant</option>
+                  </select>
+                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                </div>
+                <button type="submit" disabled={addingInvite || !inviteEmail.trim()}
+                  className="flex items-center gap-1.5 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold disabled:opacity-40 transition-all">
+                  {addingInvite ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
+                </button>
+              </form>
+
+              {pendingInvites.length > 0 && (
+                <ul className="space-y-2 mb-5">
+                  {pendingInvites.map(inv => (
+                    <li key={inv.id} className="flex items-center justify-between px-3 py-2 bg-slate-50 rounded-xl text-sm">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                        <span className="text-slate-700 truncate">{inv.email}</span>
+                      </div>
+                      <span className="text-xs font-bold text-slate-500 shrink-0 ml-2">{ROLE_LABELS[inv.role]}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {pendingInvites.length === 0 && (
+                <div className="text-center py-4 text-slate-400 text-sm mb-2">
+                  Add team members above — they'll receive an invite email.
+                </div>
+              )}
+
+              <button onClick={handleFinish}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm transition-all">
+                <Check className="w-4 h-4" />
+                {pendingInvites.length > 0 ? `Done — launch KraaFo` : 'Skip for now — launch KraaFo'}
+              </button>
+              {pendingInvites.length === 0 && (
+                <p className="text-center text-xs text-slate-400 mt-2">You can invite your team later from the Team page</p>
+              )}
+            </div>
           </div>
         </div>
       </div>

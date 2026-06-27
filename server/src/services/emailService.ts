@@ -496,3 +496,40 @@ function buildEmailHtml(invoice: any, org: any, message: string, docType: string
 </body>
 </html>`;
 }
+
+export async function sendTeamInvite(member: any, org: any, inviteToken: string): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return; // silently skip if email not configured
+
+  const resend = new Resend(apiKey);
+  const inviteUrl = `${FRONTEND_URL}/join/${inviteToken}`;
+  const roleLabels: Record<string, string> = { admin: 'Admin', staff: 'Staff', accountant: 'Accountant' };
+  const roleLabel = roleLabels[member.role] || member.role;
+
+  const html = emailShell(
+    '#4f46e5',
+    `You've been invited to join ${org.name} on KraaFo`,
+    `You've been added as a ${roleLabel}`,
+    `
+    <p style="margin:0 0 16px;color:#374151;font-size:15px">Hi${member.name ? ` ${member.name}` : ''},</p>
+    <p style="margin:0 0 16px;color:#374151;font-size:15px">
+      <strong>${org.name}</strong> has invited you to collaborate on their KraaFo account as a <strong>${roleLabel}</strong>.
+    </p>
+    <p style="margin:0 0 24px;color:#374151;font-size:15px">
+      Click below to set up your password and get started. This invite link expires after you use it.
+    </p>
+    ${cta(inviteUrl, 'Accept Invite & Set Up Account')}
+    <p style="margin:24px 0 0;color:#6b7280;font-size:13px">
+      If you weren't expecting this invite, you can safely ignore this email.
+    </p>
+    `,
+    `This invite was sent by ${org.name} via KraaFo &mdash; Professional Invoicing for businesses worldwide.`
+  );
+
+  await resend.emails.send({
+    from: FROM_ADDRESS,
+    to: member.email,
+    subject: `You've been invited to join ${org.name} on KraaFo`,
+    html,
+  });
+}

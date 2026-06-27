@@ -63,7 +63,7 @@ const DEMO_ORG = {
 
 export default function Generator() {
   const navigate = useNavigate();
-  const { org, setOrg, loading: orgLoading } = useOrg();
+  const { org, setOrg, loading: orgLoading, canManageTeam } = useOrg();
   const [items, setItems] = useState<InvoiceItem[]>([{ description: '', quantity: 1, unit: 'session', unit_price: 0, amount: 0 }]);
   const [aiLoading, setAiLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -679,6 +679,11 @@ export default function Generator() {
               </button>
             )}
 
+            {canManageTeam && !isDemo && (
+              <button onClick={() => navigate('/team')} className="p-2 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all" title="Team members">
+                <Users className="w-4 h-4" />
+              </button>
+            )}
             <button onClick={() => navigate('/setup')} className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all" title="Settings">
               <Settings className="w-4 h-4" />
             </button>

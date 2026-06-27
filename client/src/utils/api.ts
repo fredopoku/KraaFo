@@ -177,6 +177,22 @@ export const api = {
       request<{ org: any; token: string }>('/auth/set-password', { method: 'POST', body: JSON.stringify({ orgId, password }) }),
     reset: (email: string, password: string) =>
       request<{ org: any; token: string }>('/auth/reset', { method: 'POST', body: JSON.stringify({ email, password }) }),
+    getInvite: (token: string) =>
+      request<{ email: string; orgName: string; role: string }>(`/auth/join/${token}`),
+    acceptInvite: (token: string, name: string, password: string) =>
+      request<{ org: any; token: string; role: string }>(`/auth/join/${token}`, { method: 'POST', body: JSON.stringify({ name, password }) }),
+  },
+
+  team: {
+    list: () => request<any[]>('/team'),
+    invite: (email: string, role: string, name?: string) =>
+      request<any>('/team/invite', { method: 'POST', body: JSON.stringify({ email, role, name }) }),
+    changeRole: (memberId: string, role: string) =>
+      request<any>(`/team/${memberId}/role`, { method: 'PATCH', body: JSON.stringify({ role }) }),
+    remove: (memberId: string) =>
+      request<any>(`/team/${memberId}`, { method: 'DELETE' }),
+    resendInvite: (memberId: string) =>
+      request<any>(`/team/${memberId}/resend`, { method: 'POST' }),
   },
 
   pdf: {

@@ -5,8 +5,12 @@ import db from '../db/schema';
 export const JWT_SECRET = process.env.JWT_SECRET || 'krafo-dev-secret-change-in-prod';
 export const JWT_EXPIRES = '30d';
 
+export type UserRole = 'owner' | 'admin' | 'staff' | 'accountant';
+
 export interface AuthPayload {
   orgId: string;
+  userId: string;      // org.id for owner, team_member.id for members
+  role: UserRole;
   email: string;
 }
 
@@ -22,7 +26,14 @@ export function signToken(payload: AuthPayload): string {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES });
 }
 
-// Routes that don't need a user token
+export function canWrite(role: UserRole): boolean {
+  return role === 'owner' || role === 'admin' || role === 'staff';
+}
+
+export function canManageTeam(role: UserRole): boolean {
+  return role === 'owner' || role === 'admin';
+}
+
 const PUBLIC_PREFIXES = [
   '/api/auth/',
   '/api/stats',
@@ -31,18 +42,15 @@ const PUBLIC_PREFIXES = [
   '/api/health',
   '/api/subscribers',
   '/api/feedback/highlights',
+  '/api/team/join',
 ];
 
-// POST /api/feedback is public (anonymous rating); all other feedback routes need admin
 function isPublic(req: Request): boolean {
   const p = req.path;
   if (PUBLIC_PREFIXES.some(prefix => p.startsWith(prefix))) return true;
-  // Shareable invoice view
   if (req.method === 'GET' && /^\/api\/invoices\/[^/]+\/public$/.test(p)) return true;
-  // Anonymous feedback submission
   if (req.method === 'POST' && p === '/api/feedback') return true;
-  // Admin routes use their own token
-  if (p.startsWith('/api/admin') || p.startsWith('/api/broadcasts') || p.startsWith('/api/admin')) return true;
+  if (p.startsWith('/api/admin') || p.startsWith('/api/broadcasts')) return true;
   return false;
 }
 
@@ -60,7 +68,6 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
   try {
     const payload = jwt.verify(token, JWT_SECRET) as AuthPayload;
     req.auth = payload;
-    // Touch last_active_at (fire-and-forget)
     db.prepare("UPDATE organizations SET last_active_at = datetime('now') WHERE id = ?").run(payload.orgId);
     next();
   } catch {

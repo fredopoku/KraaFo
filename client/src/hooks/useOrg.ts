@@ -4,6 +4,15 @@ import { api } from '../utils/api';
 
 const TOKEN_KEY = 'krafo_token';
 
+export type UserRole = 'owner' | 'admin' | 'staff' | 'accountant';
+
+export interface TokenPayload {
+  orgId: string;
+  userId: string;
+  role: UserRole;
+  email: string;
+}
+
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
 }
@@ -16,10 +25,10 @@ export function clearToken(): void {
   localStorage.removeItem(TOKEN_KEY);
 }
 
-function decodeOrgId(token: string): string | null {
+export function decodeToken(token: string): TokenPayload | null {
   try {
     const payload = JSON.parse(atob(token.split('.')[1]));
-    return payload.orgId || null;
+    return payload.orgId ? payload as TokenPayload : null;
   } catch {
     return null;
   }
@@ -31,7 +40,13 @@ export function useOrg() {
   const [error, setError] = useState<string | null>(null);
 
   const token = getToken();
-  const orgId = token ? decodeOrgId(token) : null;
+  const decoded = token ? decodeToken(token) : null;
+  const orgId = decoded?.orgId ?? null;
+  const role: UserRole = decoded?.role ?? 'owner';
+
+  const canWrite = role === 'owner' || role === 'admin' || role === 'staff';
+  const canManageTeam = role === 'owner' || role === 'admin';
+  const isOwner = role === 'owner';
 
   useEffect(() => {
     if (!orgId) { setLoading(false); return; }
@@ -52,5 +67,5 @@ export function useOrg() {
     setOrgState(null);
   };
 
-  return { org, setOrg: saveOrg, clearOrg, loading, error, setError };
+  return { org, setOrg: saveOrg, clearOrg, loading, error, setError, role, canWrite, canManageTeam, isOwner };
 }

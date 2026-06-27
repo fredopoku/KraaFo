@@ -40,6 +40,7 @@ export interface Organization {
   dkim_domain?: string;
   dkim_selector?: string;
   dkim_private_key?: string;
+  account_type?: 'solo' | 'team';
   created_at: string;
   updated_at: string;
 }

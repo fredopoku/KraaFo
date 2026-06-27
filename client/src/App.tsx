@@ -11,6 +11,8 @@ import Admin from './pages/Admin';
 import Changelog from './pages/Changelog';
 import InvoiceView from './pages/InvoiceView';
 import Login from './pages/Login';
+import Join from './pages/Join';
+import Team from './pages/Team';
 import { trackPage } from './utils/tracker';
 
 function RouterTracker() {
@@ -37,6 +39,8 @@ export default function App() {
         <Route path="/changelog" element={<Changelog />} />
         <Route path="/view/:id" element={<InvoiceView />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/join/:token" element={<Join />} />
+        <Route path="/team" element={<Team />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

@@ -21,6 +21,7 @@ import changelogRouter from './routes/changelog';
 import trackRouter from './routes/track';
 import statsRouter from './routes/stats';
 import authRouter from './routes/auth';
+import teamRouter from './routes/team';
 import { requireAuth } from './middleware/auth';
 import { startScheduler } from './services/scheduler';
 
@@ -77,6 +78,7 @@ app.use('/api/changelog', changelogRouter);
 app.use('/api/track', trackRouter);
 app.use('/api/stats', statsRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/team', teamRouter);
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', version: '1.0.0', timestamp: new Date().toISOString() });

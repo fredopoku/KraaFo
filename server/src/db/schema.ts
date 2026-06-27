@@ -256,6 +256,24 @@ addCol('organizations', 'day7_email_sent', 'INTEGER DEFAULT 0');
 addCol('organizations', 'email_unsubscribed', 'INTEGER DEFAULT 0');
 addCol('organizations', 'password_hash', 'TEXT');
 addCol('organizations', 'last_active_at', 'TEXT DEFAULT (datetime(\'now\'))');
+addCol('organizations', 'account_type', "TEXT DEFAULT 'solo'");
+
+// Team members table
+db.exec(`
+  CREATE TABLE IF NOT EXISTS team_members (
+    id TEXT PRIMARY KEY,
+    org_id TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    name TEXT,
+    email TEXT NOT NULL,
+    password_hash TEXT,
+    role TEXT NOT NULL DEFAULT 'staff',
+    invite_token TEXT UNIQUE,
+    invite_accepted INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now'))
+  );
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_team_members_email_org ON team_members(email, org_id);
+`);
 
 // Seed initial changelog entries (INSERT OR IGNORE — safe to run on every boot)
 db.exec(`
