@@ -4,8 +4,7 @@ import db from '../db/schema';
 const router = Router();
 
 router.get('/', (req: Request, res: Response) => {
-  const { org_id } = req.query;
-  if (!org_id) return res.status(400).json({ error: 'org_id required' });
+  const org_id = req.auth!.orgId;
 
   // Invoice financials
   const totalInvoiced = (db.prepare(

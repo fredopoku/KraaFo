@@ -17,7 +17,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!org) return;
-    api.analytics.get(org.id).then(d => { setData(d); setFetching(false); }).catch(() => setFetching(false));
+    api.analytics.get().then(d => { setData(d); setFetching(false); }).catch(() => setFetching(false));
     api.changelog.list().then(d => {
       const entries = d.entries || [];
       setChangelog(entries);
@@ -73,7 +73,7 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between gap-2" style={{ height: '68px' }}>
 
           {/* Brand — logo only on mobile, logo+name on sm+ */}
-          <button onClick={() => navigate('/')} className="shrink-0 hover:opacity-80 transition-opacity">
+          <button onClick={() => navigate('/generator')} className="shrink-0 hover:opacity-80 transition-opacity">
             <Logo size="sm" className="sm:hidden" />
             <Logo size="md" className="hidden sm:flex" />
             <span className="text-slate-200 hidden sm:block">|</span>

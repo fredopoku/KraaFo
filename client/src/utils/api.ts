@@ -142,7 +142,7 @@ export const api = {
   },
 
   analytics: {
-    get: (orgId: string) => request<any>(`/analytics?org_id=${orgId}`),
+    get: () => request<any>('/analytics'),
   },
 
   statement: {

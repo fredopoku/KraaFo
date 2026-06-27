@@ -713,7 +713,7 @@ export default function Generator() {
               </button>
             )}
 
-            {!isDemo && <button onClick={() => navigate('/dashboard')} className="hidden md:block p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all" title="Dashboard"><BarChart2 className="w-4 h-4" /></button>}
+            {!isDemo && <button onClick={() => navigate('/dashboard')} className="flex items-center gap-1.5 px-2 md:px-3 py-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all" title="Dashboard"><BarChart2 className="w-4 h-4 shrink-0" /><span className="hidden md:inline text-xs font-bold">Dashboard</span></button>}
             {!isDemo && <button onClick={() => navigate('/clients')} className="hidden md:block p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all" title="Clients"><Users className="w-4 h-4" /></button>}
 
             {/* Hamburger — mobile only, gives access to all nav */}
@@ -1151,6 +1151,14 @@ export default function Generator() {
                 >
                   {linkCopied ? <CheckCircle className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
                   {linkCopied ? 'Copied!' : 'Copy message'}
+                </button>
+
+                <button
+                  onClick={() => { setShowShareNudge(false); navigate('/dashboard'); }}
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-slate-200 text-slate-500 text-sm font-semibold hover:bg-slate-50 transition-colors"
+                >
+                  <BarChart2 className="w-4 h-4" />
+                  View Dashboard
                 </button>
               </div>
             </div>

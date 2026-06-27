@@ -59,20 +59,20 @@ export default function Admin() {
 
   const loadData = useCallback(async (t: string, d = 30) => {
     const [fb, subs, bcs, users, cl, analytics] = await Promise.all([
-      adminFetch<any>('/feedback', t),
-      adminFetch<any>('/subscribers', t),
-      adminFetch<any[]>('/broadcasts', t),
-      adminFetch<any>('/admin/users', t),
-      fetch(`${BASE}/changelog`).then(r => r.json()),
-      adminFetch<any>(`/admin/analytics?days=${d}`, t),
+      adminFetch<any>('/feedback', t).catch(() => null),
+      adminFetch<any>('/subscribers', t).catch(() => ({ subscribers: [], total: 0 })),
+      adminFetch<any[]>('/broadcasts', t).catch(() => []),
+      adminFetch<any>('/admin/users', t).catch(() => null),
+      fetch(`${BASE}/changelog`).then(r => r.json()).catch(() => ({ entries: [] })),
+      adminFetch<any>(`/admin/analytics?days=${d}`, t).catch(() => null),
     ]);
-    setFeedbackData(fb);
-    setSubCount(subs.total);
-    setSubscribers(subs.subscribers || []);
-    setBroadcasts(bcs);
-    setUsersData(users);
-    setChangelogEntries(cl.entries || []);
-    setAnalyticsData(analytics);
+    if (fb) setFeedbackData(fb);
+    setSubCount(subs?.total ?? 0);
+    setSubscribers(subs?.subscribers || []);
+    setBroadcasts(bcs || []);
+    if (users) setUsersData(users);
+    setChangelogEntries(cl?.entries || []);
+    if (analytics) setAnalyticsData(analytics);
   }, []);
 
   const refreshAnalytics = async (d: number) => {
@@ -307,7 +307,7 @@ export default function Admin() {
       <main className="max-w-6xl mx-auto px-4 py-6 space-y-5">
 
         {/* Stat cards — clickable */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
             {
               label: 'Avg Rating', icon: Star, color: 'text-amber-500', bg: 'bg-amber-50',
@@ -1604,7 +1604,7 @@ export default function Admin() {
                 const fmt = (n: number) => `${sym}${Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
                 const totalInvoiced = orgDetail.recentDocs.filter((d:any)=>d.type==='invoice').reduce((s:number,d:any)=>s+d.total,0);
                 const totalCollected = orgDetail.recentDocs.filter((d:any)=>d.type==='invoice').reduce((s:number,d:any)=>s+d.amount_paid,0);
-                const outstanding = orgDetail.recentDocs.filter((d:any)=>d.type==='invoice'&&d.status==='sent'||d.status==='overdue').reduce((s:number,d:any)=>s+d.balance_due,0);
+                const outstanding = orgDetail.recentDocs.filter((d:any)=>d.type==='invoice'&&(d.status==='sent'||d.status==='overdue')).reduce((s:number,d:any)=>s+d.balance_due,0);
                 const overdue = orgDetail.recentDocs.filter((d:any)=>d.status==='overdue').length;
                 return (
                   <div className="p-5 space-y-5">

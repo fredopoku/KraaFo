@@ -173,7 +173,7 @@ export default function Setup() {
       if (org) {
         const saved = await api.organizations.update(org.id, form);
         setOrg(saved);
-        navigate('/generator');
+        navigate(org ? '/dashboard' : '/generator');
       } else {
         const created = await api.organizations.create({ ...form, account_type: accountType });
         const { org: authedOrg, token } = await api.auth.setPassword(created.id, password);
@@ -181,7 +181,7 @@ export default function Setup() {
         if (accountType === 'team') {
           setInviteStep(true);
         } else {
-          navigate('/generator');
+          navigate(org ? '/dashboard' : '/generator');
         }
       }
     } catch (err) {
@@ -312,7 +312,7 @@ export default function Setup() {
       }
     };
 
-    const handleFinish = () => navigate('/generator');
+    const handleFinish = () => navigate(org ? '/dashboard' : '/generator');
 
     const ROLE_LABELS: Record<InviteRole, string> = { admin: 'Admin', staff: 'Staff', accountant: 'Accountant' };
 
@@ -667,9 +667,9 @@ export default function Setup() {
 
         {/* Footer Actions */}
         <div className="px-8 py-5 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
-          <button onClick={() => step > 1 ? setStep(s => s - 1) : navigate('/')} className="flex items-center gap-1.5 text-gray-500 hover:text-gray-700 text-sm font-medium transition-colors">
+          <button onClick={() => step > 1 ? setStep(s => s - 1) : navigate(org ? '/dashboard' : '/')} className="flex items-center gap-1.5 text-gray-500 hover:text-gray-700 text-sm font-medium transition-colors">
             <ChevronLeft className="w-4 h-4" />
-            {step > 1 ? 'Back' : 'Home'}
+            {step > 1 ? 'Back' : org ? 'Dashboard' : 'Home'}
           </button>
           {step < STEPS.length ? (
             <button

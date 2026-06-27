@@ -114,9 +114,9 @@ export default function Team() {
       {/* Header */}
       <header className="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <button onClick={() => navigate('/generator')}
+          <button onClick={() => navigate('/dashboard')}
             className="text-slate-400 hover:text-slate-600 transition-colors flex items-center gap-1.5 text-sm font-semibold">
-            <ArrowLeft className="w-4 h-4" /> Back
+            <ArrowLeft className="w-4 h-4" /> Dashboard
           </button>
           <Logo size="md" />
         </div>
