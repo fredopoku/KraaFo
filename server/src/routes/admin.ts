@@ -82,7 +82,7 @@ router.get('/orgs/:id', adminAuth, (req: Request, res: Response) => {
   `).all(req.params.id) as any[];
 
   const recentQuotes = db.prepare(`
-    SELECT id, number, status, client_name, total, issue_date, expiry_date, currency_symbol
+    SELECT id, number, status, client_name, total, issue_date, expiry_date
     FROM quotes WHERE org_id = ? ORDER BY created_at DESC LIMIT 15
   `).all(req.params.id) as any[];
 

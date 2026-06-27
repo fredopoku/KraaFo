@@ -92,7 +92,10 @@ export default function Admin() {
     try {
       const data = await adminFetch<any>(`/admin/orgs/${id}`, token);
       setOrgDetail(data);
-    } catch {} finally { setOrgDetailLoading(false); }
+    } catch (err: any) {
+      showToast('error', err.message || 'Could not load org details');
+      setSelectedOrgId(null);
+    } finally { setOrgDetailLoading(false); }
   };
 
   const closeOrgDetail = () => { setSelectedOrgId(null); setOrgDetail(null); };
@@ -1711,7 +1714,7 @@ export default function Admin() {
                                 </div>
                                 <div className="text-[10px] text-slate-400 mt-0.5">{q.client_name || '—'} · {q.issue_date}</div>
                               </div>
-                              <div className="text-sm font-black text-slate-800 shrink-0">{q.currency_symbol||'$'}{Number(q.total||0).toLocaleString()}</div>
+                              <div className="text-sm font-black text-slate-800 shrink-0">{orgDetail.org.currency_symbol||'$'}{Number(q.total||0).toLocaleString()}</div>
                             </div>
                           );
                         })}
