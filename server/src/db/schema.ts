@@ -289,6 +289,41 @@ addCol('invoices', 'recurring_parent_id', 'TEXT'); // points to original templat
 db.exec(`
   INSERT OR IGNORE INTO changelog (id, title, description, tag, published_at) VALUES
   (
+    'cl-team-accounts-2026',
+    'Team Accounts & Multi-User Access',
+    'Invite your whole team to KraaFo. Choose between a Solo or Business Team account at setup, then add colleagues by email with role-based permissions — Owner, Admin, Staff, or Accountant. Pending invites get a branded email with a one-click join link.',
+    'New',
+    '2026-03-01 00:00:00'
+  ),
+  (
+    'cl-payment-tracking-2026',
+    'Payment Tracking Across All Documents',
+    'Record payments directly on invoices, quotes, and receipts. Mark an invoice fully or partially paid, log the payment method, and watch the confetti fly on full payment. Quotes can be accepted, declined, or converted to an invoice in one click.',
+    'New',
+    '2026-04-01 00:00:00'
+  ),
+  (
+    'cl-overdue-reminders-2026',
+    'Automatic Overdue Detection & Payment Reminders',
+    'Invoices flip to Overdue automatically once the due date passes. Clients receive escalating reminder emails at 1, 7, and 14 days overdue — gentle first, firm second, urgent third — sent from your own email address so replies come straight to you.',
+    'New',
+    '2026-04-15 00:00:00'
+  ),
+  (
+    'cl-open-generator-2026',
+    'Try Before You Sign Up',
+    'The invoice generator is now open to everyone — no account needed. Create, preview, and download documents in full demo mode. Sign up only when you want to save, send, or access documents across devices.',
+    'Improved',
+    '2026-05-01 00:00:00'
+  ),
+  (
+    'cl-revenue-dashboard-2026',
+    'Revenue Dashboard Upgrade',
+    'Your dashboard now shows what actually matters: money collected (not just fully paid invoices), your collection rate %, overdue invoices at a glance with one-click access, plus receipt revenue and quote conversion rate side-by-side.',
+    'Improved',
+    '2026-05-15 00:00:00'
+  ),
+  (
     'cl-recurring-invoices-2026',
     'Recurring Invoices',
     'Set any invoice to repeat automatically — weekly, monthly, quarterly, or yearly. The system generates a fresh invoice on schedule, copies all line items, and marks the original as your billing template. Set an optional end date or let it run indefinitely.',
