@@ -71,12 +71,12 @@ export default function Login() {
 
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div>
-                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5 block">Business email</label>
+                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5 block">Email</label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                       <input
                         type="email" value={email} onChange={e => { setEmail(e.target.value); setError(''); }}
-                        placeholder="you@yourbusiness.com" autoFocus required
+                        placeholder="you@example.com" autoFocus required
                         className="w-full pl-9 pr-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all"
                       />
                     </div>
@@ -124,11 +124,11 @@ export default function Login() {
 
                 <form onSubmit={handleReset} className="space-y-4">
                   <div>
-                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5 block">Business email</label>
+                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5 block">Email</label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                       <input type="email" value={email} onChange={e => { setEmail(e.target.value); setError(''); }}
-                        placeholder="you@yourbusiness.com" autoFocus required
+                        placeholder="you@example.com" autoFocus required
                         className="w-full pl-9 pr-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all"
                       />
                     </div>
