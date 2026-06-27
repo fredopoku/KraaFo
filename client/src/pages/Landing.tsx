@@ -900,6 +900,7 @@ export default function Landing() {
           <Logo size="lg" />
           <div className="flex items-center gap-3">
             <Link to="/generator?demo=true" className="text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors hidden sm:block">Demo</Link>
+            <Link to="/login" className="text-sm font-bold text-slate-600 hover:text-indigo-600 transition-colors hidden sm:block">Sign in</Link>
             <Link to="/setup" className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all btn-glow shadow-sm">
               Get Started <ArrowRight className="w-3.5 h-3.5" />
             </Link>

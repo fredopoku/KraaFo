@@ -163,6 +163,10 @@ export const api = {
     remove: (id: string) => request<{ success: boolean }>(`/changelog/${id}`, { method: 'DELETE' }),
   },
 
+  auth: {
+    login: (email: string) => request<any>('/auth/login', { method: 'POST', body: JSON.stringify({ email }) }),
+  },
+
   pdf: {
     preview: (invoiceId: string) => pdfOpen(`${BASE}/pdf/${invoiceId}?inline=true`, 'invoice.pdf'),
     download: (invoiceId: string) => pdfOpen(`${BASE}/pdf/${invoiceId}`, 'invoice.pdf'),

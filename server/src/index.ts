@@ -20,6 +20,7 @@ import adminRouter from './routes/admin';
 import changelogRouter from './routes/changelog';
 import trackRouter from './routes/track';
 import statsRouter from './routes/stats';
+import authRouter from './routes/auth';
 import { startScheduler } from './services/scheduler';
 
 const app = express();
@@ -71,6 +72,7 @@ app.use('/api/admin', adminRouter);
 app.use('/api/changelog', changelogRouter);
 app.use('/api/track', trackRouter);
 app.use('/api/stats', statsRouter);
+app.use('/api/auth', authRouter);
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', version: '1.0.0', timestamp: new Date().toISOString() });

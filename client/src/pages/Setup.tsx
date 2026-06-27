@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Upload, Check, ChevronRight, ChevronLeft, Loader2, Building2, Palette, CreditCard, FileText, ShieldCheck } from 'lucide-react';
 import { LogoMark } from '../components/Logo';
 import { api } from '../utils/api';
@@ -197,7 +197,12 @@ export default function Setup() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden">
+      <div className="w-full max-w-2xl">
+      <p className="text-center text-sm text-slate-500 mb-4">
+        Already have an account?{' '}
+        <Link to="/login" className="text-indigo-600 font-bold hover:underline">Sign in with your email</Link>
+      </p>
+      <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
 
         {/* Header */}
         <div style={{ background: form.primary_color }} className="px-8 py-6 text-white">
@@ -471,6 +476,7 @@ export default function Setup() {
             </button>
           )}
         </div>
+      </div>
       </div>
     </div>
   );
