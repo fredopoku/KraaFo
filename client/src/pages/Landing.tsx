@@ -1419,7 +1419,7 @@ export default function Landing() {
             ))}
           </div>
           <Link to="/generator?demo=true" className="inline-flex items-center gap-2 text-indigo-600 font-bold text-sm hover:text-indigo-800 transition-colors">
-            <Sparkles className="w-4 h-4" /> Try it live — no sign-up required <ArrowRight className="w-4 h-4" />
+            <Sparkles className="w-4 h-4" /> Try without signing up <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </section>
@@ -1470,7 +1470,7 @@ export default function Landing() {
           </div>
           <div className="text-center mb-12">
             <Link to="/generator?demo=true" className="inline-flex items-center gap-2 text-indigo-600 font-bold text-sm hover:text-indigo-800 transition-colors">
-              <Sparkles className="w-4 h-4" /> Try it live — no sign-up required <ArrowRight className="w-4 h-4" />
+              <Sparkles className="w-4 h-4" /> Try without signing up <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
           <div className="flex items-center gap-4 mb-10">
