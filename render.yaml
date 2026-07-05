@@ -48,7 +48,7 @@ services:
       - key: RESEND_FROM
         value: invoices@kraafo.com
       - key: RESEND_MARKETING_FROM
-        sync: false  # set to e.g. hello@kraafo.com for welcome/broadcast emails; falls back to RESEND_FROM if unset
+        value: invoices@kraafo.com
 
       # Email via custom SMTP (alternative to Resend, set in Render dashboard)
       - key: SMTP_HOST
