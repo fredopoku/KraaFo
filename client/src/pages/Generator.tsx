@@ -503,19 +503,22 @@ export default function Generator() {
   const buildMobileMessage = () => {
     if (!savedInvoice || !org) return '';
     const sym = org.currency_symbol || '$';
+    const orgName = org.name.trim();
     const docType = savedInvoice.type === 'receipt' ? 'Receipt' : savedInvoice.type === 'quote' ? 'Quote' : 'Invoice';
+    const pdfUrl = `${window.location.origin}${savedInvoice.type === 'quote' ? '/api/pdf/quote/' : '/api/pdf/'}${savedInvoice.id}`;
     const lines = [
-      `Hi${savedInvoice.client_name ? ' ' + savedInvoice.client_name : ''},`,
+      `Hi${savedInvoice.client_name ? ' ' + savedInvoice.client_name.trim() : ''},`,
       ``,
-      `Please find your ${docType.toLowerCase()} from ${org.name}.`,
+      `Please find your ${docType.toLowerCase()} from ${orgName}.`,
       ``,
       `📄 ${docType}: *${savedInvoice.number}*`,
       `💰 Total: *${formatCurrency(savedInvoice.total ?? 0, sym)}*`,
       ...(savedInvoice.due_date ? [`📅 Due: *${savedInvoice.due_date}*`] : []),
       ``,
-      `Thank you for your business! 🙏`,
+      `👉 View & download: ${pdfUrl}`,
       ``,
-      `— ${org.name}`,
+      `Thank you for your business!`,
+      `— ${orgName}`,
     ];
     return lines.join('\n');
   };
@@ -524,8 +527,9 @@ export default function Generator() {
     if (!savedInvoice || !org) return '';
     const sym = org.currency_symbol || '$';
     const docType = savedInvoice.type === 'receipt' ? 'Receipt' : savedInvoice.type === 'quote' ? 'Quote' : 'Invoice';
-    const due = savedInvoice.due_date ? ` Due: ${savedInvoice.due_date}.` : '';
-    return `${docType} ${savedInvoice.number} from ${org.name}. Total: ${formatCurrency(savedInvoice.total ?? 0, sym)}.${due}`;
+    const due = savedInvoice.due_date ? `. Due ${savedInvoice.due_date}` : '';
+    const pdfUrl = `${window.location.origin}${savedInvoice.type === 'quote' ? '/api/pdf/quote/' : '/api/pdf/'}${savedInvoice.id}`;
+    return `${docType} ${savedInvoice.number} · ${formatCurrency(savedInvoice.total ?? 0, sym)}${due}. View: ${pdfUrl}`.slice(0, 160);
   };
 
   const handleWhatsApp = () => {

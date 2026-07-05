@@ -63,15 +63,22 @@ router.get('/whatsapp/:invoiceId', (req: Request, res: Response) => {
   const org = db.prepare('SELECT * FROM organizations WHERE id = ?').get(invoice.org_id) as any;
   const sym = org.currency_symbol || '$';
   const docType = isQuote ? 'Quote' : invoice.type === 'receipt' ? 'Receipt' : 'Invoice';
+  const orgName = (org.name as string).trim();
+
+  const FRONTEND_URL = process.env.FRONTEND_URL || 'https://kraafo.com';
+  const pdfUrl = isQuote
+    ? `${FRONTEND_URL}/api/pdf/quote/${invoice.id}`
+    : `${FRONTEND_URL}/api/pdf/${invoice.id}`;
 
   const message = encodeURIComponent(
-    `Hi${invoice.client_name ? ' ' + invoice.client_name : ''},\n\n` +
-    `Please find your ${docType.toLowerCase()} from ${org.name}.\n\n` +
+    `Hi${invoice.client_name ? ' ' + invoice.client_name.trim() : ''},\n\n` +
+    `Please find your ${docType.toLowerCase()} from ${orgName}.\n\n` +
     `📄 ${docType}: *${invoice.number}*\n` +
     `💰 Total: *${formatMoney(invoice.total ?? 0, sym)}*\n` +
     (invoice.due_date ? `📅 Due: *${invoice.due_date}*\n` : '') +
-    `\nThank you for your business! 🙏\n\n` +
-    `— ${org.name}`
+    `\n👉 View & download: ${pdfUrl}\n\n` +
+    `Thank you for your business!\n` +
+    `— ${orgName}`
   );
 
   // If org has a WhatsApp number, use it as recipient
