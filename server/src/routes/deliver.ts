@@ -3,6 +3,7 @@ import { generateKeyPairSync } from 'crypto';
 import rateLimit from 'express-rate-limit';
 import db from '../db/schema';
 import { sendInvoiceEmail } from '../services/emailService';
+import { formatMoney } from '../utils/formatMoney';
 
 const router = Router();
 
@@ -67,7 +68,7 @@ router.get('/whatsapp/:invoiceId', (req: Request, res: Response) => {
     `Hi${invoice.client_name ? ' ' + invoice.client_name : ''},\n\n` +
     `Please find your ${docType.toLowerCase()} from ${org.name}.\n\n` +
     `📄 ${docType}: *${invoice.number}*\n` +
-    `💰 Total: *${sym}${invoice.total?.toFixed(2)}*\n` +
+    `💰 Total: *${formatMoney(invoice.total ?? 0, sym)}*\n` +
     (invoice.due_date ? `📅 Due: *${invoice.due_date}*\n` : '') +
     `\nThank you for your business! 🙏\n\n` +
     `— ${org.name}`
@@ -99,16 +100,16 @@ router.get('/payment-links/:invoiceId', (req: Request, res: Response) => {
     links.paypal = `https://www.paypal.com/paypalme/${org.paypal_email.split('@')[0]}/${amount}`;
   }
   if (org.mpesa_number) {
-    links.mpesa = { number: org.mpesa_number, amount, reference: ref, instructions: `Send ${sym}${amount.toFixed(2)} to M-Pesa number ${org.mpesa_number}. Use reference: ${ref}` };
+    links.mpesa = { number: org.mpesa_number, amount, reference: ref, instructions: `Send ${formatMoney(amount, sym)} to M-Pesa number ${org.mpesa_number}. Use reference: ${ref}` };
   }
   if (org.mtn_number) {
-    links.mtn = { number: org.mtn_number, amount, reference: ref, instructions: `Send ${sym}${amount.toFixed(2)} to MTN Mobile Money ${org.mtn_number}. Reference: ${ref}` };
+    links.mtn = { number: org.mtn_number, amount, reference: ref, instructions: `Send ${formatMoney(amount, sym)} to MTN Mobile Money ${org.mtn_number}. Reference: ${ref}` };
   }
   if (org.airtel_number) {
-    links.airtel = { number: org.airtel_number, amount, reference: ref, instructions: `Send ${sym}${amount.toFixed(2)} to Airtel Money ${org.airtel_number}. Reference: ${ref}` };
+    links.airtel = { number: org.airtel_number, amount, reference: ref, instructions: `Send ${formatMoney(amount, sym)} to Airtel Money ${org.airtel_number}. Reference: ${ref}` };
   }
   if (org.telecel_number) {
-    links.telecel = { number: org.telecel_number, amount, reference: ref, instructions: `Send ${sym}${amount.toFixed(2)} to Telecel Cash ${org.telecel_number}. Reference: ${ref}` };
+    links.telecel = { number: org.telecel_number, amount, reference: ref, instructions: `Send ${formatMoney(amount, sym)} to Telecel Cash ${org.telecel_number}. Reference: ${ref}` };
   }
 
   res.json({ amount, currency_symbol: sym, reference: ref, links });

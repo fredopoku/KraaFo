@@ -4,6 +4,7 @@ import db from '../db/schema';
 import { generatePDF } from './pdfService';
 import { getLogoBase64 } from './imageService';
 import QRCode from 'qrcode';
+import { formatMoney } from '../utils/formatMoney';
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
 const FROM_ADDRESS = process.env.RESEND_FROM || 'invoices@kraafo.com';
@@ -121,7 +122,7 @@ export async function sendInvoiceEmail(
     ``,
     `Kindly review the attached PDF for the complete breakdown of services and payment details.`,
     ``,
-    `Amount Due: ${sym}${invoice.total?.toFixed(2)}`,
+    `Amount Due: ${formatMoney(invoice.total ?? 0, sym)}`,
     ...(invoice.due_date ? [`Payment Due By: ${invoice.due_date}`] : []),
     ``,
     `Should you have any questions or require clarification, please do not hesitate to contact us.`,
@@ -373,20 +374,20 @@ export async function sendPaymentReminder(invoice: any, org: any, daysOverdue: n
 
   const resend = new Resend(apiKey);
   const sym = org.currency_symbol || '$';
-  const outstanding = (invoice.total - (invoice.amount_paid || 0)).toFixed(2);
+  const outstanding = formatMoney(invoice.total - (invoice.amount_paid || 0), sym);
   const viewUrl = `${FRONTEND_URL}/view/${invoice.id}`;
 
   const urgency = daysOverdue <= 1
     ? { subject: `Friendly reminder: Invoice ${invoice.number} is due`, tone: 'gentle' }
     : daysOverdue <= 7
-    ? { subject: `Invoice ${invoice.number} is overdue — ${sym}${outstanding} outstanding`, tone: 'firm' }
-    : { subject: `Final reminder: Invoice ${invoice.number} — ${sym}${outstanding} unpaid`, tone: 'urgent' };
+    ? { subject: `Invoice ${invoice.number} is overdue — ${outstanding} outstanding`, tone: 'firm' }
+    : { subject: `Final reminder: Invoice ${invoice.number} — ${outstanding} unpaid`, tone: 'urgent' };
 
   const body = daysOverdue <= 1 ? `
     <p style="margin:0 0 16px;color:#374151;font-size:15px">Hi ${invoice.client_name || 'there'},</p>
     <p style="margin:0 0 16px;color:#374151;font-size:15px">
       This is a friendly reminder that invoice <strong>${invoice.number}</strong> from <strong>${org.name}</strong>
-      for <strong>${sym}${outstanding}</strong> was due today.
+      for <strong>${outstanding}</strong> was due today.
     </p>
     <p style="margin:0 0 24px;color:#6b7280;font-size:14px">If you've already sent payment, please ignore this message. Otherwise, you can view your invoice below.</p>
     ${cta(viewUrl, 'View Invoice')}
@@ -394,7 +395,7 @@ export async function sendPaymentReminder(invoice: any, org: any, daysOverdue: n
     <p style="margin:0 0 16px;color:#374151;font-size:15px">Hi ${invoice.client_name || 'there'},</p>
     <p style="margin:0 0 16px;color:#374151;font-size:15px">
       Invoice <strong>${invoice.number}</strong> from <strong>${org.name}</strong> is now <strong>${daysOverdue} days overdue</strong>.
-      The outstanding balance is <strong>${sym}${outstanding}</strong>.
+      The outstanding balance is <strong>${outstanding}</strong>.
     </p>
     <p style="margin:0 0 24px;color:#6b7280;font-size:14px">Please arrange payment at your earliest convenience.</p>
     ${cta(viewUrl, 'View & Pay Invoice')}
@@ -402,7 +403,7 @@ export async function sendPaymentReminder(invoice: any, org: any, daysOverdue: n
     <p style="margin:0 0 16px;color:#374151;font-size:15px">Hi ${invoice.client_name || 'there'},</p>
     <p style="margin:0 0 16px;color:#374151;font-size:15px">
       This is a final reminder for invoice <strong>${invoice.number}</strong> from <strong>${org.name}</strong>.
-      This invoice is <strong>${daysOverdue} days overdue</strong> with <strong>${sym}${outstanding}</strong> unpaid.
+      This invoice is <strong>${daysOverdue} days overdue</strong> with <strong>${outstanding}</strong> unpaid.
     </p>
     <p style="margin:0 0 24px;color:#6b7280;font-size:14px">Please contact ${org.name} immediately to resolve this.</p>
     ${cta(viewUrl, 'View Invoice')}
@@ -536,7 +537,7 @@ function buildEmailHtml(invoice: any, org: any, message: string, docType: string
                   <table width="100%" cellpadding="0" cellspacing="0" border="0">
                     <tr>
                       <td style="color:#111827;font-size:15px;font-weight:800">Total Due:</td>
-                      <td align="right" style="color:${color};font-size:20px;font-weight:900">${sym}${invoice.total?.toFixed(2)}</td>
+                      <td align="right" style="color:${color};font-size:20px;font-weight:900">${formatMoney(invoice.total ?? 0, sym)}</td>
                     </tr>
                   </table>
                 </td>

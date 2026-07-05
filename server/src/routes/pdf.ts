@@ -1,10 +1,22 @@
 import { Router, Request, Response } from 'express';
+import rateLimit from 'express-rate-limit';
 import db from '../db/schema';
 import { generatePDF } from '../services/pdfService';
 import { getLogoBase64 } from '../services/imageService';
 import { InvoiceTemplateData } from '../templates/invoiceTemplate';
+import { verifyTurnstile } from '../utils/turnstile';
 import path from 'path';
 import QRCode from 'qrcode';
+
+// Rate limit for the unauthenticated guest PDF endpoint.
+// Puppeteer rendering is expensive — cap per IP to prevent DoS.
+const guestPdfLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many PDF requests — please wait before trying again.' },
+});
 
 const router = Router();
 
@@ -341,6 +353,95 @@ router.get('/statement/:clientId', async (req: Request, res: Response) => {
   } catch (err) {
     console.error('Statement PDF error:', err);
     res.status(500).json({ error: 'Failed to generate statement PDF' });
+  }
+});
+
+// Guest PDF download — no account required.
+// Protected by Turnstile (when configured) + IP rate limit.
+router.post('/guest', guestPdfLimiter, async (req: Request, res: Response) => {
+  const { cf_turnstile_response, type, number, issue_date, due_date, paid_date, status,
+          org: orgData, client: clientData, items: itemsData,
+          subtotal, discount_type, discount_value, discount_amount,
+          tax_rate, tax_amount, total, amount_paid, balance_due,
+          notes, terms, footer_text } = req.body;
+
+  if (!type || !['invoice', 'receipt', 'quote'].includes(type)) {
+    return res.status(400).json({ error: 'Invalid document type' });
+  }
+
+  // Verify Turnstile when configured; skip in dev (no secret set)
+  const ip = (req.headers['x-forwarded-for'] as string) || req.ip;
+  const human = await verifyTurnstile(cf_turnstile_response, ip);
+  if (!human) return res.status(403).json({ error: 'Bot check failed — please try again.' });
+
+  try {
+    const safeItems = Array.isArray(itemsData)
+      ? itemsData.slice(0, 50).map((it: any) => ({
+          description: String(it.description || '').slice(0, 500),
+          quantity: Number(it.quantity) || 1,
+          unit: String(it.unit || 'unit').slice(0, 50),
+          unit_price: Number(it.unit_price) || 0,
+          amount: Number(it.amount) || 0,
+        }))
+      : [];
+
+    const templateData: InvoiceTemplateData = {
+      type: type as 'invoice' | 'receipt' | 'quote',
+      number: String(number || 'DRAFT').slice(0, 50),
+      issue_date: String(issue_date || ''),
+      due_date: due_date ? String(due_date) : undefined,
+      paid_date: paid_date ? String(paid_date) : undefined,
+      status: String(status || 'draft'),
+      org: {
+        name: String(orgData?.name || 'Your Business').slice(0, 200),
+        email: orgData?.email ? String(orgData.email).slice(0, 200) : undefined,
+        phone: orgData?.phone ? String(orgData.phone).slice(0, 50) : undefined,
+        address: orgData?.address ? String(orgData.address).slice(0, 300) : undefined,
+        city: orgData?.city ? String(orgData.city).slice(0, 100) : undefined,
+        state: orgData?.state ? String(orgData.state).slice(0, 100) : undefined,
+        zip: orgData?.zip ? String(orgData.zip).slice(0, 20) : undefined,
+        country: orgData?.country ? String(orgData.country).slice(0, 100) : undefined,
+        website: orgData?.website ? String(orgData.website).slice(0, 200) : undefined,
+        primary_color: /^#[0-9a-fA-F]{6}$/.test(orgData?.primary_color) ? orgData.primary_color : '#2563EB',
+        secondary_color: /^#[0-9a-fA-F]{6}$/.test(orgData?.secondary_color) ? orgData.secondary_color : '#1E40AF',
+        accent_color: /^#[0-9a-fA-F]{6}$/.test(orgData?.accent_color) ? orgData.accent_color : '#DBEAFE',
+        tax_name: String(orgData?.tax_name || 'Tax').slice(0, 50),
+        currency_symbol: String(orgData?.currency_symbol || '$').slice(0, 5),
+      },
+      client: {
+        name: String(clientData?.name || '').slice(0, 200),
+        email: clientData?.email ? String(clientData.email).slice(0, 200) : undefined,
+        phone: clientData?.phone ? String(clientData.phone).slice(0, 50) : undefined,
+        address: clientData?.address ? String(clientData.address).slice(0, 300) : undefined,
+        city: clientData?.city ? String(clientData.city).slice(0, 100) : undefined,
+        state: clientData?.state ? String(clientData.state).slice(0, 100) : undefined,
+        zip: clientData?.zip ? String(clientData.zip).slice(0, 20) : undefined,
+        company: clientData?.company ? String(clientData.company).slice(0, 200) : undefined,
+      },
+      items: safeItems,
+      subtotal: Number(subtotal) || 0,
+      discount_type: String(discount_type || 'none'),
+      discount_value: Number(discount_value) || 0,
+      discount_amount: Number(discount_amount) || 0,
+      tax_rate: Number(tax_rate) || 0,
+      tax_amount: Number(tax_amount) || 0,
+      total: Number(total) || 0,
+      amount_paid: Number(amount_paid) || 0,
+      balance_due: Number(balance_due) || 0,
+      notes: notes ? String(notes).slice(0, 2000) : undefined,
+      terms: terms ? String(terms).slice(0, 2000) : undefined,
+      footer_text: footer_text ? String(footer_text).slice(0, 500) : undefined,
+    };
+
+    const pdfBuffer = await generatePDF(templateData);
+    const docLabel = type === 'receipt' ? 'receipt' : type === 'quote' ? 'quote' : 'invoice';
+    const filename = `${docLabel}-${(number || 'draft').toString().replace(/[^a-zA-Z0-9-]/g, '_')}.pdf`;
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(pdfBuffer);
+  } catch (err) {
+    console.error('Guest PDF error:', err);
+    res.status(500).json({ error: 'Failed to generate PDF — please try again.' });
   }
 });
 

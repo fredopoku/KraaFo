@@ -232,6 +232,30 @@ export const api = {
     download: (invoiceId: string) => pdfOpen(`${BASE}/pdf/${invoiceId}`, 'invoice.pdf'),
     previewQuote: (quoteId: string) => pdfOpen(`${BASE}/pdf/quote/${quoteId}?inline=true`, 'quote.pdf'),
     downloadQuote: (quoteId: string) => pdfOpen(`${BASE}/pdf/quote/${quoteId}`, 'quote.pdf'),
+    guestDownload: async (payload: Record<string, unknown>, filename: string): Promise<void> => {
+      const res = await fetch(`${BASE}/pdf/guest`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: res.statusText }));
+        throw new Error((err as any).error || 'Failed to generate PDF');
+      }
+      const blob = await res.blob();
+      if (navigator.canShare) {
+        const file = new File([blob], filename, { type: 'application/pdf' });
+        if (navigator.canShare({ files: [file] })) {
+          try { await navigator.share({ files: [file], title: filename }); return; }
+          catch (e) { if ((e as Error).name === 'AbortError') return; }
+        }
+      }
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = objectUrl; a.download = filename;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+    },
   },
 };
 

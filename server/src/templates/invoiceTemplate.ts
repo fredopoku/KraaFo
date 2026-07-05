@@ -68,6 +68,14 @@ function formatCurrency(amount: number, symbol: string): string {
   return `${symbol}${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+function pluralizeUnit(unit: string, qty: number): string {
+  if (qty === 1 || !unit) return unit;
+  const u = unit.trim();
+  if (/(ss|sh|ch|x|z)$/i.test(u)) return u + 'es';
+  if (/s$/i.test(u)) return u;
+  return u + 's';
+}
+
 function formatDate(dateStr: string): string {
   if (!dateStr) return '';
   const d = new Date(dateStr);
@@ -96,7 +104,7 @@ export function generateInvoiceHTML(data: InvoiceTemplateData): string {
   const itemRows = items.map((item, i) => `
     <tr style="border-bottom:1px solid #F3F4F6;${i % 2 !== 0 ? `background:${docColorLight}40;` : ''}">
       <td style="padding:12px 16px;font-size:13px;color:#374151;">${item.description}</td>
-      <td style="padding:12px 16px;text-align:center;font-size:13px;color:#6B7280;">${item.quantity} ${item.unit}</td>
+      <td style="padding:12px 16px;text-align:center;font-size:13px;color:#6B7280;">${item.quantity} ${pluralizeUnit(item.unit, item.quantity)}</td>
       <td style="padding:12px 16px;text-align:right;font-size:13px;color:#6B7280;">${formatCurrency(item.unit_price, sym)}</td>
       <td style="padding:12px 16px;text-align:right;font-size:13px;font-weight:600;color:#111827;">${formatCurrency(item.amount, sym)}</td>
     </tr>`).join('');

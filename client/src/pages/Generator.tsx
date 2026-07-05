@@ -9,6 +9,7 @@ import { cn } from '../utils/cn';
 import { INDUSTRIES, getClientTypes } from '../utils/industryData';
 import { LogoMark, Logo } from '../components/Logo';
 import SignaturePad from '../components/SignaturePad';
+import { TurnstileWidget, TURNSTILE_ENABLED } from '../components/Turnstile';
 
 interface FormState {
   type: 'invoice' | 'receipt' | 'quote';
@@ -53,6 +54,13 @@ const STATUS_META: Record<string, { label: string; cls: string }> = {
 
 const INPUT = 'w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all duration-150 placeholder:text-slate-300 hover:border-slate-300';
 const LABEL = 'block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5';
+
+function parseDaysFromTerms(terms: string): number {
+  const m = terms.match(/\bnet\s*(\d+)\b/i);
+  if (m) return parseInt(m[1], 10);
+  if (/due on receipt|immediate|due now|on receipt/i.test(terms)) return 0;
+  return 30;
+}
 
 const DEMO_ORG = {
   id: 'demo', name: 'Your Company Name', email: '', phone: '', address: '', city: '', state: '', zip: '', country: '', website: '',
@@ -108,6 +116,8 @@ export default function Generator() {
   const [recordingPayment, setRecordingPayment] = useState(false);
   const [checklistDismissed, setChecklistDismissed] = useState(() => !!localStorage.getItem('krafo_checklist_done'));
   const [hasSent, setHasSent] = useState(() => !!localStorage.getItem('krafo_first_sent'));
+  const [turnstileToken, setTurnstileToken] = useState<string | undefined>(undefined);
+  const [turnstileKey, setTurnstileKey] = useState(0);
   const location = useLocation();
   const isDemo = new URLSearchParams(location.search).get('demo') === 'true' || !org;
   const effectiveOrg = isDemo ? DEMO_ORG : org;
@@ -166,16 +176,25 @@ export default function Generator() {
 
   useEffect(() => {
     if (!org || isDemo) return;
+    const daysOut = parseDaysFromTerms(org.payment_terms || 'Net 30');
     setForm(f => ({
       ...f,
       tax_rate: org.tax_rate,
       notes: org.notes || '',
       terms: org.payment_terms || '',
+      due_date: addDays(f.issue_date || today(), daysOut),
       number: generateInvoiceNumber(org.invoice_prefix, 0),
     }));
     if (org.signature_url) setSignature(org.signature_url);
     loadInvoices();
   }, [org]);
+
+  // Recalculate due_date when issue_date changes, but only for unsaved documents.
+  useEffect(() => {
+    if (savedInvoice) return;
+    const terms = effectiveOrg?.payment_terms || 'Net 30';
+    setForm(f => ({ ...f, due_date: addDays(f.issue_date || today(), parseDaysFromTerms(terms)) }));
+  }, [form.issue_date, savedInvoice]);
 
   const loadInvoices = async () => {
     if (!org) return;
@@ -287,7 +306,51 @@ export default function Generator() {
   };
 
   const handleDownload = async () => {
-    if (isDemo) { showToast('Sign up free to download and send this as a PDF', 'info'); setTimeout(() => navigate('/setup'), 1200); return; }
+    if (isDemo) {
+      if (TURNSTILE_ENABLED && !turnstileToken) {
+        showToast('Human check in progress — please wait a moment', 'info');
+        return;
+      }
+      setDownloading(true);
+      try {
+        const docType = form.type === 'receipt' ? 'receipt' : form.type === 'quote' ? 'quote' : 'invoice';
+        const filename = `${docType}-${(form.number || 'draft').replace(/[^a-zA-Z0-9-]/g, '_')}.pdf`;
+        await api.pdf.guestDownload({
+          cf_turnstile_response: turnstileToken,
+          type: form.type,
+          number: form.number || `${docType.toUpperCase()}-DRAFT`,
+          issue_date: form.issue_date,
+          due_date: form.due_date || undefined,
+          paid_date: form.paid_date || undefined,
+          status: form.status === 'none' ? 'draft' : form.status,
+          org: {
+            name: effectiveOrg.name, email: effectiveOrg.email, phone: effectiveOrg.phone,
+            address: effectiveOrg.address, city: effectiveOrg.city, state: effectiveOrg.state,
+            zip: effectiveOrg.zip, country: effectiveOrg.country, website: effectiveOrg.website,
+            primary_color: effectiveOrg.primary_color, secondary_color: effectiveOrg.secondary_color,
+            accent_color: effectiveOrg.accent_color, tax_name: effectiveOrg.tax_name,
+            currency_symbol: effectiveOrg.currency_symbol,
+          },
+          client: {
+            name: form.client_name, email: form.client_email || undefined,
+            phone: form.client_phone || undefined, address: form.client_address || undefined,
+            city: form.client_city || undefined, state: form.client_state || undefined,
+            zip: form.client_zip || undefined, company: form.client_company || undefined,
+          },
+          items: items.map(i => ({ description: i.description, quantity: i.quantity, unit: i.unit, unit_price: i.unit_price, amount: i.amount })),
+          subtotal, discount_type: form.discount_type, discount_value: form.discount_value,
+          discount_amount: discountAmount, tax_rate: form.tax_rate, tax_amount: taxAmount,
+          total, amount_paid: form.amount_paid, balance_due: balanceDue,
+          notes: form.notes || undefined, terms: form.terms || undefined, footer_text: form.footer_text || undefined,
+        }, filename);
+        setTurnstileKey(k => k + 1);
+      } catch (err: any) {
+        showToast(err.message || 'Download failed', 'error');
+      } finally {
+        setDownloading(false);
+      }
+      return;
+    }
     let invoice = savedInvoice;
     if (!invoice) {
       invoice = await handleSave();
@@ -437,46 +500,44 @@ export default function Generator() {
     setSending(false);
   };
 
-  const buildMobileMessage = (emailAlso = false) => {
+  const buildMobileMessage = () => {
     if (!savedInvoice || !org) return '';
     const sym = org.currency_symbol || '$';
     const docType = savedInvoice.type === 'receipt' ? 'Receipt' : savedInvoice.type === 'quote' ? 'Quote' : 'Invoice';
     const lines = [
-      `Dear ${savedInvoice.client_name || 'Valued Client'},`,
+      `Hi${savedInvoice.client_name ? ' ' + savedInvoice.client_name : ''},`,
       ``,
-      emailAlso
-        ? `We are writing to inform you that ${docType} No. ${savedInvoice.number} from ${org.name} has been prepared and sent to your email.`
-        : `We are writing to inform you that ${docType} No. ${savedInvoice.number} from ${org.name} has been prepared for your review.`,
+      `Please find your ${docType.toLowerCase()} from ${org.name}.`,
       ``,
-      ...(emailAlso ? [`Please check your email inbox for the full ${docType.toLowerCase()} with the PDF attachment and complete payment details.`, ``] : []),
-      `${docType} Summary:`,
-      `Reference: ${savedInvoice.number}`,
-      `Amount: ${sym}${savedInvoice.total?.toFixed(2)}`,
-      ...(savedInvoice.due_date ? [`Due Date: ${savedInvoice.due_date}`] : []),
+      `📄 ${docType}: *${savedInvoice.number}*`,
+      `💰 Total: *${formatCurrency(savedInvoice.total ?? 0, sym)}*`,
+      ...(savedInvoice.due_date ? [`📅 Due: *${savedInvoice.due_date}*`] : []),
       ``,
-      `For any enquiries, please do not hesitate to contact us.`,
-      ...(org.email ? [org.email] : []),
-      ...(org.phone ? [org.phone] : []),
+      `Thank you for your business! 🙏`,
       ``,
-      `Kind regards,`,
-      org.name,
-      ``,
-      `--`,
-      `This message was sent via KraaFo — Professional Invoicing`,
+      `— ${org.name}`,
     ];
     return lines.join('\n');
+  };
+
+  const buildSMSMessage = () => {
+    if (!savedInvoice || !org) return '';
+    const sym = org.currency_symbol || '$';
+    const docType = savedInvoice.type === 'receipt' ? 'Receipt' : savedInvoice.type === 'quote' ? 'Quote' : 'Invoice';
+    const due = savedInvoice.due_date ? ` Due: ${savedInvoice.due_date}.` : '';
+    return `${docType} ${savedInvoice.number} from ${org.name}. Total: ${formatCurrency(savedInvoice.total ?? 0, sym)}.${due}`;
   };
 
   const handleWhatsApp = () => {
     if (!savedInvoice) { showToast('Save first, then send via WhatsApp', 'info'); return; }
     const phone = sendPhone.replace(/\D/g, '');
-    const msg = encodeURIComponent(buildMobileMessage(!!sendEmail));
+    const msg = encodeURIComponent(buildMobileMessage());
     window.open(phone ? `https://wa.me/${phone}?text=${msg}` : `https://wa.me/?text=${msg}`, '_blank');
     if (!hasSent) { localStorage.setItem('krafo_first_sent', '1'); setHasSent(true); }
   };
 
   const openSMS = (phone: string) => {
-    const body = encodeURIComponent(buildMobileMessage());
+    const body = encodeURIComponent(buildSMSMessage());
     // Use a temporary <a> click — more reliable for protocol handlers than window.open
     const a = document.createElement('a');
     a.href = `sms:${phone}?body=${body}`;
@@ -496,7 +557,7 @@ export default function Generator() {
     if (!sendEmail && !sendPhone) { showToast('Enter an email or phone number', 'info'); return; }
 
     const phone = sendPhone.replace(/\D/g, '');
-    const msg = encodeURIComponent(buildMobileMessage(!!sendEmail));
+    const msg = encodeURIComponent(buildMobileMessage());
 
     // Open WhatsApp synchronously (must happen within the click event before any await)
     if (sendPhone) {
@@ -764,6 +825,10 @@ export default function Generator() {
 
             {isDemo ? (
               <div className="flex items-center gap-2">
+                <button onClick={handleDownload} disabled={downloading} className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-all disabled:opacity-40 btn-glow-green">
+                  {downloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                  <span className="hidden md:inline">Download PDF</span>
+                </button>
                 <button onClick={() => navigate('/login')} className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-600 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-all">
                   Sign in
                 </button>
@@ -800,7 +865,7 @@ export default function Generator() {
         </div>
       </header>
 
-      {/* Mobile bottom action bar */}
+      {/* Mobile bottom action bar — authenticated users */}
       {!isDemo && (
         <div className="fixed bottom-0 inset-x-0 z-30 lg:hidden bg-white/98 backdrop-blur-sm border-t border-slate-100 px-4 pt-3" style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}>
           <div className="flex gap-2">
@@ -814,6 +879,26 @@ export default function Generator() {
             <button onClick={handleDownload} disabled={downloading} className="flex-1 flex items-center justify-center gap-1.5 h-12 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-all disabled:opacity-40 btn-glow-green">
               {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
               PDF
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile bottom action bar — guest/demo users */}
+      {isDemo && (
+        <div className="fixed bottom-0 inset-x-0 z-30 lg:hidden bg-white/98 backdrop-blur-sm border-t border-slate-100 px-4 pt-2" style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom))' }}>
+          <TurnstileWidget
+            onVerify={tok => setTurnstileToken(tok)}
+            onExpire={() => setTurnstileToken(undefined)}
+            resetKey={turnstileKey}
+          />
+          <div className="flex gap-2 mt-1.5">
+            <button onClick={handleDownload} disabled={downloading || (TURNSTILE_ENABLED && !turnstileToken)} className="flex-1 flex items-center justify-center gap-1.5 h-11 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-all disabled:opacity-40 btn-glow-green">
+              {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              Download PDF
+            </button>
+            <button onClick={() => navigate('/setup')} className="flex-1 flex items-center justify-center gap-1.5 h-11 rounded-xl text-sm font-bold text-white transition-all btn-glow" style={{ background: primary }}>
+              <Lock className="w-4 h-4" /> Sign Up Free
             </button>
           </div>
         </div>
@@ -1662,13 +1747,27 @@ export default function Generator() {
               {/* Actions — desktop only; mobile uses the fixed bottom bar */}
               <div className="mt-5 space-y-2.5 hidden lg:block">
                 {isDemo ? (
-                  <button
-                    onClick={() => navigate('/setup')}
-                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold text-white transition-all btn-glow"
-                    style={{ background: primary }}
-                  >
-                    <Lock className="w-4 h-4" /> Get Started to Save & Download
-                  </button>
+                  <div className="space-y-2">
+                    <TurnstileWidget
+                      onVerify={tok => setTurnstileToken(tok)}
+                      onExpire={() => setTurnstileToken(undefined)}
+                      resetKey={turnstileKey}
+                    />
+                    <button
+                      onClick={handleDownload}
+                      disabled={downloading || (TURNSTILE_ENABLED && !turnstileToken)}
+                      className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-all disabled:opacity-40 btn-glow-green"
+                    >
+                      {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                      Download PDF
+                    </button>
+                    <button
+                      onClick={() => navigate('/setup')}
+                      className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition-all"
+                    >
+                      <Lock className="w-4 h-4" /> Sign Up to Save & Send
+                    </button>
+                  </div>
                 ) : (
                   <>
                     <button
