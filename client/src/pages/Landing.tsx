@@ -133,33 +133,33 @@ function NewsletterSignup() {
 }
 
 const features = [
-  { icon: Sparkles, title: 'Smart Fill',            desc: 'Pick your industry and job type — KraaFo auto-populates line items, pricing, notes, and payment terms instantly.' },
-  { icon: Palette,  title: 'Brand-Perfect',         desc: 'Upload your logo and KraaFo extracts your brand colors for documents that look exactly like you.' },
-  { icon: FileText, title: 'Professional Invoices', desc: 'Send branded payment requests with due dates, tax, discounts, and a full itemized breakdown.' },
-  { icon: Receipt,  title: 'Instant Receipts',      desc: 'Generate a polished "PAYMENT RECEIVED" receipt the moment a client pays. No template fiddling.' },
-  { icon: Shield,   title: 'Tax & Discounts',       desc: 'Full support for GST, VAT, Sales Tax, and both percentage and fixed-amount discounts on every document.' },
-  { icon: Download, title: 'Print-Ready PDFs',      desc: 'Pixel-perfect PDFs that look stunning in print or on screen. Share by email or print on the spot.' },
-  { icon: Send,     title: 'Email & WhatsApp',      desc: 'Send invoices directly from KraaFo via email or WhatsApp — with PDF attached and a professional message.' },
-  { icon: Globe,    title: 'Works Worldwide',       desc: 'Multi-currency, mobile money (M-Pesa, MTN, Airtel, Telecel), PayPal, and bank transfer — for any market.' },
+  { icon: Sparkles, title: 'Smart Fill',            desc: 'Pick your industry and job type. KraaFo fills in your line items, pricing, notes, and terms. Review, adjust, send.' },
+  { icon: Palette,  title: 'Auto Branding',         desc: 'Upload your logo and KraaFo pulls your brand colors. Every document matches your business, automatically.' },
+  { icon: FileText, title: 'Professional Invoices', desc: 'Branded payment requests with due dates, tax, discounts, and a full itemized breakdown.' },
+  { icon: Receipt,  title: 'Instant Receipts',      desc: 'Generate a "PAYMENT RECEIVED" receipt the moment a client pays. No templates, no fiddling.' },
+  { icon: Shield,   title: 'Tax & Discounts',       desc: 'GST, VAT, Sales Tax, and both percentage and fixed-amount discounts on every document.' },
+  { icon: Download, title: 'Print-Ready PDFs',      desc: 'Sharp, clean PDFs ready to print, email, or share on the spot. Generated in seconds.' },
+  { icon: Send,     title: 'Email & WhatsApp',      desc: 'Send from inside KraaFo. Your client gets the PDF with a clean message via email or WhatsApp.' },
+  { icon: Globe,    title: 'Works Worldwide',       desc: 'Multi-currency. M-Pesa, MTN, Airtel, Telecel, PayPal, and bank transfer. Works in any country.' },
 ];
 
 const steps = [
-  { n: '01', title: 'Create in 60 seconds',                desc: 'Fill in your client, add services — or let Smart Fill pre-populate everything for your industry. Done.' },
-  { n: '02', title: 'Send to WhatsApp, email & SMS',       desc: 'One tap sends your invoice three ways at once. Your client gets a branded PDF before you finish your coffee.' },
-  { n: '03', title: 'Download free — no account needed',   desc: 'Download the PDF instantly, no sign-up required. Sign up to save history, send, and get paid faster.' },
+  { n: '01', title: 'Create in 60 seconds',           desc: 'Fill in your client and add your services. Smart Fill pre-populates everything for your industry if you need it.' },
+  { n: '02', title: 'Send by WhatsApp, email or SMS', desc: 'One tap sends your invoice three ways. Your client has it before you have packed up your tools.' },
+  { n: '03', title: 'Download free, no sign-up',      desc: 'Download the PDF right away with no account needed. Sign up free to save your history and send to clients.' },
 ];
 
 type ReviewCard = { key: string; rating: number; text: string; name: string; sub: string; photo?: string };
 
 const fallbackReviews: ReviewCard[] = [
   { key: 'sarah', rating: 5, name: 'Sarah M.', sub: 'Owner, Sparkle Clean Co. · UK',
-    text: "I send a receipt the moment I'm paid and clients love how professional it looks. Total game changer.",
+    text: "I send a receipt the moment I'm paid and my clients love how professional it looks. Saves me an hour every week.",
     photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=80&q=80' },
   { key: 'james', rating: 5, name: 'James T.', sub: 'Manager, FreshSpace Services · US',
-    text: 'Switched from Word templates. My invoices now look like a real business — in under a minute.',
+    text: 'Switched from Word templates. Now my invoices look like a proper business. Took me under two minutes to set up.',
     photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&q=80' },
   { key: 'ana',   rating: 5, name: 'Ana R.',   sub: 'Director, Crystal Clear LLC · CA',
-    text: 'Brand colors auto-extract from our logo — every document looks exactly on-brand without any effort.',
+    text: 'Brand colors pulled straight from our logo. Every document looks on-brand without touching a single setting.',
     photo: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=80&q=80' },
 ];
 
@@ -949,9 +949,9 @@ export default function Landing() {
               </div>
 
               <h1 className="text-[2.5rem] sm:text-5xl md:text-[58px] lg:text-[64px] font-black text-slate-900 tracking-tight leading-[1.08] lg:leading-[1.03] mb-6 animate-hero delay-100">
-                Send invoices your clients take seriously —{' '}
+                Send invoices your clients take seriously.{' '}
                 <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)' }}>
-                  and get paid without chasing.
+                  Get paid without chasing.
                 </span>
               </h1>
 
@@ -1140,7 +1140,7 @@ export default function Landing() {
                 Invoice from<br />wherever you work
               </h2>
               <p className="text-slate-500 text-lg leading-relaxed mb-8">
-                On the job site, between appointments, or heading home — create a fully branded invoice in 2 minutes. Smart Fill auto-populates your services and pricing so you spend more time earning, less time typing.
+                On the job site, between appointments, or heading home. Create a fully branded invoice in 2 minutes. Smart Fill fills in your services and pricing so you spend more time working, less time at a keyboard.
               </p>
               <Link to="/setup" className="inline-flex items-center gap-2 text-indigo-600 font-bold text-base hover:text-indigo-800 transition-colors group">
                 Start free today <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -1183,7 +1183,7 @@ export default function Landing() {
                 Clients get it on<br />WhatsApp in seconds
               </h2>
               <p className="text-slate-500 text-lg leading-relaxed mb-8">
-                No email delays, no follow-ups — send your invoice directly through WhatsApp or email from inside KraaFo. Your client gets a professional message with the PDF attached, instantly. Most are paid within hours.
+                No email delays, no follow-up messages. Send your invoice through WhatsApp or email directly from KraaFo. Your client gets a clean message with the PDF straight away. Most are paid within hours.
               </p>
               <Link to="/setup" className="inline-flex items-center gap-2 text-emerald-600 font-bold text-base hover:text-emerald-800 transition-colors group">
                 Try it free <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -1241,7 +1241,7 @@ export default function Landing() {
                 See your money.<br />Know your business.
               </h2>
               <p className="text-slate-500 text-lg leading-relaxed mb-8">
-                Your dashboard shows everything at a glance — what you've earned, what's outstanding, what's overdue. No spreadsheets, no guessing. Just clarity, so you can focus on the work that pays you.
+                Your dashboard shows what you have earned, what is outstanding, and what is overdue. No spreadsheets, no guessing. Just the numbers you need, when you need them.
               </p>
               <Link to="/setup" className="inline-flex items-center gap-2 text-violet-600 font-bold text-base hover:text-violet-800 transition-colors group">
                 Get started free <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -1265,7 +1265,7 @@ export default function Landing() {
               Your client can't say<br />they didn't get it.
             </h2>
             <p className="text-slate-400 text-lg max-w-2xl mx-auto leading-relaxed">
-              One tap sends your invoice three ways at once — WhatsApp, SMS, and email with the PDF attached. Every other invoicing app sends just an email and hopes for the best.
+              One tap sends your invoice three ways. WhatsApp, SMS, and email — all with the PDF attached. Every other invoicing app sends an email and waits.
             </p>
           </div>
 
@@ -1440,7 +1440,7 @@ export default function Landing() {
           <div>
             <p className="text-xs font-bold text-indigo-500 uppercase tracking-widest mb-3">Auto-branding</p>
             <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-4">Upload your logo.<br />We handle the rest.</h2>
-            <p className="text-slate-500 leading-relaxed mb-6">KraaFo reads your logo and automatically extracts your brand colors — primary, secondary, and accent. Every invoice, receipt, and quote looks perfectly on-brand without touching a color picker.</p>
+            <p className="text-slate-500 leading-relaxed mb-6">KraaFo reads your logo and pulls out your brand colors automatically. Every invoice, receipt, and quote matches your business. No color pickers, no manual setup.</p>
             <div className="space-y-3 mb-8">
               {['Brand colors auto-extracted from your logo', 'Applied to every document instantly', 'Change your logo — colors update everywhere'].map(f => (
                 <div key={f} className="flex items-center gap-2 text-sm text-slate-700 font-medium">
