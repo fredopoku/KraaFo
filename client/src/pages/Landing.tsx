@@ -1442,7 +1442,7 @@ export default function Landing() {
             <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-4">Upload your logo.<br />We handle the rest.</h2>
             <p className="text-slate-500 leading-relaxed mb-6">KraaFo reads your logo and pulls out your brand colors automatically. Every invoice, receipt, and quote matches your business. No color pickers, no manual setup.</p>
             <div className="space-y-3 mb-8">
-              {['Brand colors auto-extracted from your logo', 'Applied to every document instantly', 'Change your logo — colors update everywhere'].map(f => (
+              {['Brand colors pulled from your logo automatically', 'Applied to every document you create', 'Change your logo and colors update everywhere'].map(f => (
                 <div key={f} className="flex items-center gap-2 text-sm text-slate-700 font-medium">
                   <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" /> {f}
                 </div>
@@ -1557,7 +1557,7 @@ export default function Landing() {
           '@context': 'https://schema.org',
           '@type': 'FAQPage',
           mainEntity: [
-            { '@type': 'Question', name: 'Is KraaFo really free?', acceptedAnswer: { '@type': 'Answer', text: 'Yes — creating and downloading invoices, receipts and quotes is completely free. No credit card needed. You need a free account to send documents by email or WhatsApp and to save your history.' } },
+            { '@type': 'Question', name: 'Is KraaFo really free?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Creating and downloading invoices, receipts and quotes is completely free. No credit card needed. You need a free account to send documents by email or WhatsApp and to save your history.' } },
             { '@type': 'Question', name: 'Do I need an account to download a PDF?', acceptedAnswer: { '@type': 'Answer', text: 'No. You can fill in your invoice and download the PDF without signing up. Create an account (also free) to save your documents and send them to clients.' } },
             { '@type': 'Question', name: 'Can I send invoices on WhatsApp?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. KraaFo lets you send a professional message with your invoice directly through WhatsApp, SMS, and email — all from the same screen.' } },
             { '@type': 'Question', name: 'Can I add my logo and brand colors?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Upload your logo and KraaFo automatically extracts your brand colors. Every invoice, receipt and quote reflects your brand without any manual setup.' } },
@@ -1571,7 +1571,7 @@ export default function Landing() {
           </div>
           <div className="space-y-3">
             {[
-              { q: 'Is KraaFo really free?', a: 'Yes — creating and downloading invoices, receipts and quotes is completely free. No credit card needed. You need a free account to send documents by email or WhatsApp and to save your history.' },
+              { q: 'Is KraaFo really free?', a: 'Yes. Creating and downloading invoices, receipts and quotes is completely free. No credit card needed. You need a free account to send documents by email or WhatsApp and to save your history.' },
               { q: 'Do I need an account to download a PDF?', a: 'No. Fill in your invoice and download the PDF without signing up. Create an account (also free) to save your documents and send them to clients.' },
               { q: 'Can I send invoices on WhatsApp?', a: 'Yes. One tap sends your invoice through WhatsApp, SMS, and email — all from the same screen. Your client gets a professional message with the PDF.' },
               { q: 'Can I add my logo and brand colors?', a: 'Yes. Upload your logo and KraaFo automatically extracts your brand colors. Every document reflects your brand without any manual setup.' },
