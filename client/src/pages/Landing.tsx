@@ -948,7 +948,7 @@ export default function Landing() {
                 </div>
               </div>
 
-              <h1 className="text-5xl md:text-[58px] lg:text-[64px] font-black text-slate-900 tracking-tight leading-[1.03] mb-6 animate-hero delay-100">
+              <h1 className="text-[2.5rem] sm:text-5xl md:text-[58px] lg:text-[64px] font-black text-slate-900 tracking-tight leading-[1.08] lg:leading-[1.03] mb-6 animate-hero delay-100">
                 Send invoices your clients take seriously —{' '}
                 <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)' }}>
                   and get paid without chasing.
@@ -1099,8 +1099,8 @@ export default function Landing() {
       </section>
 
       {/* ── People Feature Sections ───────────────────────────── */}
-      <section className="py-24 px-6 bg-white">
-        <div className="max-w-6xl mx-auto space-y-28">
+      <section className="py-16 md:py-24 px-6 bg-white">
+        <div className="max-w-6xl mx-auto space-y-16 lg:space-y-28">
 
           {/* Row 1: Invoice anywhere */}
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
@@ -1136,7 +1136,7 @@ export default function Landing() {
             </div>
             <div>
               <span className="inline-block text-xs font-bold text-indigo-600 uppercase tracking-widest mb-4">Create in seconds</span>
-              <h2 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-[1.05] mb-5">
+              <h2 className="text-3xl lg:text-5xl font-black text-slate-900 tracking-tight leading-[1.05] mb-5">
                 Invoice from<br />wherever you work
               </h2>
               <p className="text-slate-500 text-lg leading-relaxed mb-8">
@@ -1179,7 +1179,7 @@ export default function Landing() {
             </div>
             <div className="lg:order-1">
               <span className="inline-block text-xs font-bold text-emerald-600 uppercase tracking-widest mb-4">Send instantly</span>
-              <h2 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-[1.05] mb-5">
+              <h2 className="text-3xl lg:text-5xl font-black text-slate-900 tracking-tight leading-[1.05] mb-5">
                 Clients get it on<br />WhatsApp in seconds
               </h2>
               <p className="text-slate-500 text-lg leading-relaxed mb-8">
@@ -1237,7 +1237,7 @@ export default function Landing() {
             </div>
             <div>
               <span className="inline-block text-xs font-bold text-violet-600 uppercase tracking-widest mb-4">Stay in control</span>
-              <h2 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-[1.05] mb-5">
+              <h2 className="text-3xl lg:text-5xl font-black text-slate-900 tracking-tight leading-[1.05] mb-5">
                 See your money.<br />Know your business.
               </h2>
               <p className="text-slate-500 text-lg leading-relaxed mb-8">
@@ -1253,7 +1253,7 @@ export default function Landing() {
       </section>
 
       {/* ── Triple Channel Delivery ───────────────────────────── */}
-      <section className="bg-slate-950 py-24 px-6 overflow-hidden">
+      <section className="bg-slate-950 py-16 md:py-24 px-6 overflow-hidden">
         <div className="max-w-6xl mx-auto">
 
           {/* Header */}
