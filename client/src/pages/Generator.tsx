@@ -505,7 +505,7 @@ export default function Generator() {
     const sym = org.currency_symbol || '$';
     const orgName = org.name.trim();
     const docType = savedInvoice.type === 'receipt' ? 'Receipt' : savedInvoice.type === 'quote' ? 'Quote' : 'Invoice';
-    const pdfUrl = `${window.location.origin}${savedInvoice.type === 'quote' ? '/api/pdf/quote/' : '/api/pdf/'}${savedInvoice.id}`;
+    const pdfUrl = `${window.location.origin}${savedInvoice.type === 'quote' ? '/api/pdf/quote/' : '/api/pdf/'}${savedInvoice.id}?inline=true`;
     const lines = [
       `Hi${savedInvoice.client_name ? ' ' + savedInvoice.client_name.trim() : ''},`,
       ``,
@@ -515,7 +515,7 @@ export default function Generator() {
       `*Total:* ${formatCurrency(savedInvoice.total ?? 0, sym)}`,
       ...(savedInvoice.due_date ? [`*Due:* ${savedInvoice.due_date}`] : []),
       ``,
-      `View & download: ${pdfUrl}`,
+      `Open invoice: ${pdfUrl}`,
       ``,
       `Thank you for your business,`,
       `${orgName}`,
@@ -526,12 +526,11 @@ export default function Generator() {
   const buildSMSMessage = () => {
     if (!savedInvoice || !org) return '';
     const sym = org.currency_symbol || '$';
-    const orgName = org.name.trim();
     const docType = savedInvoice.type === 'receipt' ? 'Receipt' : savedInvoice.type === 'quote' ? 'Quote' : 'Invoice';
-    const due = savedInvoice.due_date ? ` Due ${savedInvoice.due_date}.` : '';
-    const pdfUrl = `${window.location.origin}${savedInvoice.type === 'quote' ? '/api/pdf/quote/' : '/api/pdf/'}${savedInvoice.id}`;
-    const name = savedInvoice.client_name ? ` ${savedInvoice.client_name.trim()},` : ',';
-    return `Hi${name} your ${docType} ${savedInvoice.number} for ${formatCurrency(savedInvoice.total ?? 0, sym)} from ${orgName} is ready.${due} View: ${pdfUrl}`.slice(0, 160);
+    const due = savedInvoice.due_date ? `. Due ${savedInvoice.due_date}` : '';
+    const pdfUrl = `${window.location.origin}${savedInvoice.type === 'quote' ? '/api/pdf/quote/' : '/api/pdf/'}${savedInvoice.id}?inline=true`;
+    const firstName = savedInvoice.client_name ? ` ${savedInvoice.client_name.trim().split(' ')[0]},` : ',';
+    return `Hi${firstName} your ${docType} ${savedInvoice.number} for ${formatCurrency(savedInvoice.total ?? 0, sym)} is ready${due}. View: ${pdfUrl}`.slice(0, 160);
   };
 
   const handleWhatsApp = () => {
