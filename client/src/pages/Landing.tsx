@@ -144,9 +144,9 @@ const features = [
 ];
 
 const steps = [
-  { n: '01', title: 'Set up in 2 minutes',      desc: 'Enter your business name, upload your logo, and KraaFo auto-extracts your brand colors. Done.' },
-  { n: '02', title: 'Smart Fill your services', desc: 'Pick your industry, click Smart Fill — line items, pricing, and payment terms pre-populated instantly.' },
-  { n: '03', title: 'Send it professionally',   desc: 'Download a pixel-perfect PDF, send via email or WhatsApp, and get paid — all from one screen.' },
+  { n: '01', title: 'Create in 60 seconds',                desc: 'Fill in your client, add services — or let Smart Fill pre-populate everything for your industry. Done.' },
+  { n: '02', title: 'Send to WhatsApp, email & SMS',       desc: 'One tap sends your invoice three ways at once. Your client gets a branded PDF before you finish your coffee.' },
+  { n: '03', title: 'Download free — no account needed',   desc: 'Download the PDF instantly, no sign-up required. Sign up to save history, send, and get paid faster.' },
 ];
 
 type ReviewCard = { key: string; rating: number; text: string; name: string; sub: string; photo?: string };
@@ -953,23 +953,22 @@ export default function Landing() {
               </div>
 
               <h1 className="text-5xl md:text-[58px] lg:text-[64px] font-black text-slate-900 tracking-tight leading-[1.03] mb-6 animate-hero delay-100">
-                Stop chasing<br />
-                payments.<br />
+                Send invoices your clients take seriously —{' '}
                 <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)' }}>
-                  Get paid like a pro.
+                  and get paid without chasing.
                 </span>
               </h1>
 
               <p className="text-lg text-slate-500 mb-8 leading-relaxed max-w-lg animate-hero delay-200">
-                Professional invoices, receipts and quotes in under 2 minutes. Branded to your business. Sent by WhatsApp, email or SMS. <strong className="text-slate-700 font-semibold">Free to use.</strong>
+                Branded invoices delivered straight to WhatsApp or email. <strong className="text-slate-700 font-semibold">Free, in under a minute.</strong> Download free — no account needed.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 mb-8 animate-hero delay-300">
                 <Link to="/setup" className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3.5 rounded-xl font-bold text-base transition-all shadow-lg shadow-indigo-200 btn-glow">
-                  Create Free Account <ArrowRight className="w-4 h-4" />
+                  Create your first invoice — free <ArrowRight className="w-4 h-4" />
                 </Link>
                 <Link to="/generator?demo=true" className="flex items-center justify-center gap-2 text-slate-600 px-8 py-3.5 rounded-xl font-bold text-base border border-slate-200 bg-white/80 hover:bg-white hover:border-slate-300 transition-all">
-                  See it in action
+                  Try without signing up
                 </Link>
               </div>
 
@@ -1084,6 +1083,31 @@ export default function Landing() {
               <MessageSquare className="w-4 h-4 text-emerald-500 shrink-0" />
               Sends via WhatsApp &amp; Email
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Pain section ─────────────────────────────────────── */}
+      <section className="py-16 px-6 bg-white">
+        <div className="max-w-3xl mx-auto text-center">
+          <p className="text-xs font-bold text-red-500 uppercase tracking-widest mb-6">Sound familiar?</p>
+          <div className="space-y-5">
+            {[
+              'The Word-doc invoice that looks nothing like your work.',
+              'The "did you see my invoice?" message you hate sending.',
+              'The client who swears it never arrived.',
+            ].map((line, i) => (
+              <p key={i} className="text-xl md:text-2xl font-semibold text-slate-600 leading-snug">
+                "{line}"
+              </p>
+            ))}
+          </div>
+          <div className="mt-10 inline-block bg-indigo-50 border border-indigo-100 rounded-2xl px-8 py-5">
+            <p className="text-lg font-black text-slate-900 leading-snug">
+              Your brand on the invoice.<br />
+              Your invoice in their WhatsApp.<br />
+              <span className="text-indigo-600">You, looking like a company twice your size.</span>
+            </p>
           </div>
         </div>
       </section>
@@ -1536,6 +1560,44 @@ export default function Landing() {
                 </div>
                 <p className="text-slate-600 leading-relaxed text-sm flex-1">"{t.text}"</p>
               </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── FAQ ─────────────────────────────────────────────── */}
+      <section className="py-16 px-6 bg-slate-50">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          mainEntity: [
+            { '@type': 'Question', name: 'Is KraaFo really free?', acceptedAnswer: { '@type': 'Answer', text: 'Yes — creating and downloading invoices, receipts and quotes is completely free. No credit card needed. You need a free account to send documents by email or WhatsApp and to save your history.' } },
+            { '@type': 'Question', name: 'Do I need an account to download a PDF?', acceptedAnswer: { '@type': 'Answer', text: 'No. You can fill in your invoice and download the PDF without signing up. Create an account (also free) to save your documents and send them to clients.' } },
+            { '@type': 'Question', name: 'Can I send invoices on WhatsApp?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. KraaFo lets you send a professional message with your invoice directly through WhatsApp, SMS, and email — all from the same screen.' } },
+            { '@type': 'Question', name: 'Can I add my logo and brand colors?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Upload your logo and KraaFo automatically extracts your brand colors. Every invoice, receipt and quote reflects your brand without any manual setup.' } },
+            { '@type': 'Question', name: 'Does it work in my country and currency?', acceptedAnswer: { '@type': 'Answer', text: 'KraaFo is used in 30+ countries. You can set any currency symbol and accept mobile money (M-Pesa, MTN, Airtel, Telecel), PayPal, and bank transfer.' } },
+          ],
+        }) }} />
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-10">
+            <p className="text-xs font-bold text-indigo-500 uppercase tracking-widest mb-3">FAQ</p>
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight">Common questions</h2>
+          </div>
+          <div className="space-y-3">
+            {[
+              { q: 'Is KraaFo really free?', a: 'Yes — creating and downloading invoices, receipts and quotes is completely free. No credit card needed. You need a free account to send documents by email or WhatsApp and to save your history.' },
+              { q: 'Do I need an account to download a PDF?', a: 'No. Fill in your invoice and download the PDF without signing up. Create an account (also free) to save your documents and send them to clients.' },
+              { q: 'Can I send invoices on WhatsApp?', a: 'Yes. One tap sends your invoice through WhatsApp, SMS, and email — all from the same screen. Your client gets a professional message with the PDF.' },
+              { q: 'Can I add my logo and brand colors?', a: 'Yes. Upload your logo and KraaFo automatically extracts your brand colors. Every document reflects your brand without any manual setup.' },
+              { q: 'Does it work in my country and currency?', a: 'KraaFo is used in 30+ countries. Set any currency symbol and accept mobile money (M-Pesa, MTN, Airtel, Telecel), PayPal, or bank transfer.' },
+            ].map(({ q, a }) => (
+              <details key={q} className="group bg-white rounded-2xl border border-slate-100 px-5 py-4 cursor-pointer">
+                <summary className="flex items-center justify-between font-bold text-slate-800 text-sm list-none select-none">
+                  {q}
+                  <span className="ml-3 text-slate-400 group-open:rotate-45 transition-transform duration-200 shrink-0 text-lg leading-none">+</span>
+                </summary>
+                <p className="mt-3 text-slate-500 text-sm leading-relaxed">{a}</p>
+              </details>
             ))}
           </div>
         </div>
