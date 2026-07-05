@@ -960,7 +960,7 @@ export default function Landing() {
               </h1>
 
               <p className="text-lg text-slate-500 mb-8 leading-relaxed max-w-lg animate-hero delay-200">
-                Branded invoices delivered straight to WhatsApp or email. <strong className="text-slate-700 font-semibold">Free, in under a minute.</strong> Download free — no account needed.
+                Create professional invoices in under a minute. <strong className="text-slate-700 font-semibold">Download free — no account needed.</strong> Sign up free to save your work and send by WhatsApp or email.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 mb-8 animate-hero delay-300">
@@ -973,7 +973,7 @@ export default function Landing() {
               </div>
 
               <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm animate-hero delay-400">
-                {['Free to use', 'No credit card', '12+ industries', 'Works worldwide'].map(t => (
+                {['Download free, no sign-up', 'Sign up free to send', '12+ industries', 'Works worldwide'].map(t => (
                   <div key={t} className="flex items-center gap-1.5 text-slate-500">
                     <CheckCircle className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
                     {t}
