@@ -3,28 +3,28 @@
 // Post-build pre-renderer — converts the React SPA shell into static HTML
 // for the public routes that matter most for SEO.
 //
-// Runs a tiny static file server against client/dist, launches Chrome,
-// and saves fully-rendered HTML back to dist so Google sees real content
-// instead of <div id="root"></div>.
+// Chrome resolution: uses @sparticuz/chromium (bundled binary — no system
+// Chrome required, same mechanism as pdfService.ts). Falls back to system
+// Chrome paths for local dev.
 //
-// Set PUPPETEER_EXECUTABLE_PATH to override Chrome detection.
-// If no Chrome is found the script exits 0 (deploy still succeeds).
+// Exits 1 (fails the build) if Chrome cannot be found or any route fails
+// to produce ≥300 words of body text — silent failure is not allowed.
 
 const puppeteer = require('../server/node_modules/puppeteer-core');
 const { createServer } = require('http');
 const { createReadStream, existsSync, mkdirSync, writeFileSync } = require('fs');
 const { resolve, join, extname } = require('path');
 
-const ROOT  = resolve(__dirname, '..');
-const DIST  = resolve(ROOT, 'client/dist');
-const PORT  = 3098;
+const ROOT = resolve(__dirname, '..');
+const DIST = resolve(ROOT, 'client/dist');
+const PORT = 3098;
 
-// Routes to pre-render. 'wait' is extra ms after networkidle0 so
-// React components that rely on fallback/initial state have time to settle.
+// required: true  → build fails if word count < minWords or if render throws
+// required: false → best-effort; warns but does not fail the build
 const ROUTES = [
-  { route: '/',          out: 'index.html',           wait: 5000 },
-  { route: '/generator', out: 'generator/index.html', wait: 3000 },
-  { route: '/changelog', out: 'changelog/index.html', wait: 2000 },
+  { route: '/',          out: 'index.html',           wait: 6000, canonical: 'https://kraafo.com/',          required: true,  minWords: 300 },
+  { route: '/generator', out: 'generator/index.html', wait: 5000, canonical: 'https://kraafo.com/generator', required: false, minWords: 100 },
+  { route: '/changelog', out: 'changelog/index.html', wait: 3000, canonical: 'https://kraafo.com/changelog', required: false, minWords: 50  },
 ];
 
 const MIME = {
@@ -44,22 +44,55 @@ const MIME = {
   '.xml':  'text/xml',
 };
 
-function findChrome() {
-  const candidates = [
-    process.env.PUPPETEER_EXECUTABLE_PATH,
+// Resolve Chrome. Priority order:
+//   1. PUPPETEER_EXECUTABLE_PATH (explicit override)
+//   2. System Chrome paths (macOS dev, Render runtime which has Chrome installed)
+//   3. @sparticuz/chromium bundled binary (Linux-only — Render build workers where system Chrome is absent)
+async function getChromePath() {
+  const fs = require('fs');
+
+  // 1. Explicit override
+  if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+    try {
+      fs.accessSync(process.env.PUPPETEER_EXECUTABLE_PATH, fs.constants.X_OK);
+      console.log(`[prerender] Chrome via PUPPETEER_EXECUTABLE_PATH: ${process.env.PUPPETEER_EXECUTABLE_PATH}`);
+      return { path: process.env.PUPPETEER_EXECUTABLE_PATH, args: [] };
+    } catch {
+      console.warn(`[prerender] PUPPETEER_EXECUTABLE_PATH not executable — falling through`);
+    }
+  }
+
+  // 2. System paths (works on macOS dev and Render runtime containers)
+  const systemPaths = [
     '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
     '/usr/bin/google-chrome-stable',
     '/usr/bin/google-chrome',
     '/usr/bin/chromium-browser',
     '/usr/bin/chromium',
-  ].filter(Boolean);
-
-  for (const p of candidates) {
+  ];
+  for (const p of systemPaths) {
     try {
-      require('fs').accessSync(p, require('fs').constants.X_OK);
-      return p;
+      fs.accessSync(p, fs.constants.X_OK);
+      console.log(`[prerender] Chrome via system path: ${p}`);
+      return { path: p, args: [] };
     } catch {}
   }
+
+  // 3. @sparticuz/chromium — Linux-only bundled binary.
+  // Used on Render build workers (no system Chrome, but the package is installed).
+  // Dynamic import needed because the package is pure ESM.
+  if (process.platform === 'linux') {
+    try {
+      const chromiumMod = await import('../server/node_modules/@sparticuz/chromium/build/index.js');
+      const chromium = chromiumMod.default ?? chromiumMod;
+      const path = await chromium.executablePath();
+      console.log(`[prerender] Chrome via @sparticuz/chromium: ${path}`);
+      return { path, args: chromium.args ?? [] };
+    } catch (err) {
+      console.warn(`[prerender] @sparticuz/chromium failed: ${err.message}`);
+    }
+  }
+
   return null;
 }
 
@@ -82,49 +115,88 @@ function startStaticServer() {
   });
 }
 
+// Strip HTML tags and count whitespace-separated words.
+function countWords(html) {
+  return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().split(' ').filter(Boolean).length;
+}
+
+// Ensure the canonical <link> in <head> points to the correct route URL.
+function fixCanonical(html, canonicalUrl) {
+  // Replace existing canonical href
+  const updated = html.replace(
+    /<link\s+rel="canonical"\s+href="[^"]*"/i,
+    `<link rel="canonical" href="${canonicalUrl}"`
+  );
+  // If no canonical tag existed, inject one before </head>
+  if (updated === html && !html.includes('rel="canonical"')) {
+    return html.replace('</head>', `  <link rel="canonical" href="${canonicalUrl}" />\n</head>`);
+  }
+  return updated;
+}
+
 async function main() {
   if (!existsSync(DIST)) {
     console.error('[prerender] client/dist not found — run client build first');
     process.exit(1);
   }
 
-  const chrome = findChrome();
+  const chrome = await getChromePath();
   if (!chrome) {
-    console.warn('[prerender] No Chrome/Chromium found — skipping pre-render.');
-    console.warn('[prerender] Set PUPPETEER_EXECUTABLE_PATH to enable it in CI.');
-    return;
+    console.error('[prerender] No Chrome/Chromium found — cannot pre-render.');
+    console.error('[prerender] Ensure @sparticuz/chromium is installed in server/node_modules, or set PUPPETEER_EXECUTABLE_PATH.');
+    process.exit(1);
   }
-  console.log(`[prerender] Chrome: ${chrome}`);
 
   const server = await startStaticServer();
   console.log(`[prerender] Static server on :${PORT}`);
 
   const browser = await puppeteer.launch({
-    executablePath: chrome,
-    headless: 'new',
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'],
+    executablePath: chrome.path,
+    headless: true,
+    args: [
+      ...chrome.args,
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu',
+      '--single-process',
+    ],
   });
 
   let ok = 0;
-  for (const { route, out, wait } of ROUTES) {
+  const hardFailures = [];
+
+  for (const { route, out, wait, canonical, required, minWords } of ROUTES) {
     const url = `http://127.0.0.1:${PORT}${route}`;
     const outPath = join(DIST, out);
-    console.log(`[prerender] ${route} …`);
+    console.log(`[prerender] Rendering ${route} (${required ? 'required' : 'optional'}) …`);
 
     const page = await browser.newPage();
     await page.setViewport({ width: 1440, height: 900 });
 
     try {
-      await page.goto(url, { waitUntil: 'networkidle0', timeout: 20000 });
+      await page.goto(url, { waitUntil: 'networkidle0', timeout: 30000 });
       await new Promise(r => setTimeout(r, wait));
 
-      const html = await page.content();
+      let html = await page.content();
+      html = fixCanonical(html, canonical);
+
+      const words = countWords(html);
+      if (words < minWords) {
+        throw new Error(`only ${words} words in output — React may not have rendered (min: ${minWords})`);
+      }
+
       mkdirSync(outPath.replace(/\/[^/]+$/, ''), { recursive: true });
       writeFileSync(outPath, html, 'utf-8');
-      console.log(`[prerender] ✓ ${out} (${(html.length / 1024).toFixed(0)} KB)`);
+      console.log(`[prerender] ✓ ${out} — ${words} words, ${(html.length / 1024).toFixed(0)} KB`);
       ok++;
     } catch (err) {
-      console.warn(`[prerender] ✗ ${route}: ${err.message}`);
+      if (required) {
+        console.error(`[prerender] ✗ ${route} (REQUIRED): ${err.message}`);
+        hardFailures.push(route);
+      } else {
+        console.warn(`[prerender] ⚠ ${route} (optional, skipped): ${err.message}`);
+      }
     }
 
     await page.close();
@@ -132,10 +204,16 @@ async function main() {
 
   await browser.close();
   server.close();
-  console.log(`[prerender] complete — ${ok}/${ROUTES.length} routes pre-rendered`);
+
+  if (hardFailures.length > 0) {
+    console.error(`[prerender] BUILD FAILED — required route(s) did not produce valid output: ${hardFailures.join(', ')}`);
+    process.exit(1);
+  }
+
+  console.log(`[prerender] Complete — ${ok}/${ROUTES.length} routes pre-rendered (required routes all passed).`);
 }
 
 main().catch(err => {
-  // Non-zero exit would abort the Render deploy; pre-render is optional.
-  console.error('[prerender] fatal:', err.message);
+  console.error('[prerender] Fatal:', err.message);
+  process.exit(1);
 });

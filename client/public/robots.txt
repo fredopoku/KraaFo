@@ -6,5 +6,8 @@ Disallow: /settings
 Disallow: /team
 Disallow: /admin
 Disallow: /api/
+Disallow: /i/
+Disallow: /q/
+Disallow: /r/
 
 Sitemap: https://kraafo.com/sitemap.xml

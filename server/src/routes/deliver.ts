@@ -1,12 +1,35 @@
 import { Router, Request, Response } from 'express';
 import { generateKeyPairSync } from 'crypto';
+import rateLimit from 'express-rate-limit';
 import db from '../db/schema';
 import { sendInvoiceEmail } from '../services/emailService';
 
 const router = Router();
 
+// Per-account rate limiters for email delivery — protect shared Resend reputation.
+// Keyed on org ID so limits are per sender, not per IP (shared offices / VPNs).
+const emailHourlyLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 20,
+  keyGenerator: (req: Request) => (req.auth?.orgId ?? req.ip) as string,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Send limit reached — you can send up to 20 emails per hour. Please wait before sending again.' },
+  skipSuccessfulRequests: false,
+});
+
+const emailDailyLimiter = rateLimit({
+  windowMs: 24 * 60 * 60 * 1000,
+  max: 100,
+  keyGenerator: (req: Request) => `day:${req.auth?.orgId ?? req.ip}`,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Daily send limit reached — you can send up to 100 emails per day.' },
+  skipSuccessfulRequests: false,
+});
+
 // Send invoice/receipt by email
-router.post('/email/:invoiceId', async (req: Request, res: Response) => {
+router.post('/email/:invoiceId', emailHourlyLimiter, emailDailyLimiter, async (req: Request, res: Response) => {
   const { to, message } = req.body;
   if (!to) return res.status(400).json({ error: 'Recipient email required' });
 
