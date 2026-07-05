@@ -163,7 +163,6 @@ const fallbackReviews: ReviewCard[] = [
     photo: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=80&q=80' },
 ];
 
-const industries = ['Cleaning', 'Plumbing', 'Electrical', 'Landscaping', 'Fitness', 'Tutoring', 'IT Support', 'Photography', 'Pet Services', 'Carpentry', 'Catering', 'Consulting'];
 
 /* ─── Device Frame Components ─────────────────────────────── */
 
@@ -882,11 +881,8 @@ export default function Landing() {
     <div className="min-h-screen bg-white overflow-x-hidden">
       <EmailCapturePopup />
       <style>{`
-        @keyframes marquee { 0% { transform: translateX(0) } 100% { transform: translateX(-50%) } }
         @keyframes chipFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
         @keyframes phoneFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
-        .marquee-track { animation: marquee 32s linear infinite; }
-        .marquee-track:hover { animation-play-state: paused; }
         .chip-float { animation: chipFloat 3.5s ease-in-out infinite; }
         .phone-float { animation: phoneFloat 5s ease-in-out infinite; }
         /* Hero image float */
@@ -1026,16 +1022,6 @@ export default function Landing() {
           </div>
         </div>
 
-        {/* Marquee */}
-        <div className="overflow-hidden border-t border-slate-100/60 mt-2">
-          <div className="py-4">
-            <div className="marquee-track flex gap-3 w-max">
-              {[...industries, ...industries].map((ind, i) => (
-                <span key={i} className="px-4 py-1.5 rounded-full text-xs font-semibold border border-slate-200 text-slate-500 bg-white shadow-sm shrink-0">{ind}</span>
-              ))}
-            </div>
-          </div>
-        </div>
       </section>
 
       {/* ── Trust Strip ──────────────────────────────────────── */}
