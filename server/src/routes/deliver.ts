@@ -73,12 +73,12 @@ router.get('/whatsapp/:invoiceId', (req: Request, res: Response) => {
   const message = encodeURIComponent(
     `Hi${invoice.client_name ? ' ' + invoice.client_name.trim() : ''},\n\n` +
     `Please find your ${docType.toLowerCase()} from ${orgName}.\n\n` +
-    `📄 ${docType}: *${invoice.number}*\n` +
-    `💰 Total: *${formatMoney(invoice.total ?? 0, sym)}*\n` +
-    (invoice.due_date ? `📅 Due: *${invoice.due_date}*\n` : '') +
-    `\n👉 View & download: ${pdfUrl}\n\n` +
-    `Thank you for your business!\n` +
-    `— ${orgName}`
+    `*${docType}:* ${invoice.number}\n` +
+    `*Total:* ${formatMoney(invoice.total ?? 0, sym)}\n` +
+    (invoice.due_date ? `*Due:* ${invoice.due_date}\n` : '') +
+    `\nView & download: ${pdfUrl}\n\n` +
+    `Thank you for your business,\n` +
+    `${orgName}`
   );
 
   // If org has a WhatsApp number, use it as recipient

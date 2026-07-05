@@ -511,14 +511,14 @@ export default function Generator() {
       ``,
       `Please find your ${docType.toLowerCase()} from ${orgName}.`,
       ``,
-      `📄 ${docType}: *${savedInvoice.number}*`,
-      `💰 Total: *${formatCurrency(savedInvoice.total ?? 0, sym)}*`,
-      ...(savedInvoice.due_date ? [`📅 Due: *${savedInvoice.due_date}*`] : []),
+      `*${docType}:* ${savedInvoice.number}`,
+      `*Total:* ${formatCurrency(savedInvoice.total ?? 0, sym)}`,
+      ...(savedInvoice.due_date ? [`*Due:* ${savedInvoice.due_date}`] : []),
       ``,
-      `👉 View & download: ${pdfUrl}`,
+      `View & download: ${pdfUrl}`,
       ``,
-      `Thank you for your business!`,
-      `— ${orgName}`,
+      `Thank you for your business,`,
+      `${orgName}`,
     ];
     return lines.join('\n');
   };
@@ -526,10 +526,12 @@ export default function Generator() {
   const buildSMSMessage = () => {
     if (!savedInvoice || !org) return '';
     const sym = org.currency_symbol || '$';
+    const orgName = org.name.trim();
     const docType = savedInvoice.type === 'receipt' ? 'Receipt' : savedInvoice.type === 'quote' ? 'Quote' : 'Invoice';
-    const due = savedInvoice.due_date ? `. Due ${savedInvoice.due_date}` : '';
+    const due = savedInvoice.due_date ? ` Due ${savedInvoice.due_date}.` : '';
     const pdfUrl = `${window.location.origin}${savedInvoice.type === 'quote' ? '/api/pdf/quote/' : '/api/pdf/'}${savedInvoice.id}`;
-    return `${docType} ${savedInvoice.number} · ${formatCurrency(savedInvoice.total ?? 0, sym)}${due}. View: ${pdfUrl}`.slice(0, 160);
+    const name = savedInvoice.client_name ? ` ${savedInvoice.client_name.trim()},` : ',';
+    return `Hi${name} your ${docType} ${savedInvoice.number} for ${formatCurrency(savedInvoice.total ?? 0, sym)} from ${orgName} is ready.${due} View: ${pdfUrl}`.slice(0, 160);
   };
 
   const handleWhatsApp = () => {
