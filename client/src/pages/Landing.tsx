@@ -139,7 +139,7 @@ const features = [
   { icon: Receipt,  title: 'Instant Receipts',      desc: 'Generate a "PAYMENT RECEIVED" receipt the moment a client pays. No templates, no fiddling.' },
   { icon: Shield,   title: 'Tax & Discounts',       desc: 'GST, VAT, Sales Tax, and both percentage and fixed-amount discounts on every document.' },
   { icon: Download, title: 'Print-Ready PDFs',      desc: 'Sharp, clean PDFs ready to print, email, or share on the spot. Generated in seconds.' },
-  { icon: Send,     title: 'Email & WhatsApp',      desc: 'Send from inside KraaFo. Your client gets the PDF with a clean message via email or WhatsApp.' },
+  { icon: Send,     title: 'WhatsApp, SMS & Email',  desc: 'Send from inside KraaFo. Your client gets the PDF with a clean message via WhatsApp, SMS, or email.' },
   { icon: Globe,    title: 'Works Worldwide',       desc: 'Multi-currency. M-Pesa, MTN, Airtel, Telecel, PayPal, and bank transfer. Works in any country.' },
 ];
 
@@ -956,7 +956,7 @@ export default function Landing() {
               </h1>
 
               <p className="text-lg text-slate-500 mb-8 leading-relaxed max-w-lg animate-hero delay-200">
-                Create professional invoices in under a minute. <strong className="text-slate-700 font-semibold">Download free — no account needed.</strong> Sign up free to save your work and send by WhatsApp or email.
+                Create professional invoices in under a minute. <strong className="text-slate-700 font-semibold">Download free — no account needed.</strong> Sign up free to save your work and send by WhatsApp, SMS, or email.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 mb-8 animate-hero delay-300">
@@ -1067,7 +1067,7 @@ export default function Landing() {
             </div>
             <div className="flex items-center gap-2 text-slate-600 text-sm font-semibold">
               <MessageSquare className="w-4 h-4 text-emerald-500 shrink-0" />
-              Sends via WhatsApp &amp; Email
+              Sends via WhatsApp, SMS &amp; Email
             </div>
           </div>
         </div>
@@ -1183,7 +1183,7 @@ export default function Landing() {
                 Clients get it on<br />WhatsApp in seconds
               </h2>
               <p className="text-slate-500 text-lg leading-relaxed mb-8">
-                No email delays, no follow-up messages. Send your invoice through WhatsApp or email directly from KraaFo. Your client gets a clean message with the PDF straight away. Most are paid within hours.
+                No email delays, no follow-up messages. Send your invoice through WhatsApp, SMS, or email directly from KraaFo. Your client gets a clean message with the PDF straight away. Most are paid within hours.
               </p>
               <Link to="/setup" className="inline-flex items-center gap-2 text-emerald-600 font-bold text-base hover:text-emerald-800 transition-colors group">
                 Try it free <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
