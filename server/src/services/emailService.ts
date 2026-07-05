@@ -8,6 +8,9 @@ import { formatMoney } from '../utils/formatMoney';
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
 const FROM_ADDRESS = process.env.RESEND_FROM || 'invoices@kraafo.com';
+// Marketing identity (welcome, newsletter, lifecycle) — separate Resend domain so inbox placement
+// for transactional invoice mail is not contaminated by marketing reputation.
+const MARKETING_FROM = process.env.RESEND_MARKETING_FROM || FROM_ADDRESS;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://kraafo.com';
 
 export async function sendInvoiceEmail(
@@ -161,7 +164,7 @@ export async function sendSubscriberWelcome(email: string, name?: string, token?
   const resend = new Resend(apiKey);
   const greeting = name ? `, ${name}` : '';
   await resend.emails.send({
-    from: `KraaFo <${FROM_ADDRESS}>`,
+    from: `KraaFo <${MARKETING_FROM}>`,
     to: [email],
     subject: "You're subscribed to KraaFo updates!",
     text: `Welcome${greeting}!\n\nYou're now subscribed to KraaFo updates. We'll keep you in the loop whenever we ship new features, improvements, and tips.\n\nBest,\nThe KraaFo Team`,
@@ -180,7 +183,7 @@ export async function sendBroadcast(subject: string, body: string): Promise<{ se
   for (const sub of subscribers) {
     try {
       await resend.emails.send({
-        from: `KraaFo <${FROM_ADDRESS}>`,
+        from: `KraaFo <${MARKETING_FROM}>`,
         to: [sub.email],
         subject,
         html: buildBroadcastHtml(body, sub.token),
@@ -330,7 +333,7 @@ export async function sendDay4Email(org: any): Promise<void> {
     ${cta(`${FRONTEND_URL}/generator`, 'Start invoicing — it\'s free →')}
   `;
   await resend.emails.send({
-    from: `KraaFo <${FROM_ADDRESS}>`,
+    from: `KraaFo <${MARKETING_FROM}>`,
     to: [org.email],
     subject: "The catch? There isn't one.",
     html: emailShell('#059669', 'No catch — here\'s what you get 💚', 'KraaFo · Free to use', body,
@@ -359,7 +362,7 @@ export async function sendDay7Email(org: any): Promise<void> {
     <p style="margin:20px 0 0;color:#9ca3af;font-size:13px;text-align:center">Free to use. Nothing to lose.</p>
   `;
   await resend.emails.send({
-    from: `KraaFo <${FROM_ADDRESS}>`,
+    from: `KraaFo <${MARKETING_FROM}>`,
     to: [org.email],
     subject: 'Quick question about your invoicing',
     html: emailShell('#7c3aed', 'One week in 👋', 'A quick note from KraaFo', body,
