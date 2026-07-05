@@ -66,9 +66,7 @@ router.get('/whatsapp/:invoiceId', (req: Request, res: Response) => {
   const orgName = (org.name as string).trim();
 
   const FRONTEND_URL = process.env.FRONTEND_URL || 'https://kraafo.com';
-  const pdfUrl = isQuote
-    ? `${FRONTEND_URL}/api/pdf/quote/${invoice.id}?inline=true`
-    : `${FRONTEND_URL}/api/pdf/${invoice.id}?inline=true`;
+  const pdfUrl = `${FRONTEND_URL}/view/${invoice.id}`;
 
   const message = encodeURIComponent(
     `Hi${invoice.client_name ? ' ' + invoice.client_name.trim() : ''},\n\n` +

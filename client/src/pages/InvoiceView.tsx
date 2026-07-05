@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Printer, AlertCircle, Loader2 } from 'lucide-react';
+import { Printer, Download, AlertCircle, Loader2 } from 'lucide-react';
 
 const API = import.meta.env.VITE_API_URL || '/api';
 
@@ -66,20 +66,30 @@ export default function InvoiceView() {
 
   return (
     <div className="min-h-screen bg-slate-100 print:bg-white">
-      {/* Print / action bar — hidden when printing */}
+      {/* Action bar — hidden when printing */}
       <div className="print:hidden bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-2">
           <button onClick={() => navigate('/')} className="text-xs text-slate-400 hover:text-slate-600 font-medium">kraafo.com</button>
           <span className="text-slate-200 text-xs">·</span>
           <span className="text-xs text-slate-400">{docType} #{inv.number}</span>
         </div>
-        <button
-          onClick={() => window.print()}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all"
-          style={{ background: primary }}
-        >
-          <Printer className="w-3.5 h-3.5" /> Print / Save PDF
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => window.print()}
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all"
+          >
+            <Printer className="w-3.5 h-3.5" /> Print
+          </button>
+          <a
+            href={inv.type === 'quote' ? `${API}/pdf/quote/${id}` : `${API}/pdf/${id}`}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all"
+            style={{ background: primary }}
+          >
+            <Download className="w-3.5 h-3.5" /> Download PDF
+          </a>
+        </div>
       </div>
 
       {/* Document */}

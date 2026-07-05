@@ -23,19 +23,28 @@ router.get('/', (req: Request, res: Response) => {
 
 // Public — no auth, safe org fields only
 router.get('/:id/public', (req: Request, res: Response) => {
-  const invoice = db.prepare('SELECT * FROM invoices WHERE id = ?').get(req.params.id) as any;
-  if (!invoice) return res.status(404).json({ error: 'Not found' });
+  let doc = db.prepare('SELECT * FROM invoices WHERE id = ?').get(req.params.id) as any;
+  let isQuote = false;
+  if (!doc) {
+    doc = db.prepare('SELECT * FROM quotes WHERE id = ?').get(req.params.id) as any;
+    isQuote = true;
+  }
+  if (!doc) return res.status(404).json({ error: 'Not found' });
 
-  const items = db.prepare('SELECT * FROM invoice_items WHERE invoice_id = ? ORDER BY sort_order').all(req.params.id);
+  const items = isQuote
+    ? db.prepare('SELECT * FROM quote_items WHERE quote_id = ? ORDER BY sort_order').all(req.params.id)
+    : db.prepare('SELECT * FROM invoice_items WHERE invoice_id = ? ORDER BY sort_order').all(req.params.id);
+
   const org = db.prepare(`
     SELECT name, logo_url, email, phone, address, city, state, zip, country, website,
            primary_color, secondary_color, accent_color, currency, currency_symbol,
            tax_name, bank_name, bank_account, bank_routing,
            mpesa_number, mtn_number, airtel_number, telecel_number, paypal_email, whatsapp_number
     FROM organizations WHERE id = ?
-  `).get(invoice.org_id) as any;
+  `).get(doc.org_id) as any;
 
-  res.json({ ...invoice, items, org: org || {} });
+  const type = isQuote ? 'quote' : (doc.type || 'invoice');
+  res.json({ ...doc, type, items, org: org || {} });
 });
 
 router.get('/:id', (req: Request, res: Response) => {

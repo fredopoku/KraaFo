@@ -505,7 +505,7 @@ export default function Generator() {
     const sym = org.currency_symbol || '$';
     const orgName = org.name.trim();
     const docType = savedInvoice.type === 'receipt' ? 'Receipt' : savedInvoice.type === 'quote' ? 'Quote' : 'Invoice';
-    const pdfUrl = `${window.location.origin}${savedInvoice.type === 'quote' ? '/api/pdf/quote/' : '/api/pdf/'}${savedInvoice.id}?inline=true`;
+    const pdfUrl = `${window.location.origin}/view/${savedInvoice.id}`;
     const lines = [
       `Hi${savedInvoice.client_name ? ' ' + savedInvoice.client_name.trim() : ''},`,
       ``,
@@ -515,7 +515,7 @@ export default function Generator() {
       `*Total:* ${formatCurrency(savedInvoice.total ?? 0, sym)}`,
       ...(savedInvoice.due_date ? [`*Due:* ${savedInvoice.due_date}`] : []),
       ``,
-      `Open invoice: ${pdfUrl}`,
+      `View & download: ${pdfUrl}`,
       ``,
       `Thank you for your business,`,
       `${orgName}`,
@@ -528,7 +528,7 @@ export default function Generator() {
     const sym = org.currency_symbol || '$';
     const docType = savedInvoice.type === 'receipt' ? 'Receipt' : savedInvoice.type === 'quote' ? 'Quote' : 'Invoice';
     const due = savedInvoice.due_date ? `. Due ${savedInvoice.due_date}` : '';
-    const pdfUrl = `${window.location.origin}${savedInvoice.type === 'quote' ? '/api/pdf/quote/' : '/api/pdf/'}${savedInvoice.id}?inline=true`;
+    const pdfUrl = `${window.location.origin}/view/${savedInvoice.id}`;
     const firstName = savedInvoice.client_name ? ` ${savedInvoice.client_name.trim().split(' ')[0]},` : ',';
     return `Hi${firstName} your ${docType} ${savedInvoice.number} for ${formatCurrency(savedInvoice.total ?? 0, sym)} is ready${due}. View: ${pdfUrl}`.slice(0, 160);
   };
