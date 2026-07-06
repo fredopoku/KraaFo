@@ -292,6 +292,55 @@ router.get('/analytics', adminAuth, (req: Request, res: Response) => {
     LIMIT 10
   `).all();
 
+  // New signups per day
+  const signupsDaily = db.prepare(`
+    SELECT date(created_at) as date, COUNT(*) as count
+    FROM organizations
+    WHERE created_at >= ${since}
+    GROUP BY date(created_at)
+    ORDER BY date ASC
+  `).all();
+
+  // Documents created per day (invoices + quotes combined)
+  const docsDaily = db.prepare(`
+    SELECT date(created_at) as date, COUNT(*) as count
+    FROM (
+      SELECT created_at FROM invoices WHERE created_at >= ${since}
+      UNION ALL
+      SELECT created_at FROM quotes WHERE created_at >= ${since}
+    )
+    GROUP BY date(created_at)
+    ORDER BY date ASC
+  `).all();
+
+  // Signup summary for funnel
+  const signupSummary = db.prepare(`
+    SELECT
+      COUNT(*) as total,
+      COUNT(CASE WHEN created_at >= datetime('now', '-7 days') THEN 1 END) as week,
+      COUNT(CASE WHEN date(created_at) = date('now') THEN 1 END) as today,
+      COUNT(CASE WHEN created_at >= ${since} THEN 1 END) as period
+    FROM organizations
+  `).get() as any;
+
+  // Active orgs: signed up and created ≥1 document
+  const activeSignups = db.prepare(`
+    SELECT COUNT(DISTINCT o.id) as count
+    FROM organizations o
+    WHERE o.created_at >= ${since}
+      AND (
+        EXISTS (SELECT 1 FROM invoices WHERE org_id = o.id)
+        OR EXISTS (SELECT 1 FROM quotes WHERE org_id = o.id)
+      )
+  `).get() as any;
+
+  // Senders: orgs that used deliver route (have sent docs, status = 'sent' or 'paid')
+  const senderCount = db.prepare(`
+    SELECT COUNT(DISTINCT org_id) as count
+    FROM invoices
+    WHERE status IN ('sent','paid','overdue') AND created_at >= ${since}
+  `).get() as any;
+
   res.json({
     overview,
     prev,
@@ -308,6 +357,11 @@ router.get('/analytics', adminAuth, (req: Request, res: Response) => {
     devices,
     browsers,
     referrers,
+    signupsDaily,
+    docsDaily,
+    signupSummary,
+    activeSignups: activeSignups?.count ?? 0,
+    senderCount: senderCount?.count ?? 0,
   });
 });
 

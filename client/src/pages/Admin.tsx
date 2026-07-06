@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Star, Mail, Send, Megaphone, ChevronDown, ChevronUp, LogOut, Shield, Building2, Users, FileText, Receipt, Quote, TrendingUp, TrendingDown, Activity, Trash2, Zap, Plus, X, ArrowRight, CheckCircle, AlertCircle, Globe, Monitor, Smartphone, Tablet, Eye, ChevronRight, Phone, ExternalLink, UserCheck, Clock, BarChart2 } from 'lucide-react';
+import { Star, Mail, Send, Megaphone, ChevronDown, ChevronUp, LogOut, Shield, Building2, Users, FileText, Receipt, Quote, TrendingUp, TrendingDown, Activity, Trash2, Zap, Plus, X, ArrowRight, CheckCircle, AlertCircle, Globe, Monitor, Smartphone, Tablet, Eye, ChevronRight, Phone, ExternalLink, UserCheck, Clock, BarChart2, MousePointerClick, UserPlus, PenSquare } from 'lucide-react';
 import { LogoMark } from '../components/Logo';
 import { cn } from '../utils/cn';
 
@@ -50,6 +50,7 @@ export default function Admin() {
   const [viewsModal, setViewsModal] = useState<{ open: boolean; page?: string }>({ open: false });
   const [viewsData, setViewsData] = useState<{ views: any[]; total: number } | null>(null);
   const [viewsLoading, setViewsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<'overview' | 'traffic' | 'users' | 'financials' | 'comms'>('overview');
 
   // Org detail drill-down
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
@@ -307,9 +308,163 @@ export default function Admin() {
         </button>
       </header>
 
+      {/* Tab navigation */}
+      <div className="bg-slate-900 border-b border-slate-800 sticky top-[60px] z-30">
+        <div className="max-w-6xl mx-auto px-4 flex items-center gap-1 overflow-x-auto">
+          {([
+            { key: 'overview', label: 'Overview', icon: BarChart2 },
+            { key: 'traffic', label: 'Traffic', icon: Globe },
+            { key: 'users', label: 'Users', icon: Users },
+            { key: 'financials', label: 'Financials', icon: TrendingUp },
+            { key: 'comms', label: 'Comms', icon: Megaphone },
+          ] as const).map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={cn(
+                'flex items-center gap-1.5 px-4 py-3 text-xs font-bold whitespace-nowrap border-b-2 transition-all',
+                activeTab === tab.key
+                  ? 'border-indigo-400 text-indigo-400'
+                  : 'border-transparent text-slate-500 hover:text-slate-300'
+              )}
+            >
+              <tab.icon className="w-3.5 h-3.5" />
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <main className="max-w-6xl mx-auto px-4 py-6 space-y-5">
 
-        {/* Stat cards — clickable */}
+        {/* ══ OVERVIEW TAB ══════════════════════════════════════ */}
+        {activeTab === 'overview' && (<>
+
+        {/* KPI hero row */}
+        {usersData && analyticsData && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[
+              {
+                label: 'Visitors', sublabel: `${days > 0 ? days + 'd' : 'all'}`,
+                value: (analyticsData.overview?.period ?? 0).toLocaleString(),
+                sub: `${(analyticsData.overview?.today ?? 0).toLocaleString()} today`,
+                icon: MousePointerClick, color: 'text-indigo-500', bg: 'bg-indigo-50',
+                trend: analyticsData.prev?.total ? Math.round(((analyticsData.overview.period - analyticsData.prev.total) / analyticsData.prev.total) * 100) : null,
+              },
+              {
+                label: 'Signups', sublabel: `${days > 0 ? days + 'd' : 'all'}`,
+                value: (analyticsData.signupSummary?.period ?? 0).toLocaleString(),
+                sub: `${(analyticsData.signupSummary?.today ?? 0).toLocaleString()} today`,
+                icon: UserPlus, color: 'text-emerald-600', bg: 'bg-emerald-50',
+                trend: null,
+              },
+              {
+                label: 'Documents', sublabel: '30d',
+                value: (usersData.summary.total_invoices + usersData.summary.total_receipts + usersData.summary.total_quotes).toLocaleString(),
+                sub: `${usersData.summary.total_invoices}i · ${usersData.summary.total_receipts}r · ${usersData.summary.total_quotes}q`,
+                icon: PenSquare, color: 'text-blue-600', bg: 'bg-blue-50',
+                trend: null,
+              },
+              {
+                label: 'Active Orgs', sublabel: '30d',
+                value: usersData.summary.active_orgs.toLocaleString(),
+                sub: `${usersData.summary.new_this_week} new this week`,
+                icon: Building2, color: 'text-violet-600', bg: 'bg-violet-50',
+                trend: null,
+              },
+            ].map(card => (
+              <div key={card.label} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
+                <div className={cn('w-8 h-8 rounded-xl flex items-center justify-center mb-3', card.bg)}>
+                  <card.icon className={cn('w-4 h-4', card.color)} />
+                </div>
+                <div className="text-2xl font-black text-slate-900 leading-none">{card.value}</div>
+                <div className="text-[11px] text-slate-400 mt-1">{card.label} <span className="text-slate-300">({card.sublabel})</span></div>
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-[10px] text-slate-300">{card.sub}</span>
+                  {card.trend !== null && (
+                    <span className={cn('text-[10px] font-bold flex items-center gap-0.5', card.trend >= 0 ? 'text-emerald-600' : 'text-red-500')}>
+                      {card.trend >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                      {card.trend >= 0 ? '+' : ''}{card.trend}%
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Conversion funnel */}
+        {analyticsData && usersData && (
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-4">Conversion Funnel</p>
+            <div className="flex items-end gap-2">
+              {(() => {
+                const visitors = analyticsData.overview?.period ?? 0;
+                const signups = analyticsData.signupSummary?.period ?? 0;
+                const active = analyticsData.activeSignups ?? 0;
+                const senders = analyticsData.senderCount ?? 0;
+                const steps = [
+                  { label: 'Visitors', value: visitors, color: 'bg-indigo-500' },
+                  { label: 'Signups', value: signups, color: 'bg-emerald-500' },
+                  { label: 'Created doc', value: active, color: 'bg-blue-500' },
+                  { label: 'Sent doc', value: senders, color: 'bg-violet-500' },
+                ];
+                const max = Math.max(visitors, 1);
+                return steps.map((step, i) => {
+                  const pct = Math.round((step.value / max) * 100);
+                  const conv = i > 0 && steps[i-1].value > 0 ? Math.round((step.value / steps[i-1].value) * 100) : null;
+                  return (
+                    <div key={step.label} className="flex-1 flex flex-col items-center gap-1.5">
+                      {conv !== null && (
+                        <span className="text-[9px] font-bold text-slate-400">{conv}%</span>
+                      )}
+                      <div className={cn('w-full rounded-lg', step.color)} style={{ height: `${Math.max(pct * 1.2, 8)}px` }} />
+                      <div className="text-center">
+                        <div className="text-sm font-black text-slate-800">{step.value.toLocaleString()}</div>
+                        <div className="text-[10px] text-slate-400">{step.label}</div>
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          </div>
+        )}
+
+        {/* Signup + traffic sparkline */}
+        {analyticsData?.signupsDaily?.length > 0 && analyticsData?.daily?.length > 0 && (() => {
+          const allDates = [...new Set([...analyticsData.daily.map((d:any) => d.date), ...analyticsData.signupsDaily.map((d:any) => d.date)])].sort();
+          const viewMap: Record<string,number> = {};
+          analyticsData.daily.forEach((d:any) => { viewMap[d.date] = d.count; });
+          const signupMap: Record<string,number> = {};
+          analyticsData.signupsDaily.forEach((d:any) => { signupMap[d.date] = d.count; });
+          const maxViews = Math.max(...allDates.map(d => viewMap[d] || 0), 1);
+          const maxSignups = Math.max(...allDates.map(d => signupMap[d] || 0), 1);
+          const W = 400, H = 80;
+          const viewPts = allDates.map((d, i) => `${(i / Math.max(allDates.length - 1, 1)) * W},${H - ((viewMap[d] || 0) / maxViews) * H}`).join(' ');
+          const signupPts = allDates.map((d, i) => `${(i / Math.max(allDates.length - 1, 1)) * W},${H - ((signupMap[d] || 0) / maxSignups) * H}`).join(' ');
+          return (
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Growth Trend</p>
+                <div className="flex items-center gap-4 text-[10px] text-slate-400">
+                  <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-indigo-500 inline-block rounded" /> Page views</span>
+                  <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-emerald-500 inline-block rounded" /> Signups</span>
+                </div>
+              </div>
+              <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-24" preserveAspectRatio="none">
+                <polyline points={viewPts} fill="none" stroke="#6366f1" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.8" />
+                <polyline points={signupPts} fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.9" />
+              </svg>
+              <div className="flex justify-between text-[9px] text-slate-300 mt-1">
+                <span>{allDates[0]?.slice(5)}</span>
+                <span>{allDates[allDates.length - 1]?.slice(5)}</span>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Comms summary cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
             {
@@ -348,6 +503,11 @@ export default function Admin() {
             </button>
           ))}
         </div>
+
+        </>)}
+
+        {/* ══ USERS TAB ════════════════════════════════════════ */}
+        {activeTab === 'users' && (<>
 
         {/* ── Platform Usage ──────────────────────────────────── */}
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
@@ -472,6 +632,11 @@ export default function Admin() {
           )}
         </div>
 
+        </>)}
+
+        {/* ══ FINANCIALS TAB ═══════════════════════════════════ */}
+        {activeTab === 'financials' && (<>
+
         {/* ── Platform financials + activity ───────────────────── */}
         {usersData && (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -517,6 +682,11 @@ export default function Admin() {
             </div>
           </div>
         )}
+
+        </>)}
+
+        {/* ══ COMMS TAB ════════════════════════════════════════ */}
+        {activeTab === 'comms' && (<>
 
         {/* Feedback + Broadcast */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
@@ -807,6 +977,11 @@ export default function Admin() {
             </div>
           )}
         </div>
+
+        </>)}
+
+        {/* ══ TRAFFIC TAB ══════════════════════════════════════ */}
+        {activeTab === 'traffic' && (<>
 
         {/* ── Analytics Dashboard ──────────────────────────────── */}
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
@@ -1209,6 +1384,8 @@ export default function Admin() {
             </div>
           )}
         </div>
+
+        </>)}
 
       </main>
 
