@@ -1034,7 +1034,7 @@ export default function Generator() {
       {/* Demo Mode Banner */}
       {isDemo && (
         <div className="bg-indigo-600 text-white px-5 py-2.5 flex items-center justify-center gap-4 text-sm">
-          <span className="font-medium">Demo Mode — Smart Fill, line items, and discounts are fully live. Save, Send &amp; Download unlock after setup.</span>
+          <span className="font-medium">Demo Mode — Download free, no account needed. Sign up free to save your work and send by WhatsApp, SMS or email.</span>
           <button
             onClick={() => navigate('/setup')}
             className="shrink-0 bg-white text-indigo-600 px-4 py-1 rounded-lg text-xs font-black hover:bg-indigo-50 transition-colors"
