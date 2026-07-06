@@ -365,6 +365,37 @@ router.get('/analytics', adminAuth, (req: Request, res: Response) => {
   });
 });
 
+router.get('/activity', adminAuth, (_req: Request, res: Response) => {
+  const events = db.prepare(`
+    SELECT 'signup' as type, id, name as title, email as subtitle, country,
+           created_at as ts, NULL as amount, NULL as currency_symbol
+    FROM organizations
+    WHERE created_at >= datetime('now', '-30 days')
+    UNION ALL
+    SELECT
+      CASE WHEN status = 'paid' THEN 'payment' WHEN status = 'sent' THEN 'sent' ELSE 'doc' END as type,
+      i.id,
+      (CASE i.type WHEN 'invoice' THEN 'Invoice' WHEN 'receipt' THEN 'Receipt' ELSE 'Doc' END) || ' ' || i.number as title,
+      i.client_name as subtitle,
+      NULL as country,
+      COALESCE(i.paid_date, i.updated_at, i.created_at) as ts,
+      CASE WHEN i.status = 'paid' THEN i.amount_paid ELSE i.total END as amount,
+      i.currency_symbol
+    FROM invoices i
+    WHERE i.status IN ('sent', 'paid')
+      AND COALESCE(i.paid_date, i.updated_at, i.created_at) >= datetime('now', '-30 days')
+    UNION ALL
+    SELECT 'quote' as type, id, 'Quote ' || number as title, client_name as subtitle,
+           NULL as country, created_at as ts, total as amount, NULL as currency_symbol
+    FROM quotes
+    WHERE status IN ('sent', 'accepted', 'invoiced')
+      AND created_at >= datetime('now', '-30 days')
+    ORDER BY ts DESC
+    LIMIT 25
+  `).all();
+  res.json({ events });
+});
+
 router.get('/analytics/views', adminAuth, (req: Request, res: Response) => {
   const limit = Math.min(Number(req.query.limit) || 200, 500);
   const offset = Number(req.query.offset) || 0;

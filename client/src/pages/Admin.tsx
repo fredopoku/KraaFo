@@ -1,10 +1,61 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Star, Mail, Send, Megaphone, ChevronDown, ChevronUp, LogOut, Shield, Building2, Users, FileText, Receipt, Quote, TrendingUp, TrendingDown, Activity, Trash2, Zap, Plus, X, ArrowRight, CheckCircle, AlertCircle, Globe, Monitor, Smartphone, Tablet, Eye, ChevronRight, Phone, ExternalLink, UserCheck, Clock, BarChart2, MousePointerClick, UserPlus, PenSquare } from 'lucide-react';
+import { Star, Mail, Send, Megaphone, ChevronDown, ChevronUp, LogOut, Shield, Building2, Users, FileText, Receipt, Quote, TrendingUp, TrendingDown, Activity, Trash2, Zap, Plus, X, ArrowRight, CheckCircle, AlertCircle, Globe, Monitor, Smartphone, Tablet, Eye, ChevronRight, Phone, ExternalLink, UserCheck, Clock, BarChart2, MousePointerClick, UserPlus, PenSquare, Search, Flame } from 'lucide-react';
 import { LogoMark } from '../components/Logo';
 import { cn } from '../utils/cn';
 
 const STORAGE_KEY = 'krafo_admin_token';
 const BASE = '/api';
+
+function timeAgo(ts: string): string {
+  if (!ts) return '—';
+  const m = Math.floor((Date.now() - new Date(ts).getTime()) / 60000);
+  if (m < 1) return 'just now';
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
+
+function getOrgStatus(org: any) {
+  if (org.total_collected > 0) return { label: 'Power', cls: 'bg-emerald-50 text-emerald-700 border-emerald-100' };
+  const total = (org.invoice_count || 0) + (org.receipt_count || 0) + (org.quote_count || 0);
+  if (org.outstanding > 0) return { label: 'Active', cls: 'bg-blue-50 text-blue-600 border-blue-100' };
+  if (total > 0) return { label: 'Warm', cls: 'bg-amber-50 text-amber-600 border-amber-100' };
+  return { label: 'Cold', cls: 'bg-slate-50 text-slate-400 border-slate-100' };
+}
+
+function makeArea(vals: number[], W: number, H: number) {
+  if (vals.length < 2) return null;
+  const max = Math.max(...vals, 1);
+  const px = 3, py = 5;
+  const pts = vals.map((v, i) => ({
+    x: px + (i / (vals.length - 1)) * (W - px * 2),
+    y: H - py - (v / max) * (H - py * 2),
+  }));
+  const line = pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  const fill = `${pts[0].x.toFixed(1)},${H} ${line} ${pts[pts.length-1].x.toFixed(1)},${H}`;
+  return { line, fill };
+}
+
+function DonutChart({ segments }: { segments: { value: number; color: string; label: string }[] }) {
+  const r = 28, cx = 36, cy = 36, sw = 9;
+  const circ = 2 * Math.PI * r;
+  const total = segments.reduce((s, seg) => s + seg.value, 0) || 1;
+  let cum = 0;
+  return (
+    <svg viewBox="0 0 72 72" className="w-[72px] h-[72px] shrink-0">
+      {segments.map((seg, i) => {
+        const pct = seg.value / total;
+        const dash = Math.max(pct * circ - 2, 0);
+        const rot = cum * 360 - 90;
+        const el = <circle key={i} cx={cx} cy={cy} r={r} fill="none" stroke={seg.color} strokeWidth={sw} strokeDasharray={`${dash} ${circ}`} transform={`rotate(${rot}, ${cx}, ${cy})`} />;
+        cum += pct;
+        return el;
+      })}
+      <circle cx={cx} cy={cy} r={r - sw / 2 - 1} fill="white" />
+    </svg>
+  );
+}
 
 async function adminFetch<T>(path: string, token: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
@@ -51,6 +102,8 @@ export default function Admin() {
   const [viewsData, setViewsData] = useState<{ views: any[]; total: number } | null>(null);
   const [viewsLoading, setViewsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'traffic' | 'users' | 'financials' | 'comms'>('overview');
+  const [activityData, setActivityData] = useState<any[]>([]);
+  const [orgSearch, setOrgSearch] = useState('');
 
   // Org detail drill-down
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
@@ -59,13 +112,14 @@ export default function Admin() {
   const [orgDetailTab, setOrgDetailTab] = useState<'overview' | 'documents' | 'clients' | 'team'>('overview');
 
   const loadData = useCallback(async (t: string, d = 30) => {
-    const [fb, subs, bcs, users, cl, analytics] = await Promise.all([
+    const [fb, subs, bcs, users, cl, analytics, activity] = await Promise.all([
       adminFetch<any>('/feedback', t).catch(() => null),
       adminFetch<any>('/subscribers', t).catch(() => ({ subscribers: [], total: 0 })),
       adminFetch<any[]>('/broadcasts', t).catch(() => []),
       adminFetch<any>('/admin/users', t).catch(() => null),
       fetch(`${BASE}/changelog`).then(r => r.json()).catch(() => ({ entries: [] })),
       adminFetch<any>(`/admin/analytics?days=${d}`, t).catch(() => null),
+      adminFetch<any>('/admin/activity', t).catch(() => ({ events: [] })),
     ]);
     if (fb) setFeedbackData(fb);
     setSubCount(subs?.total ?? 0);
@@ -74,6 +128,7 @@ export default function Admin() {
     if (users) setUsersData(users);
     setChangelogEntries(cl?.entries || []);
     if (analytics) setAnalyticsData(analytics);
+    setActivityData(activity?.events || []);
   }, []);
 
   const refreshAnalytics = async (d: number) => {
@@ -338,217 +393,272 @@ export default function Admin() {
       <main className="max-w-6xl mx-auto px-4 py-6 space-y-5">
 
         {/* ══ OVERVIEW TAB ══════════════════════════════════════ */}
-        {activeTab === 'overview' && (<>
+        {activeTab === 'overview' && (() => {
+          const ov = analyticsData?.overview;
+          const pv = analyticsData?.prev;
+          const periodTrend = ov && pv?.total ? { pct: Math.round(((ov.period - pv.total) / pv.total) * 100), up: ov.period >= pv.total } : null;
+          const dateMap: Record<string, { views: number; signups: number }> = {};
+          analyticsData?.daily?.forEach((d: any) => { dateMap[d.date] = { views: d.count, signups: 0 }; });
+          analyticsData?.signupsDaily?.forEach((d: any) => {
+            if (dateMap[d.date]) dateMap[d.date].signups = d.count;
+            else dateMap[d.date] = { views: 0, signups: d.count };
+          });
+          const chartDates = Object.keys(dateMap).sort();
+          const viewSeries = chartDates.map(d => dateMap[d].views);
+          const signupSeries = chartDates.map(d => dateMap[d].signups);
+          const maxV = Math.max(...viewSeries, 1);
+          const W = 500, H = 100;
+          const viewArea = makeArea(viewSeries, W, H);
+          const signupAreaScaled = makeArea(signupSeries.map(v => (v / Math.max(...signupSeries, 1)) * maxV), W, H);
+          return (<>
 
-        {/* KPI hero row */}
-        {usersData && analyticsData && (
+        {/* ── Live Pulse Banner ──────────────────────────────── */}
+        <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 rounded-2xl p-5 sm:p-6 overflow-hidden">
+          <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, #fff 1px, transparent 0)', backgroundSize: '28px 28px' }} />
+          <div className="relative">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+              <div className="flex items-center gap-2.5">
+                <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse shrink-0" />
+                <span className="text-white font-black text-sm">Platform Pulse</span>
+                {analyticsData?.realtime?.active > 0 && (
+                  <span className="bg-emerald-500/20 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-500/20">
+                    {analyticsData.realtime.active} online now
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-1">
+                {([{ label: '7d', value: 7 }, { label: '30d', value: 30 }, { label: '90d', value: 90 }, { label: 'All', value: 0 }] as const).map(opt => (
+                  <button key={opt.value} onClick={() => { setDays(opt.value); refreshAnalytics(opt.value); }}
+                    className={cn('px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all', days === opt.value ? 'bg-white/20 text-white' : 'text-white/40 hover:text-white/70')}
+                  >{opt.label}</button>
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                { label: 'Visitors', sub: `${days > 0 ? days + 'd' : 'all time'}`, value: (ov?.period ?? 0).toLocaleString(), extra: periodTrend ? `${periodTrend.up ? '▲' : '▼'} ${Math.abs(periodTrend.pct)}% vs prev` : null, extraColor: periodTrend?.up ? 'text-emerald-400' : 'text-red-400' },
+                { label: "Today's views", sub: 'page views', value: (ov?.today ?? 0).toLocaleString(), extra: null, extraColor: '' },
+                { label: 'Signups', sub: `${days > 0 ? days + 'd' : 'all time'}`, value: (analyticsData?.signupSummary?.period ?? 0).toLocaleString(), extra: `${analyticsData?.signupSummary?.today ?? 0} today`, extraColor: 'text-emerald-400' },
+                { label: 'Active orgs', sub: 'last 30 days', value: (usersData?.summary?.active_orgs ?? 0).toLocaleString(), extra: `${usersData?.summary?.new_this_week ?? 0} this week`, extraColor: 'text-white/40' },
+              ].map(item => (
+                <div key={item.label} className="bg-white/[0.07] hover:bg-white/10 transition-colors rounded-xl p-3.5 border border-white/10">
+                  <div className="text-xl sm:text-2xl font-black text-white leading-none">{item.value}</div>
+                  <div className="text-[10px] text-white/50 mt-1.5">{item.label}</div>
+                  {item.extra && <div className={cn('text-[10px] font-bold mt-0.5', item.extraColor)}>{item.extra}</div>}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ── KPI cards ──────────────────────────────────────── */}
+        {usersData && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              {
-                label: 'Visitors', sublabel: `${days > 0 ? days + 'd' : 'all'}`,
-                value: (analyticsData.overview?.period ?? 0).toLocaleString(),
-                sub: `${(analyticsData.overview?.today ?? 0).toLocaleString()} today`,
-                icon: MousePointerClick, color: 'text-indigo-500', bg: 'bg-indigo-50',
-                trend: analyticsData.prev?.total ? Math.round(((analyticsData.overview.period - analyticsData.prev.total) / analyticsData.prev.total) * 100) : null,
-              },
-              {
-                label: 'Signups', sublabel: `${days > 0 ? days + 'd' : 'all'}`,
-                value: (analyticsData.signupSummary?.period ?? 0).toLocaleString(),
-                sub: `${(analyticsData.signupSummary?.today ?? 0).toLocaleString()} today`,
-                icon: UserPlus, color: 'text-emerald-600', bg: 'bg-emerald-50',
-                trend: null,
-              },
-              {
-                label: 'Documents', sublabel: '30d',
-                value: (usersData.summary.total_invoices + usersData.summary.total_receipts + usersData.summary.total_quotes).toLocaleString(),
-                sub: `${usersData.summary.total_invoices}i · ${usersData.summary.total_receipts}r · ${usersData.summary.total_quotes}q`,
-                icon: PenSquare, color: 'text-blue-600', bg: 'bg-blue-50',
-                trend: null,
-              },
-              {
-                label: 'Active Orgs', sublabel: '30d',
-                value: usersData.summary.active_orgs.toLocaleString(),
-                sub: `${usersData.summary.new_this_week} new this week`,
-                icon: Building2, color: 'text-violet-600', bg: 'bg-violet-50',
-                trend: null,
-              },
+              { label: 'Total orgs', value: usersData.summary.total_orgs, sub: `${usersData.summary.new_this_week} new this week`, icon: Building2, color: 'text-indigo-500', bg: 'bg-indigo-50', ring: 'ring-indigo-100' },
+              { label: 'Invoices', value: usersData.summary.total_invoices, sub: `+ ${usersData.summary.total_receipts} receipts · ${usersData.summary.total_quotes} quotes`, icon: FileText, color: 'text-blue-600', bg: 'bg-blue-50', ring: 'ring-blue-100' },
+              { label: 'Collected', value: `$${Number(usersData.summary.total_collected || 0).toLocaleString()}`, sub: `$${Number(usersData.summary.total_outstanding || 0).toLocaleString()} outstanding`, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50', ring: 'ring-emerald-100' },
+              { label: 'Team members', value: usersData.summary.total_team_members, sub: `${usersData.summary.team_accounts} team accounts`, icon: Users, color: 'text-violet-600', bg: 'bg-violet-50', ring: 'ring-violet-100' },
             ].map(card => (
-              <div key={card.label} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-3 sm:p-4">
-                <div className={cn('w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center mb-2 sm:mb-3', card.bg)}>
-                  <card.icon className={cn('w-3.5 h-3.5 sm:w-4 sm:h-4', card.color)} />
+              <div key={card.label} className={cn('bg-white rounded-2xl p-4 ring-1 shadow-sm', card.ring)}>
+                <div className={cn('w-8 h-8 rounded-xl flex items-center justify-center mb-3', card.bg)}>
+                  <card.icon className={cn('w-4 h-4', card.color)} />
                 </div>
-                <div className="text-xl sm:text-2xl font-black text-slate-900 leading-none">{card.value}</div>
-                <div className="text-[10px] sm:text-[11px] text-slate-400 mt-1">{card.label} <span className="text-slate-300 hidden sm:inline">({card.sublabel})</span></div>
-                <div className="flex items-center justify-between mt-1">
-                  <span className="text-[9px] sm:text-[10px] text-slate-300 truncate">{card.sub}</span>
-                  {card.trend !== null && (
-                    <span className={cn('text-[10px] font-bold flex items-center gap-0.5', card.trend >= 0 ? 'text-emerald-600' : 'text-red-500')}>
-                      {card.trend >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                      {card.trend >= 0 ? '+' : ''}{card.trend}%
-                    </span>
-                  )}
-                </div>
+                <div className="text-2xl font-black text-slate-900 leading-none">{typeof card.value === 'number' ? card.value.toLocaleString() : card.value}</div>
+                <div className="text-[10px] text-slate-500 mt-1 font-medium">{card.label}</div>
+                <div className="text-[9px] text-slate-300 mt-0.5 truncate">{card.sub}</div>
               </div>
             ))}
           </div>
         )}
 
-        {/* Conversion funnel */}
-        {analyticsData && usersData && (
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-4">Conversion Funnel</p>
-            {/* Mobile: horizontal bar list. Desktop: column chart */}
-            <div className="block sm:hidden space-y-2">
-              {(() => {
-                const visitors = analyticsData.overview?.period ?? 0;
-                const signups = analyticsData.signupSummary?.period ?? 0;
-                const active = analyticsData.activeSignups ?? 0;
-                const senders = analyticsData.senderCount ?? 0;
-                const steps = [
-                  { label: 'Visitors', value: visitors, color: 'bg-indigo-500' },
-                  { label: 'Signups', value: signups, color: 'bg-emerald-500' },
-                  { label: 'Created doc', value: active, color: 'bg-blue-500' },
-                  { label: 'Sent doc', value: senders, color: 'bg-violet-500' },
-                ];
-                const max = Math.max(visitors, 1);
-                return steps.map((step, i) => {
-                  const pct = Math.round((step.value / max) * 100);
-                  const conv = i > 0 && steps[i-1].value > 0 ? Math.round((step.value / steps[i-1].value) * 100) : null;
-                  return (
-                    <div key={step.label} className="flex items-center gap-3">
-                      <span className="text-[10px] text-slate-500 w-20 shrink-0">{step.label}</span>
-                      <div className="flex-1 h-5 bg-slate-100 rounded-full overflow-hidden">
-                        <div className={cn('h-full rounded-full', step.color)} style={{ width: `${Math.max(pct, 3)}%` }} />
-                      </div>
-                      <span className="text-xs font-black text-slate-700 w-10 text-right shrink-0">{step.value.toLocaleString()}</span>
-                      {conv !== null && <span className="text-[9px] text-slate-400 w-8 shrink-0">{conv}%</span>}
-                    </div>
-                  );
-                });
-              })()}
+        {/* ── Growth chart + Funnel ───────────────────────── */}
+        {analyticsData && (
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+            <div className="lg:col-span-3 bg-white rounded-2xl ring-1 ring-slate-100 shadow-sm p-5">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-xs font-black text-slate-700">Growth Trend</p>
+                <div className="flex items-center gap-4 text-[10px] text-slate-400">
+                  <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-indigo-500 inline-block rounded" />Views</span>
+                  <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-emerald-500 inline-block rounded" />Signups</span>
+                </div>
+              </div>
+              {viewArea ? (
+                <div className="mt-3">
+                  <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-28" preserveAspectRatio="none">
+                    <defs>
+                      <linearGradient id="ovGradV" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#6366f1" stopOpacity="0.22" />
+                        <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
+                      </linearGradient>
+                      <linearGradient id="ovGradS" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#10b981" stopOpacity="0.28" />
+                        <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
+                      </linearGradient>
+                    </defs>
+                    {[0.25, 0.5, 0.75].map(y => (
+                      <line key={y} x1="0" y1={y * H} x2={W} y2={y * H} stroke="#f1f5f9" strokeWidth="1" />
+                    ))}
+                    <polygon points={viewArea.fill} fill="url(#ovGradV)" />
+                    <polyline points={viewArea.line} fill="none" stroke="#6366f1" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                    {signupAreaScaled && <>
+                      <polygon points={signupAreaScaled.fill} fill="url(#ovGradS)" />
+                      <polyline points={signupAreaScaled.line} fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </>}
+                  </svg>
+                  <div className="flex justify-between text-[9px] text-slate-300 mt-1">
+                    <span>{chartDates[0]?.slice(5)}</span>
+                    <span>{chartDates[chartDates.length - 1]?.slice(5)}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="h-28 flex items-center justify-center text-slate-200 text-sm">No data yet</div>
+              )}
             </div>
-            <div className="hidden sm:flex items-end gap-2">
+
+            <div className="lg:col-span-2 bg-white rounded-2xl ring-1 ring-slate-100 shadow-sm p-5">
+              <p className="text-xs font-black text-slate-700 mb-4">Conversion Funnel</p>
               {(() => {
                 const visitors = analyticsData.overview?.period ?? 0;
                 const signups = analyticsData.signupSummary?.period ?? 0;
                 const active = analyticsData.activeSignups ?? 0;
                 const senders = analyticsData.senderCount ?? 0;
                 const steps = [
-                  { label: 'Visitors', value: visitors, color: 'bg-indigo-500' },
-                  { label: 'Signups', value: signups, color: 'bg-emerald-500' },
-                  { label: 'Created doc', value: active, color: 'bg-blue-500' },
-                  { label: 'Sent doc', value: senders, color: 'bg-violet-500' },
+                  { label: 'Visitors', value: visitors, hex: '#6366f1' },
+                  { label: 'Signups', value: signups, hex: '#10b981' },
+                  { label: 'Created doc', value: active, hex: '#3b82f6' },
+                  { label: 'Sent doc', value: senders, hex: '#8b5cf6' },
                 ];
                 const max = Math.max(visitors, 1);
-                return steps.map((step, i) => {
-                  const pct = Math.round((step.value / max) * 100);
-                  const conv = i > 0 && steps[i-1].value > 0 ? Math.round((step.value / steps[i-1].value) * 100) : null;
-                  return (
-                    <div key={step.label} className="flex-1 flex flex-col items-center gap-1.5">
-                      {conv !== null && <span className="text-[9px] font-bold text-slate-400">{conv}%</span>}
-                      <div className={cn('w-full rounded-lg', step.color)} style={{ height: `${Math.max(pct * 1.2, 8)}px` }} />
-                      <div className="text-center">
-                        <div className="text-sm font-black text-slate-800">{step.value.toLocaleString()}</div>
-                        <div className="text-[10px] text-slate-400">{step.label}</div>
-                      </div>
-                    </div>
-                  );
-                });
+                return (
+                  <div className="space-y-3">
+                    {steps.map((step, i) => {
+                      const pct = Math.round((step.value / max) * 100);
+                      const conv = i > 0 && steps[i-1].value > 0 ? Math.round((step.value / steps[i-1].value) * 100) : null;
+                      return (
+                        <div key={step.label}>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[11px] font-bold text-slate-600">{step.label}</span>
+                            <div className="flex items-center gap-2">
+                              {conv !== null && <span className="text-[9px] font-bold text-slate-400">{conv}%</span>}
+                              <span className="text-xs font-black text-slate-800">{step.value.toLocaleString()}</span>
+                            </div>
+                          </div>
+                          <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                            <div className="h-full rounded-full" style={{ width: `${Math.max(pct, 2)}%`, background: step.hex }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
               })()}
             </div>
           </div>
         )}
 
-        {/* Signup + traffic sparkline */}
-        {analyticsData?.signupsDaily?.length > 0 && analyticsData?.daily?.length > 0 && (() => {
-          const allDates = [...new Set([...analyticsData.daily.map((d:any) => d.date), ...analyticsData.signupsDaily.map((d:any) => d.date)])].sort();
-          const viewMap: Record<string,number> = {};
-          analyticsData.daily.forEach((d:any) => { viewMap[d.date] = d.count; });
-          const signupMap: Record<string,number> = {};
-          analyticsData.signupsDaily.forEach((d:any) => { signupMap[d.date] = d.count; });
-          const maxViews = Math.max(...allDates.map(d => viewMap[d] || 0), 1);
-          const maxSignups = Math.max(...allDates.map(d => signupMap[d] || 0), 1);
-          const W = 400, H = 80;
-          const viewPts = allDates.map((d, i) => `${(i / Math.max(allDates.length - 1, 1)) * W},${H - ((viewMap[d] || 0) / maxViews) * H}`).join(' ');
-          const signupPts = allDates.map((d, i) => `${(i / Math.max(allDates.length - 1, 1)) * W},${H - ((signupMap[d] || 0) / maxSignups) * H}`).join(' ');
-          return (
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Growth Trend</p>
-                <div className="flex items-center gap-4 text-[10px] text-slate-400">
-                  <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-indigo-500 inline-block rounded" /> Page views</span>
-                  <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-emerald-500 inline-block rounded" /> Signups</span>
-                </div>
+        {/* ── Activity feed + Comms ───────────────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+          <div className="lg:col-span-3 bg-white rounded-2xl ring-1 ring-slate-100 shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-50 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Activity className="w-4 h-4 text-indigo-600" />
+                <h2 className="text-sm font-black text-slate-700">Platform Activity</h2>
               </div>
-              <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-24" preserveAspectRatio="none">
-                <polyline points={viewPts} fill="none" stroke="#6366f1" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.8" />
-                <polyline points={signupPts} fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.9" />
-              </svg>
-              <div className="flex justify-between text-[9px] text-slate-300 mt-1">
-                <span>{allDates[0]?.slice(5)}</span>
-                <span>{allDates[allDates.length - 1]?.slice(5)}</span>
-              </div>
+              <span className="text-[10px] text-slate-400">Last 30 days</span>
             </div>
-          );
-        })()}
+            {activityData.length === 0 ? (
+              <div className="py-12 text-center">
+                <Activity className="w-8 h-8 text-slate-200 mx-auto mb-2" />
+                <p className="text-sm text-slate-300">Activity will appear here as users interact</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-50 max-h-[340px] overflow-y-auto">
+                {activityData.map((ev: any, idx: number) => {
+                  const cfg: Record<string, { icon: any; bg: string; color: string; label: string }> = {
+                    signup:  { icon: UserPlus,    bg: 'bg-emerald-50', color: 'text-emerald-600', label: 'New signup' },
+                    payment: { icon: CheckCircle, bg: 'bg-emerald-50', color: 'text-emerald-700', label: 'Payment received' },
+                    sent:    { icon: Send,         bg: 'bg-blue-50',    color: 'text-blue-600',    label: 'Document sent' },
+                    doc:     { icon: FileText,     bg: 'bg-indigo-50',  color: 'text-indigo-600',  label: 'Document' },
+                    quote:   { icon: Quote,        bg: 'bg-violet-50',  color: 'text-violet-600',  label: 'Quote' },
+                  };
+                  const c = cfg[ev.type] || cfg.doc;
+                  const Icon = c.icon;
+                  return (
+                    <div key={idx} className="px-5 py-3 flex items-center gap-3 hover:bg-slate-50/60 transition-colors">
+                      <div className={cn('w-7 h-7 rounded-lg flex items-center justify-center shrink-0', c.bg)}>
+                        <Icon className={cn('w-3.5 h-3.5', c.color)} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-slate-800 truncate">{ev.title}</span>
+                          {ev.amount > 0 && (
+                            <span className="text-[10px] font-black text-emerald-700 shrink-0">
+                              {ev.currency_symbol || '$'}{Number(ev.amount).toLocaleString()}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[10px] text-slate-400 truncate">
+                          {[ev.subtitle, ev.country].filter(Boolean).join(' · ') || c.label}
+                        </div>
+                      </div>
+                      <span className="text-[10px] text-slate-300 shrink-0 tabular-nums">{timeAgo(ev.ts)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
-        {/* Comms summary cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[
-            {
-              label: 'Avg Rating', icon: Star, color: 'text-amber-500', bg: 'bg-amber-50',
-              value: feedbackData ? `${feedbackData.averageRating} / 5` : '—',
-              sub: `${feedbackData?.total ?? 0} review${feedbackData?.total !== 1 ? 's' : ''}`,
-              modal: 'reviews' as const,
-            },
-            {
-              label: 'Subscribers', icon: Mail, color: 'text-indigo-600', bg: 'bg-indigo-50',
-              value: subCount,
-              sub: 'active email subscribers',
-              modal: 'subscribers' as const,
-            },
-            {
-              label: 'Broadcasts Sent', icon: Megaphone, color: 'text-emerald-600', bg: 'bg-emerald-50',
-              value: broadcasts.length,
-              sub: 'update emails sent',
-              modal: 'broadcasts' as const,
-            },
-          ].map(c => (
-            <button
-              key={c.label}
-              onClick={() => setActiveModal(c.modal)}
-              className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 text-left hover:border-indigo-200 hover:shadow-md transition-all group"
-            >
-              <div className={cn('w-8 h-8 rounded-xl flex items-center justify-center mb-3', c.bg)}>
-                <c.icon className={cn('w-4 h-4', c.color)} />
-              </div>
-              <div className="text-xl font-black text-slate-900">{c.value}</div>
-              <div className="text-[11px] font-medium text-slate-400 mt-0.5">{c.label}</div>
-              <div className="text-[10px] text-slate-300 mt-0.5">{c.sub}</div>
-              <div className="mt-2 flex items-center gap-1 text-[10px] font-bold text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                View details <ArrowRight className="w-3 h-3" />
-              </div>
-            </button>
-          ))}
+          <div className="lg:col-span-2 flex flex-col gap-3">
+            {[
+              { label: 'Avg Rating', icon: Star, color: 'text-amber-500', bg: 'bg-amber-50', ring: 'ring-amber-100', value: feedbackData ? `${feedbackData.averageRating}/5` : '—', sub: `${feedbackData?.total ?? 0} reviews`, modal: 'reviews' as const },
+              { label: 'Subscribers', icon: Mail, color: 'text-indigo-600', bg: 'bg-indigo-50', ring: 'ring-indigo-100', value: String(subCount), sub: 'email subscribers', modal: 'subscribers' as const },
+              { label: 'Broadcasts', icon: Megaphone, color: 'text-emerald-600', bg: 'bg-emerald-50', ring: 'ring-emerald-100', value: String(broadcasts.length), sub: 'sent to subscribers', modal: 'broadcasts' as const },
+            ].map(c => (
+              <button key={c.label} onClick={() => setActiveModal(c.modal)}
+                className={cn('bg-white rounded-2xl ring-1 shadow-sm p-4 text-left hover:shadow-md transition-all flex items-center gap-4 group', c.ring)}
+              >
+                <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center shrink-0', c.bg)}>
+                  <c.icon className={cn('w-4.5 h-4.5', c.color)} style={{ width: 18, height: 18 }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-2xl font-black text-slate-900 leading-none">{c.value}</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">{c.label} · {c.sub}</div>
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-indigo-400 transition-colors shrink-0" />
+              </button>
+            ))}
+          </div>
         </div>
 
-        </>)}
+        </>);
+        })()}
 
         {/* ══ USERS TAB ════════════════════════════════════════ */}
         {activeTab === 'users' && (<>
 
         {/* ── Platform Usage ──────────────────────────────────── */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-50 flex items-center justify-between">
+        <div className="bg-white rounded-2xl ring-1 ring-slate-100 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-50 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <Activity className="w-4 h-4 text-indigo-600" />
-              <h2 className="text-sm font-black text-slate-700">Platform Usage</h2>
+              <h2 className="text-sm font-black text-slate-700">Organisations</h2>
+              {usersData && (
+                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                  {usersData.summary.active_orgs} active (30d)
+                </span>
+              )}
             </div>
-            {usersData && (
-              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
-                {usersData.summary.active_orgs} active (30d)
-              </span>
-            )}
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 text-slate-300 absolute left-2.5 top-1/2 -translate-y-1/2" />
+              <input
+                value={orgSearch}
+                onChange={e => setOrgSearch(e.target.value)}
+                placeholder="Search by name, email…"
+                className="pl-8 pr-3 py-1.5 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-300 w-48"
+              />
+            </div>
           </div>
 
           {/* Summary mini-stats */}
@@ -572,7 +682,7 @@ export default function Admin() {
           )}
 
           {/* Org table */}
-          {!usersData || usersData.orgs.length === 0 ? (
+          {!usersData || (usersData.orgs.filter((o: any) => !orgSearch || o.name?.toLowerCase().includes(orgSearch.toLowerCase()) || o.email?.toLowerCase().includes(orgSearch.toLowerCase())).length === 0) ? (
             <div className="py-14 text-center">
               <Building2 className="w-8 h-8 text-slate-200 mx-auto mb-2" />
               <p className="text-sm text-slate-300">No organisations registered yet</p>
@@ -583,6 +693,7 @@ export default function Admin() {
                 <thead>
                   <tr className="border-b border-slate-50 bg-slate-50/50">
                     <th className="px-5 py-2.5 text-left font-bold text-slate-400 uppercase tracking-wider text-[10px]">Business</th>
+                    <th className="px-3 py-2.5 text-left font-bold text-slate-400 uppercase tracking-wider text-[10px] hidden sm:table-cell">Status</th>
                     <th className="px-3 py-2.5 text-left font-bold text-slate-400 uppercase tracking-wider text-[10px] hidden md:table-cell">Type</th>
                     <th className="px-3 py-2.5 text-right font-bold text-slate-400 uppercase tracking-wider text-[10px]">Docs</th>
                     <th className="px-3 py-2.5 text-right font-bold text-slate-400 uppercase tracking-wider text-[10px] hidden sm:table-cell">Team</th>
@@ -593,7 +704,9 @@ export default function Admin() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {(showAllOrgs ? usersData.orgs : usersData.orgs.slice(0, 15)).map((org: any) => {
+                  {(() => {
+                    const filtered = usersData.orgs.filter((o: any) => !orgSearch || o.name?.toLowerCase().includes(orgSearch.toLowerCase()) || o.email?.toLowerCase().includes(orgSearch.toLowerCase()));
+                    return (showAllOrgs ? filtered : filtered.slice(0, 15)).map((org: any) => {
                     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
                     const isActive = org.last_active_at && org.last_active_at >= thirtyDaysAgo;
                     const totalDocs = (org.invoice_count || 0) + (org.receipt_count || 0) + (org.quote_count || 0);
@@ -610,6 +723,9 @@ export default function Admin() {
                           <div className="text-[10px] text-slate-300 mt-0.5">
                             {org.country || ''} · Joined {new Date(org.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                           </div>
+                        </td>
+                        <td className="px-3 py-3 hidden sm:table-cell">
+                          {(() => { const s = getOrgStatus(org); return <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full border', s.cls)}>{s.label}</span>; })()}
                         </td>
                         <td className="px-3 py-3 hidden md:table-cell">
                           <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full', org.account_type === 'team' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-500')}>
@@ -642,11 +758,12 @@ export default function Admin() {
                         </td>
                       </tr>
                     );
-                  })}
+                  });
+                  })()}
                 </tbody>
               </table>
 
-              {usersData.orgs.length > 15 && (
+              {usersData.orgs.filter((o: any) => !orgSearch || o.name?.toLowerCase().includes(orgSearch.toLowerCase()) || o.email?.toLowerCase().includes(orgSearch.toLowerCase())).length > 15 && (
                 <button
                   onClick={() => setShowAllOrgs(v => !v)}
                   className="w-full px-5 py-3 flex items-center justify-center gap-1.5 text-xs font-bold text-indigo-500 hover:bg-slate-50 transition-colors border-t border-slate-50"
@@ -1115,31 +1232,51 @@ export default function Admin() {
                 );
               })()}
 
-              {/* Daily bar chart */}
+              {/* Daily area chart */}
               {analyticsData.daily && analyticsData.daily.length > 0 && (() => {
-                const maxVal = Math.max(...analyticsData.daily.map((d: any) => d.count), 1);
+                const vals = analyticsData.daily.map((d: any) => d.count);
+                const sessVals = analyticsData.daily.map((d: any) => d.sessions);
+                const CW = 600, CH = 100;
+                const va = makeArea(vals, CW, CH);
+                const sa = makeArea(sessVals.map((v: number) => (v / Math.max(...sessVals, 1)) * Math.max(...vals, 1)), CW, CH);
                 return (
                   <div>
-                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3">
-                      Page views — {days > 0 ? `last ${days} days` : 'all time'}
-                    </p>
-                    <div className="flex items-end gap-[3px] h-24 border-b border-slate-100 pb-1">
-                      {analyticsData.daily.map((d: any) => (
-                        <div key={d.date} className="flex-1 flex flex-col items-center justify-end group relative">
-                          <div
-                            className="w-full bg-indigo-500 rounded-t-sm hover:bg-indigo-600 transition-colors cursor-default"
-                            style={{ height: `${Math.max((d.count / maxVal) * 88, 2)}px` }}
-                          />
-                          <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[9px] px-1.5 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 leading-tight">
-                            {d.count} views<br />{d.sessions} sessions<br />{d.date.slice(5)}
-                          </div>
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+                        Page views — {days > 0 ? `last ${days} days` : 'all time'}
+                      </p>
+                      <div className="flex items-center gap-4 text-[10px] text-slate-400">
+                        <span className="flex items-center gap-1"><span className="w-3 h-0.5 bg-indigo-500 inline-block rounded" />Views</span>
+                        <span className="flex items-center gap-1"><span className="w-3 h-0.5 bg-emerald-400 inline-block rounded" />Sessions</span>
+                      </div>
+                    </div>
+                    {va ? (
+                      <>
+                        <svg viewBox={`0 0 ${CW} ${CH}`} className="w-full h-24" preserveAspectRatio="none">
+                          <defs>
+                            <linearGradient id="trGradV" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="#6366f1" stopOpacity="0.2" />
+                              <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
+                            </linearGradient>
+                            <linearGradient id="trGradS" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="#34d399" stopOpacity="0.18" />
+                              <stop offset="100%" stopColor="#34d399" stopOpacity="0" />
+                            </linearGradient>
+                          </defs>
+                          {[0.25, 0.5, 0.75].map(y => <line key={y} x1="0" y1={y * CH} x2={CW} y2={y * CH} stroke="#f1f5f9" strokeWidth="1" />)}
+                          <polygon points={va.fill} fill="url(#trGradV)" />
+                          <polyline points={va.line} fill="none" stroke="#6366f1" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                          {sa && <>
+                            <polygon points={sa.fill} fill="url(#trGradS)" />
+                            <polyline points={sa.line} fill="none" stroke="#34d399" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                          </>}
+                        </svg>
+                        <div className="flex justify-between text-[9px] text-slate-300 mt-1">
+                          <span>{analyticsData.daily[0]?.date?.slice(5)}</span>
+                          <span>{analyticsData.daily[analyticsData.daily.length - 1]?.date?.slice(5)}</span>
                         </div>
-                      ))}
-                    </div>
-                    <div className="flex justify-between text-[9px] text-slate-300 mt-1">
-                      <span>{analyticsData.daily[0]?.date?.slice(5)}</span>
-                      <span>{analyticsData.daily[analyticsData.daily.length - 1]?.date?.slice(5)}</span>
-                    </div>
+                      </>
+                    ) : null}
                   </div>
                 );
               })()}
@@ -1245,31 +1382,30 @@ export default function Admin() {
                 {analyticsData.devices && analyticsData.devices.length > 0 && (
                   <div>
                     <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3">Devices</p>
-                    <div className="space-y-2">
-                      {(() => {
-                        const total = analyticsData.devices.reduce((s: number, d: any) => s + d.count, 0) || 1;
-                        const icons: Record<string, any> = { Desktop: Monitor, Mobile: Smartphone, Tablet };
-                        return analyticsData.devices.map((d: any) => {
-                          const Icon = icons[d.device] || Monitor;
-                          const pct = Math.round((d.count / total) * 100);
-                          const colors: Record<string, string> = { Desktop: 'bg-indigo-500', Mobile: 'bg-emerald-500', Tablet: 'bg-amber-500' };
-                          return (
-                            <div key={d.device}>
-                              <div className="flex items-center justify-between mb-0.5">
-                                <div className="flex items-center gap-1.5">
-                                  <Icon className="w-3 h-3 text-slate-400" />
-                                  <span className="text-xs font-medium text-slate-700">{d.device}</span>
+                    {(() => {
+                      const total = analyticsData.devices.reduce((s: number, d: any) => s + d.count, 0) || 1;
+                      const hexColors: Record<string, string> = { Desktop: '#6366f1', Mobile: '#10b981', Tablet: '#f59e0b' };
+                      const icons: Record<string, any> = { Desktop: Monitor, Mobile: Smartphone, Tablet };
+                      const segments = analyticsData.devices.map((d: any) => ({ value: d.count, color: hexColors[d.device] || '#94a3b8', label: d.device }));
+                      return (
+                        <div className="flex items-center gap-4">
+                          <DonutChart segments={segments} />
+                          <div className="flex-1 space-y-2">
+                            {analyticsData.devices.map((d: any) => {
+                              const Icon = icons[d.device] || Monitor;
+                              const pct = Math.round((d.count / total) * 100);
+                              return (
+                                <div key={d.device} className="flex items-center gap-2">
+                                  <Icon className="w-3 h-3 shrink-0" style={{ color: hexColors[d.device] || '#94a3b8' }} />
+                                  <span className="text-xs text-slate-600 flex-1">{d.device}</span>
+                                  <span className="text-xs font-black text-slate-700">{pct}%</span>
                                 </div>
-                                <span className="text-xs font-bold text-slate-500">{pct}%</span>
-                              </div>
-                              <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                                <div className={`h-full rounded-full ${colors[d.device] || 'bg-slate-400'}`} style={{ width: `${pct}%` }} />
-                              </div>
-                            </div>
-                          );
-                        });
-                      })()}
-                    </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
                 {analyticsData.browsers && analyticsData.browsers.length > 0 && (
