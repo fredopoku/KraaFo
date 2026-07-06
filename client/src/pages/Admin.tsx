@@ -310,7 +310,7 @@ export default function Admin() {
 
       {/* Tab navigation */}
       <div className="bg-slate-900 border-b border-slate-800 sticky top-[60px] z-30">
-        <div className="max-w-6xl mx-auto px-4 flex items-center gap-1 overflow-x-auto">
+        <div className="max-w-6xl mx-auto px-4 flex items-center gap-1 overflow-x-auto scrollbar-none" style={{ scrollbarWidth: 'none' }}>
           {([
             { key: 'overview', label: 'Overview', icon: BarChart2 },
             { key: 'traffic', label: 'Traffic', icon: Globe },
@@ -373,14 +373,14 @@ export default function Admin() {
                 trend: null,
               },
             ].map(card => (
-              <div key={card.label} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
-                <div className={cn('w-8 h-8 rounded-xl flex items-center justify-center mb-3', card.bg)}>
-                  <card.icon className={cn('w-4 h-4', card.color)} />
+              <div key={card.label} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-3 sm:p-4">
+                <div className={cn('w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center mb-2 sm:mb-3', card.bg)}>
+                  <card.icon className={cn('w-3.5 h-3.5 sm:w-4 sm:h-4', card.color)} />
                 </div>
-                <div className="text-2xl font-black text-slate-900 leading-none">{card.value}</div>
-                <div className="text-[11px] text-slate-400 mt-1">{card.label} <span className="text-slate-300">({card.sublabel})</span></div>
+                <div className="text-xl sm:text-2xl font-black text-slate-900 leading-none">{card.value}</div>
+                <div className="text-[10px] sm:text-[11px] text-slate-400 mt-1">{card.label} <span className="text-slate-300 hidden sm:inline">({card.sublabel})</span></div>
                 <div className="flex items-center justify-between mt-1">
-                  <span className="text-[10px] text-slate-300">{card.sub}</span>
+                  <span className="text-[9px] sm:text-[10px] text-slate-300 truncate">{card.sub}</span>
                   {card.trend !== null && (
                     <span className={cn('text-[10px] font-bold flex items-center gap-0.5', card.trend >= 0 ? 'text-emerald-600' : 'text-red-500')}>
                       {card.trend >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
@@ -397,7 +397,37 @@ export default function Admin() {
         {analyticsData && usersData && (
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
             <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-4">Conversion Funnel</p>
-            <div className="flex items-end gap-2">
+            {/* Mobile: horizontal bar list. Desktop: column chart */}
+            <div className="block sm:hidden space-y-2">
+              {(() => {
+                const visitors = analyticsData.overview?.period ?? 0;
+                const signups = analyticsData.signupSummary?.period ?? 0;
+                const active = analyticsData.activeSignups ?? 0;
+                const senders = analyticsData.senderCount ?? 0;
+                const steps = [
+                  { label: 'Visitors', value: visitors, color: 'bg-indigo-500' },
+                  { label: 'Signups', value: signups, color: 'bg-emerald-500' },
+                  { label: 'Created doc', value: active, color: 'bg-blue-500' },
+                  { label: 'Sent doc', value: senders, color: 'bg-violet-500' },
+                ];
+                const max = Math.max(visitors, 1);
+                return steps.map((step, i) => {
+                  const pct = Math.round((step.value / max) * 100);
+                  const conv = i > 0 && steps[i-1].value > 0 ? Math.round((step.value / steps[i-1].value) * 100) : null;
+                  return (
+                    <div key={step.label} className="flex items-center gap-3">
+                      <span className="text-[10px] text-slate-500 w-20 shrink-0">{step.label}</span>
+                      <div className="flex-1 h-5 bg-slate-100 rounded-full overflow-hidden">
+                        <div className={cn('h-full rounded-full', step.color)} style={{ width: `${Math.max(pct, 3)}%` }} />
+                      </div>
+                      <span className="text-xs font-black text-slate-700 w-10 text-right shrink-0">{step.value.toLocaleString()}</span>
+                      {conv !== null && <span className="text-[9px] text-slate-400 w-8 shrink-0">{conv}%</span>}
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+            <div className="hidden sm:flex items-end gap-2">
               {(() => {
                 const visitors = analyticsData.overview?.period ?? 0;
                 const signups = analyticsData.signupSummary?.period ?? 0;
@@ -415,9 +445,7 @@ export default function Admin() {
                   const conv = i > 0 && steps[i-1].value > 0 ? Math.round((step.value / steps[i-1].value) * 100) : null;
                   return (
                     <div key={step.label} className="flex-1 flex flex-col items-center gap-1.5">
-                      {conv !== null && (
-                        <span className="text-[9px] font-bold text-slate-400">{conv}%</span>
-                      )}
+                      {conv !== null && <span className="text-[9px] font-bold text-slate-400">{conv}%</span>}
                       <div className={cn('w-full rounded-lg', step.color)} style={{ height: `${Math.max(pct * 1.2, 8)}px` }} />
                       <div className="text-center">
                         <div className="text-sm font-black text-slate-800">{step.value.toLocaleString()}</div>
@@ -1068,15 +1096,18 @@ export default function Admin() {
                     </div>
 
                     {/* Session quality metrics */}
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-3 gap-2 sm:gap-3">
                       {[
-                        { label: 'Avg Pages / Session', value: String(avgPages), color: 'text-indigo-600' },
-                        { label: 'Avg Session Duration', value: avgDuration >= 60 ? `${Math.floor(avgDuration / 60)}m ${avgDuration % 60}s` : `${avgDuration}s`, color: 'text-emerald-600' },
-                        { label: 'Bounce Rate', value: `${bounceRate}%`, color: bounceRate > 70 ? 'text-red-500' : bounceRate > 50 ? 'text-amber-600' : 'text-emerald-600' },
+                        { short: 'Pages/Session', long: 'Avg Pages / Session', value: String(avgPages), color: 'text-indigo-600' },
+                        { short: 'Avg Duration', long: 'Avg Session Duration', value: avgDuration >= 60 ? `${Math.floor(avgDuration / 60)}m ${avgDuration % 60}s` : `${avgDuration}s`, color: 'text-emerald-600' },
+                        { short: 'Bounce Rate', long: 'Bounce Rate', value: `${bounceRate}%`, color: bounceRate > 70 ? 'text-red-500' : bounceRate > 50 ? 'text-amber-600' : 'text-emerald-600' },
                       ].map(m => (
-                        <div key={m.label} className="bg-slate-50 rounded-xl p-3 text-center">
-                          <div className={`text-xl font-black ${m.color} leading-none`}>{m.value}</div>
-                          <div className="text-[10px] font-medium text-slate-500 mt-1">{m.label}</div>
+                        <div key={m.long} className="bg-slate-50 rounded-xl p-2 sm:p-3 text-center">
+                          <div className={`text-lg sm:text-xl font-black ${m.color} leading-none`}>{m.value}</div>
+                          <div className="text-[9px] sm:text-[10px] font-medium text-slate-500 mt-1 leading-tight">
+                            <span className="sm:hidden">{m.short}</span>
+                            <span className="hidden sm:inline">{m.long}</span>
+                          </div>
                         </div>
                       ))}
                     </div>
