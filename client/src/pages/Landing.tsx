@@ -460,11 +460,15 @@ export default function Landing() {
               </div>
             </div>
 
-            {/* ── Right: Product visual ── */}
+            {/* ── Right: Hero photo ── */}
             <div className="animate-hero delay-200 mt-6 lg:mt-0">
-              <LaptopFrame>
-                <GeneratorMockup />
-              </LaptopFrame>
+              <img
+                src="/hero-photo.jpg"
+                alt="Small business owner smiling at a payment received notification after sending an invoice"
+                className="w-full rounded-3xl object-cover shadow-2xl shadow-slate-300/50"
+                style={{ maxHeight: '680px', objectPosition: 'center 12%' }}
+                fetchPriority="high"
+              />
             </div>
 
           </div>
