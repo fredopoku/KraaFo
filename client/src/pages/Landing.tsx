@@ -465,21 +465,6 @@ export default function Landing() {
               <LaptopFrame>
                 <GeneratorMockup />
               </LaptopFrame>
-              {/* Floating review card */}
-              <div className="mt-4 bg-white rounded-2xl p-4 shadow-lg border border-slate-100 max-w-sm mx-auto">
-                <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center shrink-0 border-2 border-indigo-50">
-                    <span className="text-indigo-600 font-bold">T</span>
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex gap-0.5 mb-1">
-                      {[0,1,2,3,4].map(i => <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />)}
-                    </div>
-                    <p className="text-slate-700 text-sm font-medium leading-snug">"My clients think I have a whole accounts department."</p>
-                    <p className="text-slate-400 text-xs mt-1">Theresa · KraaFo user</p>
-                  </div>
-                </div>
-              </div>
             </div>
 
           </div>
@@ -706,27 +691,47 @@ export default function Landing() {
                 <p className="text-slate-500 text-sm mt-2 font-semibold">{reviews.length} verified reviews from real users</p>
               ) : null}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {reviews.map((t, i) => (
-                <div key={t.key} className="bg-white rounded-2xl p-5 hover-lift animate-fade-up flex flex-col border border-slate-100 shadow-sm hover:shadow-md transition-shadow" style={{ animationDelay: `${i * 100}ms` }}>
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-11 h-11 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-base shrink-0">
-                      {t.name.charAt(0)}
-                    </div>
-                    <div>
-                      <div className="font-bold text-slate-900 text-sm">{t.name}</div>
-                      <div className="text-slate-400 text-xs mt-0.5">{t.sub}</div>
-                    </div>
-                  </div>
-                  <div className="flex mb-3">
-                    {[1,2,3,4,5].map(s => (
-                      <span key={s} className={`text-sm ${s <= t.rating ? 'text-amber-400' : 'text-slate-200'}`}>★</span>
-                    ))}
-                  </div>
-                  <p className="text-slate-600 leading-relaxed text-sm flex-1">"{t.text}"</p>
+            {reviews.length === 1 ? (
+              <div className="max-w-2xl mx-auto bg-white rounded-2xl p-8 border border-slate-100 shadow-sm">
+                <div className="flex gap-0.5 mb-5">
+                  {[1,2,3,4,5].map(s => (
+                    <span key={s} className={`text-lg ${s <= reviews[0].rating ? 'text-amber-400' : 'text-slate-200'}`}>★</span>
+                  ))}
                 </div>
-              ))}
-            </div>
+                <p className="text-slate-700 text-lg leading-relaxed mb-6">"{reviews[0].text}"</p>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold shrink-0">
+                    {reviews[0].name.charAt(0)}
+                  </div>
+                  <div>
+                    <div className="font-bold text-slate-900 text-sm">{reviews[0].name}</div>
+                    <div className="text-slate-400 text-xs mt-0.5">{reviews[0].sub}</div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className={`grid gap-4 ${reviews.length === 2 ? 'grid-cols-1 md:grid-cols-2 max-w-3xl mx-auto' : 'grid-cols-1 md:grid-cols-3'}`}>
+                {reviews.map((t, i) => (
+                  <div key={t.key} className="bg-white rounded-2xl p-5 hover-lift animate-fade-up flex flex-col border border-slate-100 shadow-sm hover:shadow-md transition-shadow" style={{ animationDelay: `${i * 100}ms` }}>
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-11 h-11 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-base shrink-0">
+                        {t.name.charAt(0)}
+                      </div>
+                      <div>
+                        <div className="font-bold text-slate-900 text-sm">{t.name}</div>
+                        <div className="text-slate-400 text-xs mt-0.5">{t.sub}</div>
+                      </div>
+                    </div>
+                    <div className="flex mb-3">
+                      {[1,2,3,4,5].map(s => (
+                        <span key={s} className={`text-sm ${s <= t.rating ? 'text-amber-400' : 'text-slate-200'}`}>★</span>
+                      ))}
+                    </div>
+                    <p className="text-slate-600 leading-relaxed text-sm flex-1">"{t.text}"</p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </section>
       )}
