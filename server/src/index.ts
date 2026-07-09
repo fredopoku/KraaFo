@@ -114,8 +114,61 @@ app.get('/api/health', (_req, res) => {
 // client/dist is at ../../client/dist relative to server/dist/index.js
 const clientDist = path.resolve(__dirname, '../../client/dist');
 if (isProd && fs.existsSync(clientDist)) {
+  // Build the prerendered homepage HTML once at startup.
+  // React replaces this on mount; crawlers see the full content before JS runs.
+  let homepageHtml: string;
+  try {
+    const shell = fs.readFileSync(path.join(clientDist, 'index.html'), 'utf8');
+    const staticContent = `<main>
+<h1>Send invoices your clients take seriously. Get paid without chasing.</h1>
+<p>Create professional invoices in under a minute. Download free — no account needed. Sign up free to save your work and send by WhatsApp, SMS, or email.</p>
+<p>Free to use · No credit card · Sends via WhatsApp, SMS &amp; email</p>
+<h2>Your client can't say they didn't get it</h2>
+<p>One tap sends your invoice three ways — WhatsApp, SMS, and email — all with the PDF attached. Every other invoicing app sends an email and waits. KraaFo sends all three at once.</p>
+<h2>Features</h2>
+<ul>
+<li><strong>Smart Fill</strong> — Pick your industry and job type. KraaFo fills in your line items, pricing, notes, and terms. Review, adjust, send.</li>
+<li><strong>Auto Branding</strong> — Upload your logo and KraaFo pulls your brand colors. Every document matches your business, automatically.</li>
+<li><strong>Professional Invoices</strong> — Branded payment requests with due dates, tax, discounts, and a full itemized breakdown.</li>
+<li><strong>Instant Receipts</strong> — Generate a receipt the moment a client pays. No templates, no fiddling.</li>
+<li><strong>Tax &amp; Discounts</strong> — GST, VAT, Sales Tax, and both percentage and fixed-amount discounts on every document.</li>
+<li><strong>Print-Ready PDFs</strong> — Sharp, clean PDFs ready to print, email, or share on the spot. Generated in seconds.</li>
+<li><strong>WhatsApp, SMS &amp; Email</strong> — Send from inside KraaFo. Your client gets the PDF via WhatsApp, SMS, or email.</li>
+<li><strong>Works Worldwide</strong> — Multi-currency. M-Pesa, MTN, Airtel, Telecel, PayPal, and bank transfer. Works in any country.</li>
+</ul>
+<h2>How it works — from zero to paid in minutes</h2>
+<ol>
+<li><strong>Create in 60 seconds</strong> — Fill in your client and add your services. Smart Fill pre-populates everything for your industry.</li>
+<li><strong>Send by WhatsApp, email or SMS</strong> — One tap sends your invoice three ways. Your client has it before you pack up your tools.</li>
+<li><strong>Download free, no sign-up</strong> — Download the PDF right away with no account needed. Sign up free to save history and send to clients.</li>
+</ol>
+<h2>Common questions</h2>
+<dl>
+<dt>Is KraaFo really free?</dt>
+<dd>Yes. Creating and downloading invoices, receipts and quotes is completely free. No credit card needed. You need a free account to send documents by email or WhatsApp and to save your history.</dd>
+<dt>Do I need an account to download a PDF?</dt>
+<dd>No. Fill in your invoice and download the PDF without signing up. Create an account (also free) to save your documents and send them to clients.</dd>
+<dt>Can I send invoices on WhatsApp?</dt>
+<dd>Yes. One tap sends your invoice through WhatsApp, SMS, and email — all from the same screen. Your client gets a professional message with the PDF.</dd>
+<dt>Can I add my logo and brand colors?</dt>
+<dd>Yes. Upload your logo and KraaFo automatically extracts your brand colors. Every document reflects your brand without any manual setup.</dd>
+<dt>Does it work in my country and currency?</dt>
+<dd>KraaFo works worldwide. Set any currency symbol and accept mobile money (M-Pesa, MTN, Airtel, Telecel), PayPal, or bank transfer.</dd>
+</dl>
+</main>`;
+    homepageHtml = shell.replace('<div id="root"></div>', `<div id="root">${staticContent}</div>`);
+  } catch {
+    homepageHtml = fs.readFileSync(path.join(clientDist, 'index.html'), 'utf8');
+  }
+
+  // Serve prerendered homepage — must come before express.static so it wins for GET /
+  app.get('/', (_req, res) => {
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(homepageHtml);
+  });
+
   app.use(express.static(clientDist));
-  // SPA fallback — serve pre-rendered route HTML when available, otherwise index.html
+  // SPA fallback — serve index.html for all client-side routes
   app.get('*', (req, res) => {
     const safePath = path.normalize(req.path);
     if (safePath !== '/') {
