@@ -151,17 +151,7 @@ const steps = [
 
 type ReviewCard = { key: string; rating: number; text: string; name: string; sub: string; photo?: string };
 
-const fallbackReviews: ReviewCard[] = [
-  { key: 'sarah', rating: 5, name: 'Sarah M.', sub: 'Owner, Sparkle Clean Co. · UK',
-    text: "I send a receipt the moment I'm paid and my clients love how professional it looks. Saves me an hour every week.",
-    photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=80&q=80' },
-  { key: 'james', rating: 5, name: 'James T.', sub: 'Manager, FreshSpace Services · US',
-    text: 'Switched from Word templates. Now my invoices look like a proper business. Took me under two minutes to set up.',
-    photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&q=80' },
-  { key: 'ana',   rating: 5, name: 'Ana R.',   sub: 'Director, Crystal Clear LLC · CA',
-    text: 'Brand colors pulled straight from our logo. Every document looks on-brand without touching a single setting.',
-    photo: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=80&q=80' },
-];
+const fallbackReviews: ReviewCard[] = [];
 
 
 /* ─── Device Frame Components ─────────────────────────────── */
@@ -872,10 +862,7 @@ export default function Landing() {
     api.stats.get().then(setStats).catch(() => {});
   }, []);
 
-  // Show real reviews; pad with fallbacks to always display at least 3 cards
-  const reviews = liveReviews.length > 0
-    ? [...liveReviews, ...fallbackReviews.slice(0, Math.max(0, 3 - liveReviews.length))]
-    : fallbackReviews;
+  const reviews = liveReviews;
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
@@ -925,27 +912,14 @@ export default function Landing() {
             {/* ── Left: Text ───────────────────────────────── */}
             <div className="relative z-10 pt-6 lg:pt-0">
 
-              {/* Social proof avatars */}
-              <div className="flex items-center gap-3 mb-7 animate-hero">
-                <div className="flex -space-x-2.5">
-                  {[
-                    'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=80&q=80',
-                    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&q=80',
-                    'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=80&q=80',
-                    'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=80&q=80',
-                    'https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&w=80&q=80',
-                  ].map((src, i) => (
-                    <div key={i} className="w-9 h-9 rounded-full border-2 border-white overflow-hidden bg-indigo-100 shrink-0">
-                      <img src={src} alt="" className="w-full h-full object-cover" loading="eager" />
-                    </div>
-                  ))}
-                </div>
-                <div>
-                  <div className="flex items-center gap-0.5">
-                    {[0,1,2,3,4].map(i => <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />)}
+              {/* Trust bullets */}
+              <div className="flex flex-wrap gap-x-5 gap-y-2 mb-7 animate-hero">
+                {['Free to use', 'No credit card', 'Sends via WhatsApp, SMS & email'].map(t => (
+                  <div key={t} className="flex items-center gap-1.5 text-slate-500 text-sm">
+                    <CheckCircle className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                    {t}
                   </div>
-                  <p className="text-xs text-slate-500 font-semibold mt-0.5">Loved by 2,000+ businesses worldwide</p>
-                </div>
+                ))}
               </div>
 
               <h1 className="text-[2.5rem] sm:text-5xl md:text-[58px] lg:text-[64px] font-black text-slate-900 tracking-tight leading-[1.08] lg:leading-[1.03] mb-6 animate-hero delay-100">
@@ -1001,19 +975,15 @@ export default function Landing() {
               {/* Floating review card */}
               <div className="absolute bottom-5 left-3 right-3 sm:left-5 sm:right-5 bg-white/95 backdrop-blur-md rounded-2xl p-4 shadow-2xl border border-white">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full overflow-hidden bg-indigo-100 shrink-0 border-2 border-indigo-50">
-                    <img
-                      src="/people-hero.jpg"
-                      alt=""
-                      className="w-full h-full object-cover"
-                    />
+                  <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center shrink-0 border-2 border-indigo-50">
+                    <span className="text-indigo-600 font-bold text-base">T</span>
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-0.5 mb-1">
                       {[0,1,2,3,4].map(i => <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />)}
                     </div>
                     <p className="text-slate-700 text-sm font-medium leading-snug">"My clients think I have a whole accounts department."</p>
-                    <p className="text-slate-400 text-xs font-semibold mt-1">Sarah M. · Sparkle Clean Co., UK</p>
+                    <p className="text-slate-400 text-xs font-semibold mt-1">Theresa · KraaFo user</p>
                   </div>
                 </div>
               </div>
@@ -1028,39 +998,6 @@ export default function Landing() {
       <section className="bg-slate-50 border-b border-slate-100">
         <div className="max-w-6xl mx-auto px-6 py-5">
           <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
-            {stats && stats.documents > 0 ? (
-              <div className="flex items-center gap-2 text-slate-600 text-sm font-semibold">
-                <FileText className="w-4 h-4 text-indigo-500 shrink-0" />
-                {stats.documents.toLocaleString()}+ documents generated
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 text-slate-600 text-sm font-semibold">
-                <FileText className="w-4 h-4 text-indigo-500 shrink-0" />
-                Professional documents in minutes
-              </div>
-            )}
-            {stats && stats.countries > 0 ? (
-              <div className="flex items-center gap-2 text-slate-600 text-sm font-semibold">
-                <Globe className="w-4 h-4 text-emerald-500 shrink-0" />
-                Used in {stats.countries}+ countries
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 text-slate-600 text-sm font-semibold">
-                <Globe className="w-4 h-4 text-emerald-500 shrink-0" />
-                Works in any country, any currency
-              </div>
-            )}
-            {stats?.avgRating ? (
-              <div className="flex items-center gap-1.5 text-slate-600 text-sm font-semibold">
-                <Star className="w-4 h-4 fill-amber-400 text-amber-400 shrink-0" />
-                {stats.avgRating} / 5 from real users
-              </div>
-            ) : (
-              <div className="flex items-center gap-1.5 text-slate-600 text-sm font-semibold">
-                <Star className="w-4 h-4 fill-amber-400 text-amber-400 shrink-0" />
-                5-star rated by real businesses
-              </div>
-            )}
             <div className="flex items-center gap-2 text-slate-600 text-sm font-semibold">
               <Zap className="w-4 h-4 text-violet-500 shrink-0" />
               Free to use · No credit card needed
@@ -1069,6 +1006,16 @@ export default function Landing() {
               <MessageSquare className="w-4 h-4 text-emerald-500 shrink-0" />
               Sends via WhatsApp, SMS &amp; Email
             </div>
+            <div className="flex items-center gap-2 text-slate-600 text-sm font-semibold">
+              <Globe className="w-4 h-4 text-emerald-500 shrink-0" />
+              Works in any country, any currency
+            </div>
+            {stats?.avgRating ? (
+              <div className="flex items-center gap-1.5 text-slate-600 text-sm font-semibold">
+                <Star className="w-4 h-4 fill-amber-400 text-amber-400 shrink-0" />
+                {stats.avgRating} / 5 from real users
+              </div>
+            ) : null}
           </div>
         </div>
       </section>
@@ -1503,53 +1450,44 @@ export default function Landing() {
       </section>
 
       {/* ── Testimonials ────────────────────────────────────── */}
-      <section className="py-16 px-6 bg-slate-50">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-10">
-            <div className="flex justify-center gap-1 mb-3">
-              {[0,1,2,3,4].map(i => <Star key={i} className="w-4 h-4 text-amber-400 fill-amber-400" />)}
+      {reviews.length > 0 && (
+        <section className="py-16 px-6 bg-slate-50">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-10">
+              <div className="flex justify-center gap-1 mb-3">
+                {[0,1,2,3,4].map(i => <Star key={i} className="w-4 h-4 text-amber-400 fill-amber-400" />)}
+              </div>
+              <h2 className="text-3xl font-black text-slate-900 tracking-tight">What early users say</h2>
+              {reviews.length === 1 ? (
+                <p className="text-slate-500 text-sm mt-2 font-semibold">5 out of 5 · 1 verified review</p>
+              ) : reviews.length > 1 ? (
+                <p className="text-slate-500 text-sm mt-2 font-semibold">{reviews.length} verified reviews from real users</p>
+              ) : null}
             </div>
-            <h2 className="text-3xl font-black text-slate-900 tracking-tight">Trusted by businesses worldwide</h2>
-            {stats?.avgRating && stats.ratingCount > 0 ? (
-              <p className="text-slate-500 text-sm mt-2 font-semibold">{stats.avgRating} out of 5 · {stats.ratingCount} verified review{stats.ratingCount !== 1 ? 's' : ''}</p>
-            ) : liveReviews.length > 0 ? (
-              <p className="text-slate-400 text-xs mt-2">{liveReviews.length} verified review{liveReviews.length !== 1 ? 's' : ''} from real users</p>
-            ) : null}
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {reviews.map((t, i) => (
-              <div key={t.key} className="bg-white rounded-2xl p-5 hover-lift animate-fade-up flex flex-col border border-slate-100 shadow-sm hover:shadow-md transition-shadow" style={{ animationDelay: `${i * 100}ms` }}>
-                {/* Avatar + name */}
-                <div className="flex items-center gap-3 mb-4">
-                  {t.photo ? (
-                    <img
-                      src={t.photo}
-                      alt={t.name}
-                      className="w-11 h-11 rounded-full object-cover border-2 border-slate-100 shrink-0"
-                      loading="lazy"
-                    />
-                  ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {reviews.map((t, i) => (
+                <div key={t.key} className="bg-white rounded-2xl p-5 hover-lift animate-fade-up flex flex-col border border-slate-100 shadow-sm hover:shadow-md transition-shadow" style={{ animationDelay: `${i * 100}ms` }}>
+                  <div className="flex items-center gap-3 mb-4">
                     <div className="w-11 h-11 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-base shrink-0">
                       {t.name.charAt(0)}
                     </div>
-                  )}
-                  <div>
-                    <div className="font-bold text-slate-900 text-sm">{t.name}</div>
-                    <div className="text-slate-400 text-xs mt-0.5">{t.sub}</div>
+                    <div>
+                      <div className="font-bold text-slate-900 text-sm">{t.name}</div>
+                      <div className="text-slate-400 text-xs mt-0.5">{t.sub}</div>
+                    </div>
                   </div>
+                  <div className="flex mb-3">
+                    {[1,2,3,4,5].map(s => (
+                      <span key={s} className={`text-sm ${s <= t.rating ? 'text-amber-400' : 'text-slate-200'}`}>★</span>
+                    ))}
+                  </div>
+                  <p className="text-slate-600 leading-relaxed text-sm flex-1">"{t.text}"</p>
                 </div>
-                {/* Stars */}
-                <div className="flex mb-3">
-                  {[1,2,3,4,5].map(s => (
-                    <span key={s} className={`text-sm ${s <= t.rating ? 'text-amber-400' : 'text-slate-200'}`}>★</span>
-                  ))}
-                </div>
-                <p className="text-slate-600 leading-relaxed text-sm flex-1">"{t.text}"</p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ── FAQ ─────────────────────────────────────────────── */}
       <section className="py-16 px-6 bg-slate-50">
@@ -1561,7 +1499,7 @@ export default function Landing() {
             { '@type': 'Question', name: 'Do I need an account to download a PDF?', acceptedAnswer: { '@type': 'Answer', text: 'No. You can fill in your invoice and download the PDF without signing up. Create an account (also free) to save your documents and send them to clients.' } },
             { '@type': 'Question', name: 'Can I send invoices on WhatsApp?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. KraaFo lets you send a professional message with your invoice directly through WhatsApp, SMS, and email — all from the same screen.' } },
             { '@type': 'Question', name: 'Can I add my logo and brand colors?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Upload your logo and KraaFo automatically extracts your brand colors. Every invoice, receipt and quote reflects your brand without any manual setup.' } },
-            { '@type': 'Question', name: 'Does it work in my country and currency?', acceptedAnswer: { '@type': 'Answer', text: 'KraaFo is used in 30+ countries. You can set any currency symbol and accept mobile money (M-Pesa, MTN, Airtel, Telecel), PayPal, and bank transfer.' } },
+            { '@type': 'Question', name: 'Does it work in my country and currency?', acceptedAnswer: { '@type': 'Answer', text: 'KraaFo works worldwide. You can set any currency symbol and accept mobile money (M-Pesa, MTN, Airtel, Telecel), PayPal, and bank transfer.' } },
           ],
         }) }} />
         <div className="max-w-3xl mx-auto">
@@ -1575,7 +1513,7 @@ export default function Landing() {
               { q: 'Do I need an account to download a PDF?', a: 'No. Fill in your invoice and download the PDF without signing up. Create an account (also free) to save your documents and send them to clients.' },
               { q: 'Can I send invoices on WhatsApp?', a: 'Yes. One tap sends your invoice through WhatsApp, SMS, and email — all from the same screen. Your client gets a professional message with the PDF.' },
               { q: 'Can I add my logo and brand colors?', a: 'Yes. Upload your logo and KraaFo automatically extracts your brand colors. Every document reflects your brand without any manual setup.' },
-              { q: 'Does it work in my country and currency?', a: 'KraaFo is used in 30+ countries. Set any currency symbol and accept mobile money (M-Pesa, MTN, Airtel, Telecel), PayPal, or bank transfer.' },
+              { q: 'Does it work in my country and currency?', a: 'KraaFo works worldwide. Set any currency symbol and accept mobile money (M-Pesa, MTN, Airtel, Telecel), PayPal, or bank transfer.' },
             ].map(({ q, a }) => (
               <details key={q} className="group bg-white rounded-2xl border border-slate-100 px-5 py-4 cursor-pointer">
                 <summary className="flex items-center justify-between font-bold text-slate-800 text-sm list-none select-none">
