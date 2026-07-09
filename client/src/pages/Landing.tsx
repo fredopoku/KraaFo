@@ -20,123 +20,37 @@ type ReviewCard = { key: string; rating: number; text: string; name: string; sub
 
 function LaptopFrame({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative select-none" style={{
-      /* Three-layer shadow: wide diffuse + mid-range + tight contact */
-      filter:
-        'drop-shadow(0 80px 120px rgba(0,0,0,0.28))' +
-        ' drop-shadow(0 32px 48px rgba(0,0,0,0.18))' +
-        ' drop-shadow(0 8px 16px rgba(0,0,0,0.12))',
+    <div className="select-none rounded-xl overflow-hidden" style={{
+      boxShadow:
+        '0 0 0 1px rgba(0,0,0,0.06),' +
+        '0 8px 24px rgba(0,0,0,0.08),' +
+        '0 24px 56px rgba(0,0,0,0.12),' +
+        '0 48px 96px rgba(0,0,0,0.08)',
     }}>
-
-      {/* ══ SCREEN LID ══════════════════════════════════════════ */}
+      {/* Browser chrome */}
       <div style={{
-        /* Outer silver/white aluminum shell — matches reference exactly */
-        background: 'linear-gradient(158deg,#f8f8f8 0%,#ececec 22%,#e0e0e0 48%,#d6d6d6 72%,#cccccc 100%)',
-        borderRadius: '20px 20px 4px 4px',
-        padding: '8px 8px 0',
-        boxShadow:
-          'inset 0 0 0 0.5px rgba(255,255,255,1),' +
-          'inset 0 2px 6px rgba(255,255,255,0.6),' +
-          '0 0 0 0.5px rgba(0,0,0,0.16)',
+        background: '#f4f4f5',
+        borderBottom: '1px solid #e4e4e7',
+        padding: '9px 14px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
       }}>
-        {/* Ultra-thin black bezel — matches reference (almost bezel-less) */}
-        <div style={{
-          background: '#0e0e10',
-          borderRadius: '13px 13px 2px 2px',
-          padding: '4px 4px 0',
-          position: 'relative',
-        }}>
-          {/* MacBook Pro–style notch — flat rectangle dropping from top */}
-          <div style={{
-            position: 'absolute', top: 0, left: '50%',
-            transform: 'translateX(-50%)',
-            width: 72, height: 16,
-            background: '#0e0e10',
-            borderRadius: '0 0 10px 10px',
-            zIndex: 10,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            {/* Camera lens */}
-            <div style={{
-              width: 6, height: 6, borderRadius: '50%', marginTop: 4,
-              background: 'radial-gradient(circle at 38% 38%, #2c2c32, #080808)',
-              boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.07), 0 0 0 1px rgba(0,0,0,0.6)',
-            }} />
-          </div>
-
-          {/* Screen — fills almost the full lid (edge-to-edge feel) */}
-          <div style={{
-            overflow: 'hidden',
-            borderRadius: '10px 10px 0 0',
-            background: '#fff',
-          }}>
-            {children}
-          </div>
-        </div>
-      </div>
-
-      {/* ══ HINGE ════════════════════════════════════════════════ */}
-      <div style={{
-        height: 5,
-        background:
-          'linear-gradient(90deg,' +
-          '#888 0%,#b0b0b8 10%,#d0d0d8 26%,#e4e4ec 44%,#ebebf2 50%,#e4e4ec 56%,#d0d0d8 74%,#b0b0b8 90%,#888 100%)',
-        boxShadow: '0 2px 6px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.3)',
-      }} />
-
-      {/* ══ BASE ═════════════════════════════════════════════════ */}
-      <div style={{
-        /* Same silver as the lid outer shell */
-        background: 'linear-gradient(174deg,#f4f4f4 0%,#e8e8e8 28%,#dcdcdc 58%,#d0d0d0 100%)',
-        borderRadius: '0 0 18px 18px',
-        padding: '14px 20px 18px',
-        boxShadow:
-          'inset 0 2px 0 rgba(255,255,255,0.7),' +
-          'inset 0 -1px 0 rgba(0,0,0,0.06),' +
-          '0 0 0 0.5px rgba(0,0,0,0.13)',
-      }}>
-
-        {/* Dark keyboard island — raised block like reference image */}
-        <div style={{
-          background: 'linear-gradient(180deg,#1e1e22 0%,#161618 100%)',
-          borderRadius: 8,
-          padding: '5px 10px 6px',
-          marginBottom: 8,
-          boxShadow:
-            '0 3px 10px rgba(0,0,0,0.35),' +
-            'inset 0 1px 0 rgba(255,255,255,0.04),' +
-            'inset 0 -1px 0 rgba(0,0,0,0.2)',
-        }}>
-          {/* 5 key rows */}
-          {[
-            { count: 14, spaceAt: -1 },
-            { count: 14, spaceAt: -1 },
-            { count: 13, spaceAt: -1 },
-            { count: 12, spaceAt: -1 },
-            { count:  4, spaceAt:  1 },
-          ].map(({ count, spaceAt }, row) => (
-            <div key={row} style={{ display:'flex', gap: 2, marginBottom: row < 4 ? 2 : 0 }}>
-              {Array.from({ length: count }).map((_, i) => (
-                <div key={i} style={{
-                  flex: i === spaceAt ? 7 : 1,
-                  height: 5,
-                  background: 'linear-gradient(180deg,#38383e 0%,#2a2a30 100%)',
-                  borderRadius: 2,
-                  boxShadow: '0 1px 0 rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06)',
-                }} />
-              ))}
-            </div>
+        <div style={{ display: 'flex', gap: 5, flexShrink: 0 }}>
+          {['#ff5f57', '#febc2e', '#28c840'].map((c, i) => (
+            <div key={i} style={{ width: 10, height: 10, borderRadius: '50%', background: c, boxShadow: '0 0 0 0.5px rgba(0,0,0,0.10)' }} />
           ))}
         </div>
-
-        {/* Trackpad */}
         <div style={{
-          width: '38%', height: 16, margin: '0 auto',
-          background: 'rgba(0,0,0,0.04)', borderRadius: 7,
-          border: '0.5px solid rgba(0,0,0,0.1)',
-          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.5)',
-        }} />
+          flex: 1, background: '#fff', borderRadius: 6,
+          border: '1px solid #e4e4e7', padding: '3px 0',
+          textAlign: 'center', fontSize: 11, color: '#71717a',
+          fontFamily: 'system-ui, sans-serif',
+        }}>
+          kraafo.com/generator
+        </div>
       </div>
+      {children}
     </div>
   );
 }
