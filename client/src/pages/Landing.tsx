@@ -1,158 +1,20 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, Palette, Download, Shield, CheckCircle, ArrowRight, FileText, Receipt, Send, Globe, Star, TrendingUp, Clock, AlertCircle, Plus, Settings, Users, ScanLine, X, Mail, MessageSquare, Zap } from 'lucide-react';
+import { Sparkles, Palette, Download, CheckCircle, ArrowRight, FileText, Receipt, Send, Globe, Star, TrendingUp, Mail, MessageSquare, Zap } from 'lucide-react';
 import { Logo, LogoMark } from '../components/Logo';
 import { api } from '../utils/api';
-import { TurnstileWidget, TURNSTILE_ENABLED } from '../components/Turnstile';
 
-function FeedbackWidget() {
-  const [hovered, setHovered] = useState(0);
-  const [selected, setSelected] = useState(0);
-  const [form, setForm] = useState({ name: '', email: '', message: '' });
-  const [submitting, setSubmitting] = useState(false);
-  const [done, setDone] = useState(false);
-  const [error, setError] = useState('');
-  const [cfToken, setCfToken] = useState('');
-  const [resetKey, setResetKey] = useState(0);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.name.trim() || !selected) { setError('Please enter your name and pick a rating.'); return; }
-    if (TURNSTILE_ENABLED && !cfToken) { setError('Please complete the security check below.'); return; }
-    setSubmitting(true); setError('');
-    try {
-      const res = await fetch('/api/feedback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: form.name, email: form.email || undefined, rating: selected, message: form.message || undefined, cf_turnstile_response: cfToken }),
-      });
-      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Failed'); }
-      setDone(true);
-    } catch (err: any) { setError(err.message || 'Something went wrong. Please try again.'); setResetKey(k => k + 1); setCfToken(''); }
-    finally { setSubmitting(false); }
-  };
-
-  if (done) return (
-    <div className="text-center py-6">
-      <div className="text-4xl mb-3">🙏</div>
-      <h3 className="text-lg font-black text-slate-900 mb-1">Thank you!</h3>
-      <p className="text-slate-500 text-sm">Your feedback helps us build a better KraaFo.</p>
-    </div>
-  );
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Star picker */}
-      <div className="flex justify-center gap-2">
-        {[1, 2, 3, 4, 5].map(n => (
-          <button key={n} type="button"
-            onMouseEnter={() => setHovered(n)} onMouseLeave={() => setHovered(0)}
-            onClick={() => setSelected(n)}
-            className="transition-transform hover:scale-110 focus:outline-none"
-            aria-label={`${n} star${n > 1 ? 's' : ''}`}
-          >
-            <Star className={`w-8 h-8 transition-colors ${n <= (hovered || selected) ? 'fill-amber-400 text-amber-400' : 'text-slate-200'}`} />
-          </button>
-        ))}
-      </div>
-      {selected > 0 && (
-        <p className="text-center text-xs font-bold text-slate-400">
-          {['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent!'][selected]}
-        </p>
-      )}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <input required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-          placeholder="Your name *" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white" />
-        <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-          placeholder="Email (optional)" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white" />
-      </div>
-      <textarea value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
-        placeholder="Tell us more… (optional)" rows={3}
-        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white resize-none" />
-      <TurnstileWidget onVerify={setCfToken} onExpire={() => setCfToken('')} resetKey={resetKey} />
-      {error && <p className="text-xs text-red-500">{error}</p>}
-      <button type="submit" disabled={submitting || (TURNSTILE_ENABLED && !cfToken)}
-        className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm transition-all disabled:opacity-60">
-        {submitting ? 'Sending…' : 'Submit Feedback'}
-      </button>
-    </form>
-  );
-}
-
-function NewsletterSignup() {
-  const [form, setForm] = useState({ email: '', name: '' });
-  const [submitting, setSubmitting] = useState(false);
-  const [done, setDone] = useState(false);
-  const [error, setError] = useState('');
-  const [cfToken, setCfToken] = useState('');
-  const [resetKey, setResetKey] = useState(0);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.email.trim()) { setError('Email is required.'); return; }
-    if (TURNSTILE_ENABLED && !cfToken) { setError('Please complete the security check below.'); return; }
-    setSubmitting(true); setError('');
-    try {
-      const res = await fetch('/api/subscribers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: form.email, name: form.name || undefined, cf_turnstile_response: cfToken }),
-      });
-      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Failed'); }
-      setDone(true);
-    } catch (err: any) { setError(err.message || 'Something went wrong.'); setResetKey(k => k + 1); setCfToken(''); }
-    finally { setSubmitting(false); }
-  };
-
-  if (done) return (
-    <div className="text-center py-2">
-      <CheckCircle className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
-      <p className="text-white font-bold">You're subscribed!</p>
-      <p className="text-indigo-200 text-sm mt-1">We'll keep you in the loop on every new feature.</p>
-    </div>
-  );
-
-  return (
-    <form onSubmit={handleSubmit} className="max-w-lg mx-auto space-y-3">
-      <div className="flex flex-col sm:flex-row gap-3">
-        <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-          placeholder="Your name (optional)"
-          className="flex-1 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-indigo-300 text-sm focus:outline-none focus:ring-2 focus:ring-white/40" />
-        <input required type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-          placeholder="Your email *"
-          className="flex-1 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-indigo-300 text-sm focus:outline-none focus:ring-2 focus:ring-white/40" />
-      </div>
-      <TurnstileWidget onVerify={setCfToken} onExpire={() => setCfToken('')} resetKey={resetKey} />
-      {error && <p className="text-xs text-red-300 text-center">{error}</p>}
-      <button type="submit" disabled={submitting || (TURNSTILE_ENABLED && !cfToken)}
-        className="w-full sm:w-auto px-6 py-3 rounded-xl bg-white text-indigo-700 font-bold text-sm hover:bg-indigo-50 transition-all disabled:opacity-60 whitespace-nowrap mx-auto block">
-        {submitting ? 'Joining…' : 'Stay Updated →'}
-      </button>
-    </form>
-  );
-}
 
 const features = [
   { icon: Sparkles, title: 'Smart Fill',            desc: 'Pick your industry and job type. KraaFo fills in your line items, pricing, notes, and terms. Review, adjust, send.' },
   { icon: Palette,  title: 'Auto Branding',         desc: 'Upload your logo and KraaFo pulls your brand colors. Every document matches your business, automatically.' },
   { icon: FileText, title: 'Professional Invoices', desc: 'Branded payment requests with due dates, tax, discounts, and a full itemized breakdown.' },
   { icon: Receipt,  title: 'Instant Receipts',      desc: 'Generate a "PAYMENT RECEIVED" receipt the moment a client pays. No templates, no fiddling.' },
-  { icon: Shield,   title: 'Tax & Discounts',       desc: 'GST, VAT, Sales Tax, and both percentage and fixed-amount discounts on every document.' },
-  { icon: Download, title: 'Print-Ready PDFs',      desc: 'Sharp, clean PDFs ready to print, email, or share on the spot. Generated in seconds.' },
   { icon: Send,     title: 'WhatsApp, SMS & Email',  desc: 'Send from inside KraaFo. Your client gets the PDF with a clean message via WhatsApp, SMS, or email.' },
   { icon: Globe,    title: 'Works Worldwide',       desc: 'Multi-currency. M-Pesa, MTN, Airtel, Telecel, PayPal, and bank transfer. Works in any country.' },
 ];
 
-const steps = [
-  { n: '01', title: 'Create in 60 seconds',           desc: 'Fill in your client and add your services. Smart Fill pre-populates everything for your industry if you need it.' },
-  { n: '02', title: 'Send by WhatsApp, email or SMS', desc: 'One tap sends your invoice three ways. Your client has it before you have packed up your tools.' },
-  { n: '03', title: 'Download free, no sign-up',      desc: 'Download the PDF right away with no account needed. Sign up free to save your history and send to clients.' },
-];
-
 type ReviewCard = { key: string; rating: number; text: string; name: string; sub: string; photo?: string };
-
-const fallbackReviews: ReviewCard[] = [];
-
 
 /* ─── Device Frame Components ─────────────────────────────── */
 
@@ -279,75 +141,6 @@ function LaptopFrame({ children }: { children: React.ReactNode }) {
   );
 }
 
-function PhoneShell({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  /* iPhone 17 Pro — Natural Titanium finish */
-  const titanium = 'linear-gradient(160deg,#AEAEB2 0%,#8E8E93 20%,#636366 45%,#48484A 58%,#636366 74%,#8E8E93 88%,#AEAEB2 100%)';
-  const btn      = 'linear-gradient(180deg,#AEAEB2 0%,#8E8E93 50%,#636366 100%)';
-  return (
-    <div className={`relative select-none ${className}`} style={{
-      background: titanium,
-      borderRadius: 50,
-      padding: '4px 3.5px',
-      boxShadow:
-        'inset 0 0 0 0.5px rgba(255,255,255,0.45),' +
-        'inset 0 1px 0 rgba(255,255,255,0.3),' +
-        '0 0 0 0.5px rgba(0,0,0,0.3),' +
-        '0 32px 64px rgba(0,0,0,0.30),' +
-        '0 8px 20px rgba(0,0,0,0.18)',
-    }}>
-      {/* Power / side button — right */}
-      <div style={{ position:'absolute', right:-2.5, top:'22%', width:3, height:56, background:btn, borderRadius:'0 3px 3px 0', boxShadow:'inset -1px 0 0 rgba(255,255,255,0.18)' }} />
-      {/* Action button — left top */}
-      <div style={{ position:'absolute', left:-2.5, top:'14%', width:3, height:28, background:btn, borderRadius:'3px 0 0 3px', boxShadow:'inset 1px 0 0 rgba(255,255,255,0.18)' }} />
-      {/* Volume up — left */}
-      <div style={{ position:'absolute', left:-2.5, top:'calc(14% + 40px)', width:3, height:44, background:btn, borderRadius:'3px 0 0 3px', boxShadow:'inset 1px 0 0 rgba(255,255,255,0.18)' }} />
-      {/* Volume down — left */}
-      <div style={{ position:'absolute', left:-2.5, top:'calc(14% + 96px)', width:3, height:44, background:btn, borderRadius:'3px 0 0 3px', boxShadow:'inset 1px 0 0 rgba(255,255,255,0.18)' }} />
-
-      {/* Screen glass */}
-      <div style={{ borderRadius:47, overflow:'hidden', background:'#000' }}>
-        {/* Dynamic Island */}
-        <div style={{ background:'#000', display:'flex', justifyContent:'center', paddingTop:8 }}>
-          <div style={{ width:92, height:24, background:'#000', borderRadius:16, boxShadow:'0 0 0 1px rgba(255,255,255,0.06)' }} />
-        </div>
-
-        {/* Status bar */}
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'3px 18px 3px', background:'#fff' }}>
-          <span style={{ fontSize:10, fontWeight:700, color:'#0d0d10', fontFamily:'system-ui', letterSpacing:'-0.2px' }}>9:41</span>
-          <div style={{ display:'flex', alignItems:'center', gap:4 }}>
-            {/* Signal */}
-            <div style={{ display:'flex', alignItems:'flex-end', gap:1 }}>
-              {[4,6,9,12].map((h,i) => (
-                <div key={i} style={{ width:3, height:h, background:i < 3 ? '#0d0d10' : '#c7c7cc', borderRadius:1.5 }} />
-              ))}
-            </div>
-            {/* WiFi */}
-            <svg width="13" height="10" viewBox="0 0 13 10" fill="none">
-              <path d="M6.5 7.5a1 1 0 110 2 1 1 0 010-2z" fill="#0d0d10"/>
-              <path d="M3.8 5.3a3.8 3.8 0 015 0" stroke="#0d0d10" strokeWidth="1.2" strokeLinecap="round" fill="none"/>
-              <path d="M1.5 3a6.5 6.5 0 0110 0" stroke="#0d0d10" strokeWidth="1.2" strokeLinecap="round" fill="none"/>
-            </svg>
-            {/* Battery */}
-            <div style={{ display:'flex', alignItems:'center', gap:1 }}>
-              <div style={{ width:22, height:11, borderRadius:3, border:'1.5px solid #0d0d10', padding:'1.5px 2px' }}>
-                <div style={{ width:'76%', height:'100%', background:'#0d0d10', borderRadius:1 }} />
-              </div>
-              <div style={{ width:2, height:5, background:'#0d0d10', borderRadius:'0 1px 1px 0', marginLeft:-1 }} />
-            </div>
-          </div>
-        </div>
-
-        <div style={{ background:'#fff' }}>{children}</div>
-
-        {/* Home indicator */}
-        <div style={{ display:'flex', justifyContent:'center', padding:'6px 0 14px', background:'#fff' }}>
-          <div style={{ width:100, height:5, borderRadius:3, background:'rgba(0,0,0,0.16)' }} />
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /* ─── Generator Desktop Mockup ─────────────────────────────── */
 
 function GeneratorMockup() {
@@ -355,7 +148,6 @@ function GeneratorMockup() {
   const inp = 'border border-slate-200 rounded-lg px-2 py-1.5 text-[8px] text-slate-700 w-full';
   return (
     <div className="bg-slate-50">
-      {/* App header */}
       <div className="bg-white border-b border-slate-100 px-3 py-1.5 flex items-center gap-2">
         <LogoMark size={16} className="shrink-0" />
         <span className="text-[9px] font-black text-slate-900 tracking-tight">KraaFo</span>
@@ -365,28 +157,16 @@ function GeneratorMockup() {
           ))}
         </div>
         <div className="ml-auto flex items-center gap-1">
-          <div className="text-[7px] text-slate-500 border border-slate-200 rounded-lg px-1.5 py-0.5 hidden sm:block">Documents ↓</div>
-          <div className="text-[7px] text-slate-400 border border-slate-200 rounded-lg px-1.5 py-0.5 hidden md:block">+ New</div>
           <div className="text-[7px] bg-indigo-600 text-white rounded-lg px-1.5 py-0.5 font-bold">Save</div>
           <div className="text-[7px] bg-violet-600 text-white rounded-lg px-1.5 py-0.5 font-bold">Send</div>
           <div className="text-[7px] bg-emerald-600 text-white rounded-lg px-1.5 py-0.5 font-bold hidden sm:block">PDF</div>
         </div>
       </div>
-
-      {/* Body */}
       <div className="flex gap-2.5 p-2.5">
-        {/* Left column */}
         <div className="flex-1 space-y-2 min-w-0">
-          {/* Doc header */}
           <div className="bg-white rounded-xl border border-slate-100 p-2.5">
             <div className="grid grid-cols-2 gap-2">
-              {[['Invoice Number', 'INV-2026-0042'], ['Status', 'Sent']].map(([label, val]) => (
-                <div key={label}>
-                  <div className={col}>{label}</div>
-                  <div className={inp}>{val}</div>
-                </div>
-              ))}
-              {[['Issue Date', '27/05/2026'], ['Due Date', '26/06/2026']].map(([label, val]) => (
+              {[['Invoice Number', 'INV-2026-0042'], ['Status', 'Sent'], ['Issue Date', '27/05/2026'], ['Due Date', '26/06/2026']].map(([label, val]) => (
                 <div key={label}>
                   <div className={col}>{label}</div>
                   <div className={inp}>{val}</div>
@@ -394,8 +174,6 @@ function GeneratorMockup() {
               ))}
             </div>
           </div>
-
-          {/* Client */}
           <div className="bg-white rounded-xl border border-slate-100 p-2.5">
             <div className="text-[8px] font-black text-slate-700 mb-2">Client Details</div>
             <div className="grid grid-cols-2 gap-2">
@@ -407,73 +185,49 @@ function GeneratorMockup() {
               ))}
             </div>
           </div>
-
-          {/* Services */}
           <div className="bg-white rounded-xl border border-slate-100 p-2.5">
             <div className="flex items-center justify-between mb-2">
               <div className="text-[8px] font-black text-slate-700">Services &amp; Line Items</div>
-              <div className="bg-indigo-600 text-white text-[7px] font-bold px-2 py-0.5 rounded-lg flex items-center gap-0.5">
-                <span>✦</span> Smart Fill
-              </div>
-            </div>
-            <div className="grid grid-cols-12 gap-1 mb-1 px-0.5">
-              {['DESCRIPTION', 'QTY', 'UNIT', 'PRICE'].map(h => (
-                <div key={h} className={`${h === 'DESCRIPTION' ? 'col-span-5' : 'col-span-2'} text-[6px] font-bold text-slate-400 uppercase tracking-widest ${h !== 'DESCRIPTION' ? 'text-center' : ''}`}>{h}</div>
-              ))}
-              <div className="col-span-1" />
+              <div className="bg-indigo-600 text-white text-[7px] font-bold px-2 py-0.5 rounded-lg flex items-center gap-0.5"><span>✦</span> Smart Fill</div>
             </div>
             {[['Deep House Cleaning', '1', 'session', '$250.00'], ['Carpet Cleaning', '3', 'room', '$135.00'], ['Window Cleaning', '8', 'unit', '$64.00']].map(([d, q, u, p]) => (
               <div key={d} className="grid grid-cols-12 gap-1 mb-1">
                 <div className="col-span-5 border border-slate-100 rounded-lg px-1.5 py-1 text-[7px] text-slate-600">{d}</div>
-                <div className="col-span-2 border border-slate-100 rounded-lg px-1.5 py-1 text-[7px] text-slate-600 text-center">{q}</div>
+                <div className="col-span-2 border border-slate-100 rounded-lg px-1.5 py-1 text-[7px] text-center">{q}</div>
                 <div className="col-span-2 border border-slate-100 rounded-lg px-1.5 py-1 text-[7px] text-slate-500 text-center">{u}</div>
                 <div className="col-span-2 border border-slate-100 rounded-lg px-1.5 py-1 text-[7px] text-slate-700 font-semibold text-right">{p}</div>
-                <div className="col-span-1 flex items-center justify-center">
-                  <div className="w-2 h-2 rounded text-red-300 text-[6px] flex items-center justify-center">✕</div>
-                </div>
+                <div className="col-span-1 flex items-center justify-center text-red-300 text-[6px]">✕</div>
               </div>
             ))}
             <div className="text-[7px] text-indigo-500 font-bold mt-1.5">+ Add Line Item</div>
           </div>
         </div>
-
-        {/* Right sidebar */}
         <div className="w-28 shrink-0 space-y-2">
-          {/* Summary */}
           <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
             <div className="h-0.5 bg-gradient-to-r from-indigo-600 to-violet-600" />
             <div className="p-2.5">
               <div className="text-[8px] font-black text-slate-700 mb-2">Summary</div>
               <div className="space-y-1">
-                <div className="flex justify-between text-[7px]"><span className="text-slate-500">Subtotal</span><span className="text-slate-700">$449.00</span></div>
-                <div className="flex justify-between text-[7px]"><span className="text-slate-500">Tax (7.5%)</span><span className="text-slate-700">$33.68</span></div>
-                <div className="border-t border-slate-100 pt-1.5 mt-1">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[7px] font-black text-slate-800">Total</span>
-                    <span className="text-[10px] font-black text-indigo-600">$482.58</span>
-                  </div>
+                <div className="flex justify-between text-[7px]"><span className="text-slate-500">Subtotal</span><span>$449.00</span></div>
+                <div className="flex justify-between text-[7px]"><span className="text-slate-500">Tax (7.5%)</span><span>$33.68</span></div>
+                <div className="border-t border-slate-100 pt-1.5 mt-1 flex justify-between items-center">
+                  <span className="text-[7px] font-black text-slate-800">Total</span>
+                  <span className="text-[10px] font-black text-indigo-600">$482.58</span>
                 </div>
               </div>
               <div className="mt-2.5 space-y-1.5">
-                <div className="bg-indigo-600 text-white text-[7px] font-bold text-center py-1.5 rounded-lg flex items-center justify-center gap-0.5">
-                  <span>⬛</span> Save Invoice
-                </div>
-                <div className="bg-emerald-600 text-white text-[7px] font-bold text-center py-1.5 rounded-lg flex items-center justify-center gap-0.5">
-                  <span>↓</span> Download PDF
-                </div>
+                <div className="bg-indigo-600 text-white text-[7px] font-bold text-center py-1.5 rounded-lg">Save Invoice</div>
+                <div className="bg-emerald-600 text-white text-[7px] font-bold text-center py-1.5 rounded-lg">↓ Download PDF</div>
               </div>
-              <div className="mt-2 flex items-center justify-center gap-1 text-emerald-600">
-                <span className="text-[7px]">✓</span>
-                <span className="text-[7px] font-bold">Saved · INV-2026-0042</span>
+              <div className="mt-2 flex items-center justify-center gap-1 text-emerald-600 text-[7px]">
+                <span>✓</span><span className="font-bold">Saved · INV-2026-0042</span>
               </div>
             </div>
           </div>
-
-          {/* Live preview */}
           <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
             <div className="h-0.5 bg-gradient-to-r from-indigo-600 to-violet-600" />
             <div className="p-2.5">
-              <div className="text-[6px] text-slate-400 font-bold uppercase tracking-widest mb-2 flex items-center gap-1">👁 Live Preview</div>
+              <div className="text-[6px] text-slate-400 font-bold uppercase tracking-widest mb-2">👁 Live Preview</div>
               <div className="text-[6px] text-slate-500 mb-0.5">Thompson LLC</div>
               <div className="flex justify-between items-center">
                 <div className="text-[7px] font-black text-indigo-600">INVOICE</div>
@@ -496,345 +250,161 @@ function GeneratorMockup() {
   );
 }
 
-/* ─── Dashboard Mobile Mockup ──────────────────────────────── */
+/* ─── How It Works — Interactive Stepper ──────────────────── */
 
-function DashboardMobileContent() {
-  const stats = [
-    { icon: TrendingUp, val: '$12,840', label: 'Total Revenue', sub: '18 paid', color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { icon: Clock,      val: '$3,200',  label: 'Outstanding',   sub: 'Awaiting',color: 'text-amber-600',  bg: 'bg-amber-50'   },
-    { icon: AlertCircle,val: '$0',      label: 'Overdue',       sub: 'All clear',color:'text-red-500',    bg: 'bg-red-50'     },
-    { icon: FileText,   val: '24',      label: 'Total Invoices',sub: '4 receipts',color:'text-indigo-600',bg: 'bg-indigo-50'  },
-  ];
+function SendVisual() {
   return (
-    <div className="bg-slate-50 flex-1">
-      {/* Header */}
-      <div className="bg-white border-b border-slate-100 px-3 py-2 flex items-center justify-between">
-        <LogoMark size={18} />
-        <div className="flex gap-1.5">
-          <div className="w-6 h-6 rounded-lg bg-indigo-600 flex items-center justify-center">
-            <Plus className="w-3 h-3 text-white" />
-          </div>
-          <div className="w-6 h-6 rounded-lg border border-slate-200 flex items-center justify-center">
-            <Settings className="w-3 h-3 text-slate-400" />
+    <div className="max-w-[340px] mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100">
+      <div className="px-4 py-3 flex items-center gap-3" style={{ background: '#128C7E' }}>
+        <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+          <span className="text-white font-bold text-sm">J</span>
+        </div>
+        <div>
+          <div className="text-white text-sm font-bold">James Mensah</div>
+          <div className="text-green-200 text-xs">WhatsApp</div>
+        </div>
+        <span className="ml-auto text-green-200 text-[10px]">09:42</span>
+      </div>
+      <div className="p-4 space-y-3" style={{ background: '#e5ddd5' }}>
+        <div className="flex justify-end">
+          <div className="rounded-2xl rounded-tr-sm px-3 py-2.5 max-w-[270px] shadow-sm" style={{ background: '#d9fdd3' }}>
+            <p className="text-[11px] text-slate-700 leading-relaxed">Hi James! 👋 Your <strong>Invoice INV-0042</strong> from Acme Services is ready.<br /><br />📄 INV-0042 · 💰 $482.58 · 📅 Due 26 Jul 2026</p>
+            <div className="flex items-center justify-end gap-1 mt-1.5">
+              <span className="text-[9px] text-slate-400">09:42</span>
+              <span className="text-emerald-500 text-[11px] font-bold">✓✓</span>
+            </div>
           </div>
         </div>
-      </div>
-      {/* Greeting */}
-      <div className="px-3 pt-3 pb-2">
-        <div className="text-[7px] font-bold text-slate-400 uppercase tracking-widest">Good Morning</div>
-        <div className="text-[9px] font-black text-slate-900 leading-tight mt-0.5">Acme Services 👋</div>
-        <div className="text-[7px] text-slate-400 mt-0.5">Here's your business overview</div>
-      </div>
-      {/* Stat cards */}
-      <div className="px-3 grid grid-cols-2 gap-1.5">
-        {stats.map(({ icon: Icon, val, label, sub, color, bg }) => (
-          <div key={label} className="bg-white rounded-xl border border-slate-100 p-2">
-            <div className={`w-5 h-5 rounded-lg ${bg} flex items-center justify-center mb-1.5`}>
-              <Icon className={`w-2.5 h-2.5 ${color}`} />
+        <div className="flex justify-end">
+          <div className="bg-white rounded-2xl rounded-tr-sm p-3 max-w-[220px] shadow-sm flex items-center gap-2.5">
+            <div className="w-9 h-11 bg-red-500/90 rounded-lg flex items-center justify-center text-white text-[10px] font-black shrink-0">PDF</div>
+            <div>
+              <div className="text-[11px] font-bold text-slate-800">Invoice_INV-0042.pdf</div>
+              <div className="text-[10px] text-slate-400">284 KB · PDF</div>
             </div>
-            <div className="text-[9px] font-black text-slate-900 leading-none">{val}</div>
-            <div className="text-[6px] text-slate-400 font-medium mt-0.5">{label}</div>
-            <div className="text-[6px] text-slate-300 mt-0.5">{sub}</div>
           </div>
-        ))}
-      </div>
-      {/* Chart area */}
-      <div className="px-3 mt-2">
-        <div className="bg-white rounded-xl border border-slate-100 p-2">
-          <div className="text-[7px] font-black text-slate-700 mb-2">Revenue (Last 6 Months)</div>
-          <div className="flex items-end gap-1 h-10">
-            {[30, 55, 40, 75, 60, 90].map((h, i) => (
-              <div key={i} className="flex-1 rounded-t-sm bg-indigo-600 opacity-80" style={{ height: `${h}%` }} />
-            ))}
-          </div>
-          <div className="flex gap-1 mt-1">
-            {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'].map(m => (
-              <div key={m} className="flex-1 text-center text-[5px] text-slate-300">{m}</div>
-            ))}
-          </div>
+        </div>
+        <div className="text-center">
+          <span className="text-[9px] text-slate-500 bg-white/70 px-3 py-1 rounded-full">SMS &amp; email also sent ✓</span>
         </div>
       </div>
     </div>
   );
 }
 
-/* ─── Recent Documents Mobile Mockup ──────────────────────── */
-
-function RecentDocsMobileContent() {
-  const docs = [
-    { num: 'INV-2026-0013', name: 'James Mensah', status: 'Draft',  statusCls: 'bg-slate-100 text-slate-500', amt: 'GH¢1,551' },
-    { num: 'REC-2026-0003', name: 'Aisha Boateng', status: 'Sent',  statusCls: 'bg-blue-50 text-blue-600',   amt: 'GH¢1,188' },
-    { num: 'INV-2026-0012', name: 'James Mensah', status: 'Sent',   statusCls: 'bg-blue-50 text-blue-600',   amt: 'GH¢1,188' },
-  ];
+function GetPaidVisual() {
   return (
-    <div className="bg-white flex-1 relative overflow-hidden">
-      {/* App header (blurred behind) */}
-      <div className="bg-white border-b border-slate-100 px-3 py-2 flex items-center justify-between opacity-40">
-        <LogoMark size={18} />
-        <div className="flex gap-1"><div className="w-6 h-6 rounded-lg border border-slate-200" /><div className="w-6 h-6 rounded-lg border border-slate-200" /></div>
-      </div>
-      {/* Modal overlay */}
-      <div className="absolute inset-x-0 top-0 bottom-0 bg-black/20" />
-      <div className="absolute inset-x-2 top-2 bg-white rounded-2xl shadow-2xl overflow-hidden">
-        <div className="px-3 py-2.5 border-b border-slate-100 flex items-center justify-between">
-          <span className="text-[9px] font-black text-slate-800">Recent Documents</span>
-          <X className="w-3 h-3 text-slate-400" />
-        </div>
-        {docs.map((d, i) => (
-          <div key={i} className="border-b border-slate-50 px-3 py-2">
-            <div className="flex items-center justify-between mb-1">
-              <div>
-                <div className="text-[8px] font-bold text-slate-800">{d.num}</div>
-                <div className="text-[6px] text-slate-400">{d.name}</div>
-              </div>
-              <div className="flex items-center gap-1">
-                <span className={`text-[6px] font-bold px-1.5 py-0.5 rounded-full ${d.statusCls}`}>{d.status}</span>
-                <span className="text-[8px] font-black text-slate-700">{d.amt}</span>
-              </div>
-            </div>
-            <div className="flex gap-1">
-              <div className="flex-1 border border-slate-200 rounded-lg text-center text-[6px] py-0.5 font-bold text-slate-600">Edit</div>
-              <div className="flex-1 bg-emerald-600 rounded-lg text-center text-[6px] py-0.5 font-bold text-white">Preview PDF</div>
-            </div>
+    <div className="max-w-[340px] mx-auto space-y-3">
+      <div className="bg-white rounded-2xl border border-emerald-100 shadow-lg shadow-emerald-50/60 p-5">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 bg-emerald-50 rounded-2xl flex items-center justify-center shrink-0">
+            <CheckCircle className="w-6 h-6 text-emerald-500" />
           </div>
-        ))}
-      </div>
-      {/* Bottom bar */}
-      <div className="absolute bottom-0 inset-x-0 bg-white border-t border-slate-100 px-2 py-1.5 flex gap-1.5">
-        <div className="flex-1 bg-indigo-500 rounded-xl py-1.5 text-center text-[7px] font-bold text-white">Save</div>
-        <div className="flex-1 bg-violet-600 rounded-xl py-1.5 text-center text-[7px] font-bold text-white">Send</div>
-        <div className="flex-1 bg-emerald-600 rounded-xl py-1.5 text-center text-[7px] font-bold text-white">PDF</div>
-      </div>
-    </div>
-  );
-}
-
-/* ─── Mobile Menu Mockup ───────────────────────────────────── */
-
-function MobileMenuContent() {
-  const items = [
-    { icon: Plus,      label: 'New Document', cls: 'text-indigo-600', bg: 'bg-indigo-100', badge: null },
-    { icon: FileText,  label: 'Documents',    cls: 'text-slate-600',  bg: 'bg-slate-100',  badge: '9+' },
-    { icon: () => <svg className="w-3 h-3 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>, label: 'Dashboard', cls: 'text-slate-600', bg: 'bg-slate-100', badge: null },
-    { icon: Users,     label: 'Clients',      cls: 'text-slate-600',  bg: 'bg-slate-100',  badge: null },
-    { icon: ScanLine,  label: 'Import Document',cls:'text-slate-600', bg: 'bg-slate-100',  badge: null },
-    { icon: Settings,  label: 'Settings',     cls: 'text-slate-600',  bg: 'bg-slate-100',  badge: null },
-  ];
-  return (
-    <div className="bg-white flex-1">
-      {/* Drawer header */}
-      <div className="px-3 py-2.5 border-b border-slate-100 flex items-center justify-between">
-        <div className="flex items-center gap-1.5">
-          <LogoMark size={18} />
-          <span className="text-[9px] font-black text-slate-900">KraaFo</span>
+          <div>
+            <div className="font-black text-slate-900 text-sm">Invoice #0042 — Paid</div>
+            <div className="text-xs text-slate-400 mt-0.5">Sarah Thompson · $482.58 received</div>
+          </div>
         </div>
-        <X className="w-3.5 h-3.5 text-slate-400" />
       </div>
-      {/* Nav items */}
-      <div className="py-1">
-        {items.map(({ icon: Icon, label, cls, bg, badge }, i) => (
-          <div key={label}>
-            {i === 5 && <div className="h-px bg-slate-100 my-1 mx-3" />}
-            <div className="flex items-center gap-2.5 px-3 py-2 hover:bg-slate-50">
-              <div className={`w-7 h-7 rounded-xl ${bg} flex items-center justify-center shrink-0`}>
-                <Icon className={`w-3 h-3 ${cls}`} />
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-lg p-5">
+        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">This month</div>
+        <div className="space-y-2.5">
+          {([
+            { label: 'Revenue',     val: '$12,840', dot: 'bg-emerald-400', text: 'text-emerald-600' },
+            { label: 'Outstanding', val: '$3,200',  dot: 'bg-amber-400',   text: 'text-amber-500'  },
+            { label: 'Overdue',     val: '$0',      dot: 'bg-red-300',     text: 'text-red-400'    },
+          ] as const).map(({ label, val, dot, text }) => (
+            <div key={label} className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs text-slate-500">
+                <div className={`w-2 h-2 rounded-full ${dot}`} />
+                {label}
               </div>
-              <span className={`text-[9px] font-bold flex-1 ${cls}`}>{label}</span>
-              {badge && (
-                <span className="w-4 h-4 rounded-full bg-orange-500 text-white text-[7px] flex items-center justify-center font-bold">{badge}</span>
-              )}
+              <span className={`text-sm font-black ${text}`}>{val}</span>
             </div>
-          </div>
-        ))}
-      </div>
-      {/* Footer */}
-      <div className="px-3 pt-2 text-center">
-        <p className="text-[6px] text-slate-300 font-semibold tracking-wide">KraaFo — Free Professional Invoicing</p>
-      </div>
-    </div>
-  );
-}
-
-/* ─── Branding Setup Mockup ────────────────────────────────── */
-
-function BrandingSetupMockup() {
-  return (
-    <div className="rounded-2xl overflow-hidden border border-slate-200 shadow-2xl shadow-slate-200/60">
-      {/* Wizard header */}
-      <div className="bg-indigo-700 px-5 py-3">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <LogoMark size={20} className="brightness-0 invert" />
-            <span className="text-xs font-black text-white">Set Up KraaFo</span>
-          </div>
-          <span className="text-xs text-indigo-300 font-semibold">Step 2 of 4</span>
-        </div>
-        {/* Progress */}
-        <div className="flex gap-1">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className={`flex-1 h-1 rounded-full ${i <= 2 ? 'bg-white' : 'bg-white/30'}`} />
           ))}
         </div>
-        <div className="flex gap-4 mt-2">
-          {['Company Info', 'Branding', 'Invoice Settings', 'Banking & Payments'].map((s, i) => (
-            <span key={s} className={`text-[9px] font-semibold ${i === 1 ? 'text-white' : 'text-indigo-300'}`}>{s}</span>
-          ))}
+        <div className="mt-3 pt-2.5 border-t border-slate-50 text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
+          <TrendingUp className="w-2.5 h-2.5" />
+          +28% from last month
         </div>
-      </div>
-      {/* Content */}
-      <div className="bg-white px-5 py-4">
-        <h3 className="text-sm font-black text-slate-900 mb-4">Brand your documents</h3>
-
-        {/* Logo upload */}
-        <div className="mb-4">
-          <label className="text-xs font-bold text-slate-600 mb-1.5 block">Company Logo</label>
-          <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 flex flex-col items-center gap-2">
-            <div className="w-12 h-12 bg-indigo-700 rounded-xl flex items-center justify-center">
-              <span className="text-white text-lg font-black">K</span>
-            </div>
-            <div className="flex items-center gap-1.5 text-emerald-600">
-              <CheckCircle className="w-3.5 h-3.5" />
-              <span className="text-xs font-semibold">Logo uploaded! Brand colors auto-extracted.</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Brand colors */}
-        <div className="mb-4">
-          <label className="text-xs font-bold text-slate-600 mb-2 block">Brand Colors</label>
-          <div className="flex justify-around">
-            {[
-              { label: 'Primary', hex: '#4338CA', color: 'bg-indigo-700' },
-              { label: 'Secondary', hex: '#1E1B5E', color: 'bg-indigo-950' },
-              { label: 'Accent / Background', hex: '#EEF2FF', color: 'bg-indigo-50 border border-indigo-100' },
-            ].map(({ label, hex, color }) => (
-              <div key={label} className="flex flex-col items-center gap-1.5">
-                <div className={`w-10 h-10 rounded-xl ${color}`} />
-                <span className="text-[10px] font-semibold text-slate-600">{label}</span>
-                <span className="text-[9px] text-slate-400 font-mono">{hex}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Invoice preview */}
-        <div className="rounded-xl overflow-hidden border border-slate-200">
-          <div className="bg-indigo-700 h-1.5" />
-          <div className="bg-white px-3 py-2 flex items-center justify-between">
-            <div className="text-[10px] font-bold text-indigo-700">Your Company Name</div>
-            <div className="text-[11px] font-black text-indigo-700 tracking-wider">INVOICE</div>
-          </div>
-          <div className="bg-indigo-700 mx-3 mb-3 rounded-lg h-6 opacity-20" />
-        </div>
-      </div>
-      {/* Footer */}
-      <div className="bg-white border-t border-slate-100 px-5 py-3 flex justify-between items-center">
-        <button className="text-xs font-semibold text-slate-500">← Back</button>
-        <div className="bg-indigo-700 text-white text-xs font-bold px-5 py-2 rounded-xl">Continue →</div>
       </div>
     </div>
   );
 }
 
-/* ─── Email Capture Popup ──────────────────────────────────── */
-
-function EmailCapturePopup() {
-  const [visible, setVisible] = useState(false);
-  const [dismissed, setDismissed] = useState(false);
-  const [email, setEmail] = useState('');
-  const [done, setDone] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
-  const [cfToken, setCfToken] = useState('');
-  const [resetKey, setResetKey] = useState(0);
-  const shown = useRef(false);
+function HowItWorksStepper() {
+  const [active, setActive] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const STEP_MS = 4500;
+  const TICK_MS = 60;
 
   useEffect(() => {
-    if (sessionStorage.getItem('krafo_popup_shown')) return;
-    const show = () => {
-      if (shown.current) return;
-      shown.current = true;
-      sessionStorage.setItem('krafo_popup_shown', '1');
-      setVisible(true);
-    };
-    const timer = setTimeout(show, 30000);
-    const onScroll = () => {
-      const pct = window.scrollY / Math.max(document.body.scrollHeight - window.innerHeight, 1);
-      if (pct >= 0.6) show();
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => { clearTimeout(timer); window.removeEventListener('scroll', onScroll); };
-  }, []);
+    if (paused) return;
+    setProgress(0);
+    const tick = setInterval(() => setProgress(p => Math.min(p + (TICK_MS / STEP_MS) * 100, 100)), TICK_MS);
+    const timer = setTimeout(() => { setActive(a => (a + 1) % 3); setProgress(0); }, STEP_MS);
+    return () => { clearInterval(tick); clearTimeout(timer); };
+  }, [active, paused]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email.trim()) return;
-    if (TURNSTILE_ENABLED && !cfToken) { setError('Please complete the security check.'); return; }
-    setSubmitting(true); setError('');
-    try {
-      const res = await fetch('/api/subscribers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), cf_turnstile_response: cfToken }),
-      });
-      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Failed'); }
-      setDone(true);
-    } catch (err: any) { setError(err.message || 'Something went wrong. Try again.'); setResetKey(k => k + 1); setCfToken(''); }
-    finally { setSubmitting(false); }
-  };
+  const goTo = (i: number) => { setActive(i); setProgress(0); setPaused(true); };
 
-  if (!visible || dismissed) return null;
+  const stepData = [
+    {
+      n: '01', title: 'Create in 60 seconds',
+      desc: 'Fill in your client and add your services. Smart Fill pre-populates everything for your industry if you need it.',
+      visual: <LaptopFrame><GeneratorMockup /></LaptopFrame>,
+    },
+    {
+      n: '02', title: 'Send by WhatsApp, email or SMS',
+      desc: 'One tap sends your invoice three ways. Your client has it before you pack up your tools.',
+      visual: <SendVisual />,
+    },
+    {
+      n: '03', title: 'Get paid, stay in control',
+      desc: "See what you've earned, what's outstanding, and what's overdue. No spreadsheets — just the numbers you need, when you need them.",
+      visual: <GetPaidVisual />,
+    },
+  ];
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 w-80 bg-white rounded-2xl shadow-2xl shadow-slate-300/50 border border-slate-100 overflow-hidden animate-fade-up">
-      <div className="h-1 bg-gradient-to-r from-indigo-600 to-violet-600" />
-      <div className="p-5">
-        <button
-          onClick={() => setDismissed(true)}
-          className="absolute top-3 right-3 text-slate-300 hover:text-slate-500 transition-colors p-1"
-          aria-label="Close"
-        >
-          <X className="w-4 h-4" />
-        </button>
-        {done ? (
-          <div className="text-center py-2">
-            <CheckCircle className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
-            <p className="font-bold text-slate-800 text-sm">You're in!</p>
-            <p className="text-xs text-slate-400 mt-1">We'll keep you updated on every new feature.</p>
-          </div>
-        ) : (
-          <>
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
-                <Zap className="w-4 h-4 text-indigo-600" />
-              </div>
-              <div>
-                <p className="text-sm font-black text-slate-800">Stay ahead with KraaFo</p>
-                <p className="text-[10px] text-slate-400">New features drop regularly — be first to know.</p>
-              </div>
+    <div>
+      {/* Step tabs with progress */}
+      <div className="flex border-b border-slate-100 mb-10">
+        {stepData.map((s, i) => (
+          <button
+            key={i}
+            onClick={() => goTo(i)}
+            className={`flex-1 relative py-4 text-left px-1 sm:px-4 transition-colors ${
+              i === active ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'
+            }`}
+          >
+            <span className={`block text-xs font-black tracking-widest mb-1 ${i === active ? 'text-indigo-600' : 'text-slate-300'}`}>{s.n}</span>
+            <span className="block font-bold text-sm leading-tight hidden sm:block">{s.title}</span>
+            <div className="absolute bottom-0 inset-x-0 h-0.5 bg-slate-100">
+              {i === active && (
+                <div className="h-full bg-indigo-600" style={{ width: paused ? '100%' : `${progress}%`, transition: paused ? 'none' : `width ${TICK_MS}ms linear` }} />
+              )}
             </div>
-            <form onSubmit={handleSubmit} className="space-y-2">
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="Your email address"
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
-              />
-              <TurnstileWidget onVerify={setCfToken} onExpire={() => setCfToken('')} resetKey={resetKey} />
-              {error && <p className="text-[11px] text-red-500">{error}</p>}
-              <button
-                type="submit"
-                disabled={submitting || (TURNSTILE_ENABLED && !cfToken)}
-                className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm transition-all disabled:opacity-60"
-              >
-                {submitting ? 'Joining…' : 'Get updates — it\'s free'}
-              </button>
-              <p className="text-[10px] text-slate-300 text-center">No spam · Unsubscribe anytime</p>
-            </form>
-          </>
-        )}
+          </button>
+        ))}
+      </div>
+
+      {/* Step content */}
+      <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+        <div className="order-2 lg:order-1">
+          <div className="text-xs font-black text-indigo-600 uppercase tracking-widest mb-3">Step {active + 1} of 3</div>
+          <h3 className="text-2xl lg:text-3xl font-black text-slate-900 tracking-tight mb-4">{stepData[active].title}</h3>
+          <p className="text-slate-500 leading-relaxed mb-8">{stepData[active].desc}</p>
+          {active === 2 && (
+            <Link to="/setup" className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-7 py-3.5 rounded-xl font-bold text-base transition-all shadow-lg shadow-indigo-200 btn-glow">
+              Create your first invoice — free <ArrowRight className="w-4 h-4" />
+            </Link>
+          )}
+        </div>
+        <div className="order-1 lg:order-2">
+          {stepData[active].visual}
+        </div>
       </div>
     </div>
   );
@@ -844,7 +414,6 @@ function EmailCapturePopup() {
 
 export default function Landing() {
   const [liveReviews, setLiveReviews] = useState<ReviewCard[]>([]);
-  const [stats, setStats] = useState<{ documents: number; countries: number; avgRating: number | null; ratingCount: number } | null>(null);
 
   useEffect(() => {
     api.feedback.highlights()
@@ -859,33 +428,12 @@ export default function Landing() {
         if (cards.length > 0) setLiveReviews(cards);
       })
       .catch(() => {});
-    api.stats.get().then(setStats).catch(() => {});
   }, []);
 
   const reviews = liveReviews;
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
-      <EmailCapturePopup />
-      <style>{`
-        @keyframes chipFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
-        @keyframes phoneFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
-        .chip-float { animation: chipFloat 3.5s ease-in-out infinite; }
-        .phone-float { animation: phoneFloat 5s ease-in-out infinite; }
-        /* Hero image float */
-        @keyframes heroFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
-        .hero-float { animation: heroFloat 7s ease-in-out infinite; }
-        /* Shine sweep on hover */
-        @keyframes shine { 0%{left:-80%} 100%{left:130%} }
-        .hero-img-wrap { position:relative; overflow:hidden; border-radius:20px; }
-        @media(min-width:640px){ .hero-img-wrap { border-radius:28px; } }
-        .hero-img-wrap::after {
-          content:''; position:absolute; top:0; left:-80%; width:55%; height:100%;
-          background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,0.18) 50%,transparent 60%);
-          pointer-events:none;
-        }
-        .hero-img-wrap:hover::after { animation: shine 0.8s ease forwards; }
-      `}</style>
 
       {/* Nav */}
       <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-100">
@@ -952,38 +500,23 @@ export default function Landing() {
               </div>
             </div>
 
-            {/* ── Right: Person photo + floating review card ── */}
-            <div className="relative animate-hero delay-200 mt-4 lg:mt-0">
-
-              {/* "2 min" badge */}
-              <div className="absolute -top-3 left-2 sm:left-8 z-20 bg-indigo-600 text-white rounded-2xl px-4 py-3 shadow-xl shadow-indigo-300/40">
-                <div className="text-2xl font-black leading-none">2 min</div>
-                <div className="text-indigo-200 text-[11px] font-semibold mt-0.5">setup to first invoice</div>
-              </div>
-
-              {/* Person photo */}
-              <div className="relative rounded-[2rem] overflow-hidden aspect-[3/4] max-w-sm mx-auto lg:max-w-none shadow-2xl shadow-slate-300/40">
-                <img
-                  src="/people-hero.jpg"
-                  alt="Business owner using KraaFo"
-                  className="w-full h-full object-cover"
-                  loading="eager"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" />
-              </div>
-
+            {/* ── Right: Product visual ── */}
+            <div className="animate-hero delay-200 mt-6 lg:mt-0">
+              <LaptopFrame>
+                <GeneratorMockup />
+              </LaptopFrame>
               {/* Floating review card */}
-              <div className="absolute bottom-5 left-3 right-3 sm:left-5 sm:right-5 bg-white/95 backdrop-blur-md rounded-2xl p-4 shadow-2xl border border-white">
+              <div className="mt-4 bg-white rounded-2xl p-4 shadow-lg border border-slate-100 max-w-sm mx-auto">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center shrink-0 border-2 border-indigo-50">
-                    <span className="text-indigo-600 font-bold text-base">T</span>
+                  <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center shrink-0 border-2 border-indigo-50">
+                    <span className="text-indigo-600 font-bold">T</span>
                   </div>
                   <div className="min-w-0">
-                    <div className="flex items-center gap-0.5 mb-1">
+                    <div className="flex gap-0.5 mb-1">
                       {[0,1,2,3,4].map(i => <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />)}
                     </div>
                     <p className="text-slate-700 text-sm font-medium leading-snug">"My clients think I have a whole accounts department."</p>
-                    <p className="text-slate-400 text-xs font-semibold mt-1">Theresa · KraaFo user</p>
+                    <p className="text-slate-400 text-xs mt-1">Theresa · KraaFo user</p>
                   </div>
                 </div>
               </div>
@@ -992,32 +525,6 @@ export default function Landing() {
           </div>
         </div>
 
-      </section>
-
-      {/* ── Trust Strip ──────────────────────────────────────── */}
-      <section className="bg-slate-50 border-b border-slate-100">
-        <div className="max-w-6xl mx-auto px-6 py-5">
-          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
-            <div className="flex items-center gap-2 text-slate-600 text-sm font-semibold">
-              <Zap className="w-4 h-4 text-violet-500 shrink-0" />
-              Free to use · No credit card needed
-            </div>
-            <div className="flex items-center gap-2 text-slate-600 text-sm font-semibold">
-              <MessageSquare className="w-4 h-4 text-emerald-500 shrink-0" />
-              Sends via WhatsApp, SMS &amp; Email
-            </div>
-            <div className="flex items-center gap-2 text-slate-600 text-sm font-semibold">
-              <Globe className="w-4 h-4 text-emerald-500 shrink-0" />
-              Works in any country, any currency
-            </div>
-            {stats?.avgRating ? (
-              <div className="flex items-center gap-1.5 text-slate-600 text-sm font-semibold">
-                <Star className="w-4 h-4 fill-amber-400 text-amber-400 shrink-0" />
-                {stats.avgRating} / 5 from real users
-              </div>
-            ) : null}
-          </div>
-        </div>
       </section>
 
       {/* ── Pain section ─────────────────────────────────────── */}
@@ -1042,160 +549,6 @@ export default function Landing() {
               <span className="text-indigo-600">You, looking like a company twice your size.</span>
             </p>
           </div>
-        </div>
-      </section>
-
-      {/* ── People Feature Sections ───────────────────────────── */}
-      <section className="py-16 md:py-24 px-6 bg-white">
-        <div className="max-w-6xl mx-auto space-y-16 lg:space-y-28">
-
-          {/* Row 1: Invoice anywhere */}
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-            <div className="relative">
-              <div className="rounded-[2rem] overflow-hidden aspect-[4/5] shadow-2xl shadow-slate-200/60">
-                <img
-                  src="/people-1.jpg"
-                  alt="Tradesperson creating an invoice on the job site"
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/20 via-transparent to-transparent pointer-events-none" />
-              </div>
-              {/* Floating invoice mini-card */}
-              <div className="absolute -bottom-5 -right-3 sm:right-4 bg-white rounded-2xl shadow-2xl border border-slate-100 p-4 max-w-[220px]">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] font-black text-slate-700 uppercase tracking-wide">Invoice</span>
-                  <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-0.5">
-                    <CheckCircle className="w-2.5 h-2.5" /> Paid
-                  </span>
-                </div>
-                <div className="text-xs font-black text-slate-900 mb-0.5">Sarah Thompson</div>
-                <div className="text-[10px] text-slate-400 mb-2.5">Deep House Cleaning · 3 items</div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-slate-500">Total</span>
-                  <span className="text-base font-black text-indigo-600">$482.58</span>
-                </div>
-                <div className="mt-2 pt-2 border-t border-slate-50 text-[9px] text-slate-400 flex items-center gap-1">
-                  <MessageSquare className="w-2.5 h-2.5 text-emerald-500" />
-                  Sent via WhatsApp · 2 min ago
-                </div>
-              </div>
-            </div>
-            <div>
-              <span className="inline-block text-xs font-bold text-indigo-600 uppercase tracking-widest mb-4">Create in seconds</span>
-              <h2 className="text-3xl lg:text-5xl font-black text-slate-900 tracking-tight leading-[1.05] mb-5">
-                Invoice from<br />wherever you work
-              </h2>
-              <p className="text-slate-500 text-lg leading-relaxed mb-8">
-                On the job site, between appointments, or heading home. Create a fully branded invoice in 2 minutes. Smart Fill fills in your services and pricing so you spend more time working, less time at a keyboard.
-              </p>
-              <Link to="/setup" className="inline-flex items-center gap-2 text-indigo-600 font-bold text-base hover:text-indigo-800 transition-colors group">
-                Start free today <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Link>
-            </div>
-          </div>
-
-          {/* Row 2: Send by WhatsApp (reversed) */}
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-            <div className="lg:order-2 relative">
-              <div className="rounded-[2rem] overflow-hidden aspect-[4/5] shadow-2xl shadow-slate-200/60">
-                <img
-                  src="/people-2.jpg"
-                  alt="Tradesperson sending an invoice from the job site"
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/20 via-transparent to-transparent pointer-events-none" />
-              </div>
-              {/* Floating WhatsApp card */}
-              <div className="absolute -top-5 -left-3 sm:left-auto sm:-right-3 bg-white rounded-2xl shadow-2xl border border-slate-100 p-3 max-w-[210px]">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
-                    <MessageSquare className="w-3 h-3 text-white" />
-                  </div>
-                  <span className="text-[10px] font-bold text-slate-700">WhatsApp sent!</span>
-                </div>
-                <div className="bg-emerald-50 rounded-xl px-2.5 py-2 text-[9px] text-slate-600 leading-relaxed border border-emerald-100">
-                  "Hi James! Here is your invoice INV-0042 for $482.58. PDF is attached. Thank you!"
-                </div>
-                <div className="flex items-center gap-1 mt-1.5 text-[8px] text-slate-400">
-                  <span className="text-emerald-500 font-bold">✓✓</span>
-                  <span>Delivered · just now</span>
-                </div>
-              </div>
-            </div>
-            <div className="lg:order-1">
-              <span className="inline-block text-xs font-bold text-emerald-600 uppercase tracking-widest mb-4">Send instantly</span>
-              <h2 className="text-3xl lg:text-5xl font-black text-slate-900 tracking-tight leading-[1.05] mb-5">
-                Clients get it on<br />WhatsApp in seconds
-              </h2>
-              <p className="text-slate-500 text-lg leading-relaxed mb-8">
-                No email delays, no follow-up messages. Send your invoice through WhatsApp, SMS, or email directly from KraaFo. Your client gets a clean message with the PDF straight away. Most are paid within hours.
-              </p>
-              <Link to="/setup" className="inline-flex items-center gap-2 text-emerald-600 font-bold text-base hover:text-emerald-800 transition-colors group">
-                Try it free <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Link>
-            </div>
-          </div>
-
-          {/* Row 3: Know your numbers */}
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-            <div className="relative">
-              <div className="rounded-[2rem] overflow-hidden aspect-[4/5] shadow-2xl shadow-slate-200/60">
-                <img
-                  src="/people-3.jpg"
-                  alt="Business owner reviewing their finances"
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/20 via-transparent to-transparent pointer-events-none" />
-              </div>
-              {/* Floating dashboard mini-card */}
-              <div className="absolute -bottom-5 -right-3 sm:right-4 bg-white rounded-2xl shadow-2xl border border-slate-100 p-4 max-w-[230px]">
-                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">This month</div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
-                      <div className="w-2 h-2 rounded-full bg-emerald-400" />
-                      Revenue
-                    </div>
-                    <span className="text-sm font-black text-emerald-600">$12,840</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
-                      <div className="w-2 h-2 rounded-full bg-amber-400" />
-                      Outstanding
-                    </div>
-                    <span className="text-sm font-black text-amber-500">$3,200</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
-                      <div className="w-2 h-2 rounded-full bg-red-300" />
-                      Overdue
-                    </div>
-                    <span className="text-sm font-black text-red-400">$0</span>
-                  </div>
-                </div>
-                <div className="mt-3 pt-2.5 border-t border-slate-50 text-[9px] text-emerald-600 font-semibold flex items-center gap-1">
-                  <TrendingUp className="w-2.5 h-2.5" />
-                  +28% from last month
-                </div>
-              </div>
-            </div>
-            <div>
-              <span className="inline-block text-xs font-bold text-violet-600 uppercase tracking-widest mb-4">Stay in control</span>
-              <h2 className="text-3xl lg:text-5xl font-black text-slate-900 tracking-tight leading-[1.05] mb-5">
-                See your money.<br />Know your business.
-              </h2>
-              <p className="text-slate-500 text-lg leading-relaxed mb-8">
-                Your dashboard shows what you have earned, what is outstanding, and what is overdue. No spreadsheets, no guessing. Just the numbers you need, when you need them.
-              </p>
-              <Link to="/setup" className="inline-flex items-center gap-2 text-violet-600 font-bold text-base hover:text-violet-800 transition-colors group">
-                Get started free <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Link>
-            </div>
-          </div>
-
         </div>
       </section>
 
@@ -1342,66 +695,11 @@ export default function Landing() {
           {/* CTA */}
           <div className="text-center">
             <Link to="/setup" className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3.5 rounded-xl font-bold text-base transition-all shadow-lg shadow-indigo-900/50 btn-glow">
-              Start sending smarter <ArrowRight className="w-4 h-4" />
+              Create your first invoice — free <ArrowRight className="w-4 h-4" />
             </Link>
             <p className="text-slate-600 text-xs mt-3 font-semibold">Free to use · No credit card · 2-minute setup</p>
           </div>
 
-        </div>
-      </section>
-
-      {/* ── Recent Documents Showcase ─────────────────────────── */}
-      <section className="py-16 px-6 bg-slate-50">
-        <div className="max-w-5xl mx-auto">
-          <p className="text-xs font-bold text-indigo-500 uppercase tracking-widest mb-3">Document history</p>
-          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 mb-10">
-            <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-tight max-w-lg">All your documents,<br />always at your fingertips.</h2>
-            <p className="text-slate-500 leading-relaxed max-w-md">Every invoice, receipt, and quote is saved and searchable. Switch between documents in seconds — edit, preview, or re-send with one tap.</p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-            {[
-              { icon: FileText, label: 'Invoices, receipts & quotes', desc: 'All document types in one place', color: 'bg-indigo-50 text-indigo-600' },
-              { icon: Download, label: 'Instant PDF preview', desc: 'On any device, any time', color: 'bg-emerald-50 text-emerald-600' },
-              { icon: Send, label: 'One-tap re-send', desc: 'Back to any client instantly', color: 'bg-violet-50 text-violet-600' },
-            ].map(({ icon: Icon, label, desc, color }) => (
-              <div key={label} className="bg-white rounded-2xl border border-slate-100 p-5 flex items-start gap-4">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${color}`}>
-                  <Icon className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="font-bold text-slate-800 text-sm mb-0.5">{label}</div>
-                  <div className="text-slate-400 text-xs">{desc}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-          <Link to="/generator?demo=true" className="inline-flex items-center gap-2 text-indigo-600 font-bold text-sm hover:text-indigo-800 transition-colors">
-            <Sparkles className="w-4 h-4" /> Try without signing up <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-      </section>
-
-      {/* ── Branding Section ─────────────────────────────────── */}
-      <section className="py-16 px-6 bg-white">
-        <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          <div>
-            <p className="text-xs font-bold text-indigo-500 uppercase tracking-widest mb-3">Auto-branding</p>
-            <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-4">Upload your logo.<br />We handle the rest.</h2>
-            <p className="text-slate-500 leading-relaxed mb-6">KraaFo reads your logo and pulls out your brand colors automatically. Every invoice, receipt, and quote matches your business. No color pickers, no manual setup.</p>
-            <div className="space-y-3 mb-8">
-              {['Brand colors pulled from your logo automatically', 'Applied to every document you create', 'Change your logo and colors update everywhere'].map(f => (
-                <div key={f} className="flex items-center gap-2 text-sm text-slate-700 font-medium">
-                  <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" /> {f}
-                </div>
-              ))}
-            </div>
-            <Link to="/setup" className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-all btn-glow shadow-sm">
-              Set up your brand <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-          <div>
-            <BrandingSetupMockup />
-          </div>
         </div>
       </section>
 
@@ -1413,23 +711,7 @@ export default function Landing() {
             <h2 className="text-4xl font-black text-slate-900 tracking-tight mb-2">From zero to paid in minutes</h2>
             <p className="text-slate-500">No learning curve. No complicated setup. Just results.</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
-            {steps.map((s, i) => (
-              <div key={s.n} className="relative animate-fade-up" style={{ animationDelay: `${i * 100}ms` }}>
-                {i < steps.length - 1 && <div className="hidden md:block absolute top-7 left-full h-px bg-gradient-to-r from-indigo-200 to-transparent z-0" style={{ width: 'calc(100% - 2rem)' }} />}
-                <div className="relative z-10">
-                  <div className="w-14 h-14 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-black text-base mb-4 shadow-lg shadow-indigo-200">{s.n}</div>
-                  <h3 className="font-black text-slate-800 text-base mb-1.5">{s.title}</h3>
-                  <p className="text-slate-500 text-sm leading-relaxed">{s.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="text-center mb-12">
-            <Link to="/generator?demo=true" className="inline-flex items-center gap-2 text-indigo-600 font-bold text-sm hover:text-indigo-800 transition-colors">
-              <Sparkles className="w-4 h-4" /> Try without signing up <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
+          <HowItWorksStepper />
           <div className="flex items-center gap-4 mb-10">
             <div className="flex-1 h-px bg-slate-200" />
             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest shrink-0">Everything you get</p>
@@ -1534,25 +816,8 @@ export default function Landing() {
           <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Ready to send your first document?</h2>
           <p className="text-slate-500 mb-7 leading-relaxed">Takes under 2 minutes to set up. Free to use — no credit card needed.</p>
           <Link to="/setup" className="inline-flex items-center gap-2.5 bg-indigo-600 hover:bg-indigo-700 text-white px-10 py-3.5 rounded-xl font-bold text-base transition-all shadow-2xl shadow-indigo-200 btn-glow">
-            Get Started Free <ArrowRight className="w-4 h-4" />
+            Create your first invoice — free <ArrowRight className="w-4 h-4" />
           </Link>
-        </div>
-      </section>
-
-      {/* ── Newsletter ──────────────────────────────────────── */}
-      <section className="py-16 px-6 bg-indigo-600">
-        <div className="max-w-2xl mx-auto text-center">
-          <div className="flex justify-center mb-4">
-            <div className="w-11 h-11 rounded-2xl bg-white/15 flex items-center justify-center">
-              <Mail className="w-5 h-5 text-white" />
-            </div>
-          </div>
-          <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight mb-2">Stay in the loop</h2>
-          <p className="text-indigo-200 mb-8 text-sm sm:text-base">
-            We keep shipping — new features, improvements, tips. Drop your email and we'll update you whenever something worth knowing lands.
-          </p>
-          <NewsletterSignup />
-          <p className="text-indigo-300 text-xs mt-4">No spam, ever. Unsubscribe with one click anytime.</p>
         </div>
       </section>
 
