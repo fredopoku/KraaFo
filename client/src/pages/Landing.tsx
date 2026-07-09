@@ -390,23 +390,69 @@ function HowItWorksStepper() {
         ))}
       </div>
 
-      {/* Step content */}
+      {/* Step content — all panels in DOM, toggled via class so crawlers index all steps */}
       <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
         <div className="order-2 lg:order-1">
-          <div className="text-xs font-black text-indigo-600 uppercase tracking-widest mb-3">Step {active + 1} of 3</div>
-          <h3 className="text-2xl lg:text-3xl font-black text-slate-900 tracking-tight mb-4">{stepData[active].title}</h3>
-          <p className="text-slate-500 leading-relaxed mb-8">{stepData[active].desc}</p>
-          {active === 2 && (
-            <Link to="/setup" className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-7 py-3.5 rounded-xl font-bold text-base transition-all shadow-lg shadow-indigo-200 btn-glow">
-              Create your first invoice — free <ArrowRight className="w-4 h-4" />
-            </Link>
-          )}
+          {stepData.map((step, i) => (
+            <div key={i} className={i === active ? 'block' : 'hidden'}>
+              <div className="text-xs font-black text-indigo-600 uppercase tracking-widest mb-3">Step {i + 1} of 3</div>
+              <h3 className="text-2xl lg:text-3xl font-black text-slate-900 tracking-tight mb-4">{step.title}</h3>
+              <p className="text-slate-500 leading-relaxed mb-8">{step.desc}</p>
+              {i === 2 && (
+                <Link to="/setup" className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-7 py-3.5 rounded-xl font-bold text-base transition-all shadow-lg shadow-indigo-200 btn-glow">
+                  Create your first invoice — free <ArrowRight className="w-4 h-4" />
+                </Link>
+              )}
+            </div>
+          ))}
         </div>
         <div className="order-1 lg:order-2">
           {stepData[active].visual}
         </div>
       </div>
     </div>
+  );
+}
+
+/* ─── Footer newsletter — quiet single line ─────────────────── */
+
+function FooterUpdatesLine() {
+  const [email, setEmail] = useState('');
+  const [state, setState] = useState<'idle' | 'loading' | 'done'>('idle');
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) return;
+    setState('loading');
+    try {
+      await api.subscribers.subscribe({ email: email.trim() });
+      setState('done');
+    } catch {
+      setState('idle');
+    }
+  };
+
+  if (state === 'done') {
+    return (
+      <div className="border-t border-slate-100 pt-4 text-center text-xs text-slate-400">
+        <CheckCircle className="inline w-3.5 h-3.5 text-emerald-500 mr-1 -mt-0.5" />
+        You're subscribed — we'll keep you posted.
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={submit} className="border-t border-slate-100 pt-4 flex flex-col sm:flex-row items-center justify-center gap-2">
+      <span className="text-xs text-slate-400 shrink-0">Get product updates</span>
+      <input
+        type="email" required value={email} onChange={e => setEmail(e.target.value)}
+        placeholder="your@email.com"
+        className="text-xs px-3 py-1.5 border border-slate-200 rounded-lg w-48 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+      />
+      <button type="submit" disabled={state === 'loading'} className="text-xs px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg font-medium transition-colors disabled:opacity-60">
+        {state === 'loading' ? 'Joining…' : 'Subscribe'}
+      </button>
+    </form>
   );
 }
 
@@ -823,16 +869,19 @@ export default function Landing() {
 
       {/* ── Footer ──────────────────────────────────────────── */}
       <footer className="border-t border-slate-100 py-8 px-6 bg-white">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <Logo size="lg" />
-          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
-            <Link to="/changelog" className="text-xs text-slate-400 hover:text-indigo-600 transition-colors font-medium">What's New</Link>
-            <span className="text-slate-200 hidden sm:inline">·</span>
-            <a href="mailto:kraafo.invoice.receipt@gmail.com" className="text-xs text-slate-400 hover:text-indigo-600 transition-colors font-medium">
-              Questions? kraafo.invoice.receipt@gmail.com
-            </a>
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
+            <Logo size="lg" />
+            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+              <Link to="/changelog" className="text-xs text-slate-400 hover:text-indigo-600 transition-colors font-medium">What's New</Link>
+              <span className="text-slate-200 hidden sm:inline">·</span>
+              <a href="mailto:kraafo.invoice.receipt@gmail.com" className="text-xs text-slate-400 hover:text-indigo-600 transition-colors font-medium">
+                Questions? kraafo.invoice.receipt@gmail.com
+              </a>
+            </div>
+            <p className="text-xs text-slate-300 font-medium">© {new Date().getFullYear()} KraaFo</p>
           </div>
-          <p className="text-xs text-slate-300 font-medium">© {new Date().getFullYear()} KraaFo</p>
+          <FooterUpdatesLine />
         </div>
       </footer>
     </div>
