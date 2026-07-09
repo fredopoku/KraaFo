@@ -1,19 +1,20 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { useEffect, Component, ReactNode } from 'react';
+import { useEffect, lazy, Suspense, Component, ReactNode } from 'react';
 import Landing from './pages/Landing';
-import Setup from './pages/Setup';
-import Generator from './pages/Generator';
-import Dashboard from './pages/Dashboard';
-import Clients from './pages/Clients';
-import Quotes from './pages/Quotes';
-import Unsubscribe from './pages/Unsubscribe';
-import Admin from './pages/Admin';
-import Changelog from './pages/Changelog';
-import InvoiceView from './pages/InvoiceView';
-import Login from './pages/Login';
-import Join from './pages/Join';
-import Team from './pages/Team';
 import { trackPage } from './utils/tracker';
+
+const Setup = lazy(() => import('./pages/Setup'));
+const Generator = lazy(() => import('./pages/Generator'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Clients = lazy(() => import('./pages/Clients'));
+const Quotes = lazy(() => import('./pages/Quotes'));
+const Unsubscribe = lazy(() => import('./pages/Unsubscribe'));
+const Admin = lazy(() => import('./pages/Admin'));
+const Changelog = lazy(() => import('./pages/Changelog'));
+const InvoiceView = lazy(() => import('./pages/InvoiceView'));
+const Login = lazy(() => import('./pages/Login'));
+const Join = lazy(() => import('./pages/Join'));
+const Team = lazy(() => import('./pages/Team'));
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state = { error: null };
@@ -45,27 +46,33 @@ function RouterTracker() {
   return null;
 }
 
+function PageLoader() {
+  return <div style={{ minHeight: '100vh', background: '#fff' }} />;
+}
+
 export default function App() {
   return (
     <ErrorBoundary>
     <BrowserRouter>
       <RouterTracker />
-      <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route path="/setup" element={<Setup />} />
-        <Route path="/generator" element={<Generator />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/clients" element={<Clients />} />
-        <Route path="/quotes" element={<Quotes />} />
-        <Route path="/unsubscribe" element={<Unsubscribe />} />
-        <Route path="/admin" element={<Admin />} />
-        <Route path="/changelog" element={<Changelog />} />
-        <Route path="/view/:id" element={<InvoiceView />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/join/:token" element={<Join />} />
-        <Route path="/team" element={<Team />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route path="/setup" element={<Setup />} />
+          <Route path="/generator" element={<Generator />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/clients" element={<Clients />} />
+          <Route path="/quotes" element={<Quotes />} />
+          <Route path="/unsubscribe" element={<Unsubscribe />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/changelog" element={<Changelog />} />
+          <Route path="/view/:id" element={<InvoiceView />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/join/:token" element={<Join />} />
+          <Route path="/team" element={<Team />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
     </BrowserRouter>
     </ErrorBoundary>
   );
