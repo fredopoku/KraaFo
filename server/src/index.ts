@@ -114,68 +114,116 @@ app.get('/api/health', (_req, res) => {
 // client/dist is at ../../client/dist relative to server/dist/index.js
 const clientDist = path.resolve(__dirname, '../../client/dist');
 if (isProd && fs.existsSync(clientDist)) {
-  // Build the prerendered homepage HTML once at startup.
-  // React replaces this on mount; crawlers see the full content before JS runs.
-  let homepageHtml: string;
-  try {
-    const shell = fs.readFileSync(path.join(clientDist, 'index.html'), 'utf8');
-    const staticContent = `<main>
-<h1>Send invoices your clients take seriously. Get paid without chasing.</h1>
-<p>Create professional invoices in under a minute. Download free — no account needed. Sign up free to save your work and send by WhatsApp, SMS, or email.</p>
-<p>Free to use · No credit card · Sends via WhatsApp, SMS &amp; email</p>
-<h2>Your client can't say they didn't get it</h2>
-<p>One tap sends your invoice three ways — WhatsApp, SMS, and email — all with the PDF attached. Every other invoicing app sends an email and waits. KraaFo sends all three at once.</p>
-<h2>Features</h2>
-<ul>
-<li><strong>Smart Fill</strong> — Pick your industry and job type. KraaFo fills in your line items, pricing, notes, and terms. Review, adjust, send.</li>
-<li><strong>Auto Branding</strong> — Upload your logo and KraaFo pulls your brand colors. Every document matches your business, automatically.</li>
-<li><strong>Professional Invoices</strong> — Branded payment requests with due dates, tax, discounts, and a full itemized breakdown.</li>
-<li><strong>Instant Receipts</strong> — Generate a receipt the moment a client pays. No templates, no fiddling.</li>
-<li><strong>Tax &amp; Discounts</strong> — GST, VAT, Sales Tax, and both percentage and fixed-amount discounts on every document.</li>
-<li><strong>Print-Ready PDFs</strong> — Sharp, clean PDFs ready to print, email, or share on the spot. Generated in seconds.</li>
-<li><strong>WhatsApp, SMS &amp; Email</strong> — Send from inside KraaFo. Your client gets the PDF via WhatsApp, SMS, or email.</li>
-<li><strong>Works Worldwide</strong> — Multi-currency. M-Pesa, MTN, Airtel, Telecel, PayPal, and bank transfer. Works in any country.</li>
-</ul>
-<h2>How it works — from zero to paid in minutes</h2>
-<ol>
-<li><strong>Create in 60 seconds</strong> — Fill in your client and add your services. Smart Fill pre-populates everything for your industry.</li>
-<li><strong>Send by WhatsApp, email or SMS</strong> — One tap sends your invoice three ways. Your client has it before you pack up your tools.</li>
-<li><strong>Download free, no sign-up</strong> — Download the PDF right away with no account needed. Sign up free to save history and send to clients.</li>
-</ol>
-<h2>Common questions</h2>
-<dl>
-<dt>Is KraaFo really free?</dt>
-<dd>Yes. Creating and downloading invoices, receipts and quotes is completely free. No credit card needed. You need a free account to send documents by email or WhatsApp and to save your history.</dd>
-<dt>Do I need an account to download a PDF?</dt>
-<dd>No. Fill in your invoice and download the PDF without signing up. Create an account (also free) to save your documents and send them to clients.</dd>
-<dt>Can I send invoices on WhatsApp?</dt>
-<dd>Yes. One tap sends your invoice through WhatsApp, SMS, and email — all from the same screen. Your client gets a professional message with the PDF.</dd>
-<dt>Can I add my logo and brand colors?</dt>
-<dd>Yes. Upload your logo and KraaFo automatically extracts your brand colors. Every document reflects your brand without any manual setup.</dd>
-<dt>Does it work in my country and currency?</dt>
-<dd>KraaFo works worldwide. Set any currency symbol and accept mobile money (M-Pesa, MTN, Airtel, Telecel), PayPal, or bank transfer.</dd>
-</dl>
-</main>`;
-    homepageHtml = shell.replace('<div id="root"></div>', `<div id="root">${staticContent}</div>`);
-  } catch {
-    homepageHtml = fs.readFileSync(path.join(clientDist, 'index.html'), 'utf8');
+  // Per-route prerender: each public route gets its own metadata + correct h1.
+  // The build step (scripts/prerender.cjs) renders each route with Puppeteer and
+  // writes the result to client/dist/<route>/index.html. Here we read those files
+  // and patch the head metadata, since Puppeteer only fixes the canonical link.
+  // For /generator (which has no h1 in the React UI), we inject a hidden h1 for crawlers.
+
+  type RouteConfig = {
+    srcFile: string;          // path relative to clientDist
+    title: string;
+    description: string;
+    canonical: string;
+    ogTitle: string;
+    ogDescription: string;
+    twitterTitle: string;
+    twitterDescription: string;
+    injectH1?: string;        // hidden h1 text for routes whose React UI has no <h1>
+  };
+
+  const patchMeta = (html: string, nameOrProp: string, value: string): string =>
+    html.replace(
+      new RegExp(`(<meta[^>]+(name|property)="${nameOrProp}"[^>]+content=")[^"]*"`),
+      `$1${value}"`
+    );
+
+  const buildPageHtml = (shell: string, cfg: RouteConfig): string => {
+    let h = shell;
+    h = h.replace(/<title>[^<]*<\/title>/, `<title>${cfg.title}</title>`);
+    h = patchMeta(h, 'description', cfg.description);
+    h = patchMeta(h, 'og:url', cfg.canonical);
+    h = patchMeta(h, 'og:title', cfg.ogTitle);
+    h = patchMeta(h, 'og:description', cfg.ogDescription);
+    h = patchMeta(h, 'twitter:title', cfg.twitterTitle);
+    h = patchMeta(h, 'twitter:description', cfg.twitterDescription);
+    h = h.replace(/(<link\s+rel="canonical"\s+href=")[^"]*"/, `$1${cfg.canonical}"`);
+    if (cfg.injectH1) {
+      // Inject right after <body> — invisible to sighted users, readable by crawlers
+      const hiddenStyle = 'position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border-width:0';
+      h = h.replace('<body>', `<body><h1 style="${hiddenStyle}">${cfg.injectH1}</h1>`);
+    }
+    return h;
+  };
+
+  const routeConfigs: Record<string, RouteConfig> = {
+    '/': {
+      srcFile: 'index.html',
+      title: 'KraaFo — Free Invoicing & Receipt Software for Service Businesses',
+      description: 'Create and download professional invoices, receipts and quotes free — no account needed. Branded PDFs delivered by email & WhatsApp. Sign up to save and send.',
+      canonical: 'https://kraafo.com/',
+      ogTitle: 'KraaFo — Professional Invoices & Receipts in Under a Minute',
+      ogDescription: 'Professional invoices in under a minute — delivered straight to WhatsApp or email. Branded PDFs, Smart Fill, free to create. Sign up to send and save.',
+      twitterTitle: 'KraaFo — Free Invoice & Receipt Generator',
+      twitterDescription: 'Professional invoices in under a minute. Branded PDFs delivered by WhatsApp or email. Free to create — sign up to send.',
+    },
+    '/generator': {
+      srcFile: 'generator/index.html',
+      title: 'Free Invoice Generator — Create & Download in 60 Seconds | KraaFo',
+      description: 'Create a professional invoice in under 60 seconds. Download free as PDF — no account needed. Add your logo, set your rates, and send by WhatsApp, SMS, or email.',
+      canonical: 'https://kraafo.com/generator',
+      ogTitle: 'Free Invoice Generator — Create & Download in 60 Seconds | KraaFo',
+      ogDescription: 'Create a professional invoice in under 60 seconds. Download free as PDF — no account needed. Add your logo and send by WhatsApp, SMS, or email.',
+      twitterTitle: 'Free Invoice Generator | KraaFo',
+      twitterDescription: 'Create a professional invoice in under 60 seconds. Download free — no sign-up needed.',
+      injectH1: 'Free Invoice Generator — Create &amp; Download in 60 Seconds',
+    },
+    '/changelog': {
+      srcFile: 'changelog/index.html',
+      title: "What's New in KraaFo — Latest Updates & Features",
+      description: "See the latest updates, new features, and improvements to KraaFo. Invoicing, receipts, WhatsApp delivery and more — always improving.",
+      canonical: 'https://kraafo.com/changelog',
+      ogTitle: "What's New in KraaFo — Changelog",
+      ogDescription: "The latest updates and new features in KraaFo — your free invoice and receipt generator.",
+      twitterTitle: "What's New in KraaFo",
+      twitterDescription: "Latest updates and new features in KraaFo — free invoice and receipt generator.",
+    },
+  };
+
+  // Build all route HTML variants at startup.
+  // Each route reads its own Puppeteer-prerendered file; falls back to index.html if missing.
+  const routeHtmlMap: Record<string, string> = {};
+  const fallbackShell = (() => {
+    try { return fs.readFileSync(path.join(clientDist, 'index.html'), 'utf8'); } catch { return ''; }
+  })();
+
+  for (const [routePath, cfg] of Object.entries(routeConfigs)) {
+    try {
+      const filePath = path.join(clientDist, cfg.srcFile);
+      const shell = fs.existsSync(filePath)
+        ? fs.readFileSync(filePath, 'utf8')
+        : fallbackShell;
+      routeHtmlMap[routePath] = buildPageHtml(shell, cfg);
+    } catch (err) {
+      console.warn(`[prerender] Failed to build HTML for ${routePath}:`, err);
+    }
   }
 
-  // Serve prerendered homepage — must come before express.static so it wins for GET /
-  app.get('/', (_req, res) => {
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.send(homepageHtml);
-  });
+  // Register per-route handlers before express.static so they win for direct GET requests
+  for (const [routePath, html] of Object.entries(routeHtmlMap)) {
+    app.get(routePath, (_req, res) => {
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.send(html);
+    });
+  }
 
   app.use(express.static(clientDist));
-  // SPA fallback — serve index.html for all client-side routes
+  // SPA fallback — serve plain index.html for all other client-side routes
   app.get('*', (req, res) => {
     const safePath = path.normalize(req.path);
-    if (safePath !== '/') {
-      const routeHtml = path.join(clientDist, safePath, 'index.html');
-      if (routeHtml.startsWith(clientDist) && fs.existsSync(routeHtml)) {
-        return res.sendFile(routeHtml);
-      }
+    const routeHtml = path.join(clientDist, safePath, 'index.html');
+    if (routeHtml.startsWith(clientDist) && fs.existsSync(routeHtml)) {
+      return res.sendFile(routeHtml);
     }
     res.sendFile(path.join(clientDist, 'index.html'));
   });
