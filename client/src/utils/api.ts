@@ -128,6 +128,7 @@ export const api = {
   invoicePayment: {
     record: (id: string, amount_paid: number, paid_date: string, payment_method?: string) =>
       request<any>(`/invoices/${id}/payment`, { method: 'PATCH', body: JSON.stringify({ amount_paid, paid_date, payment_method }) }),
+    createReceipt: (id: string) => request<any>(`/invoices/${id}/receipt`, { method: 'POST' }),
   },
 
   deliver: {

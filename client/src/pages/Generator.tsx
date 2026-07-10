@@ -114,6 +114,7 @@ export default function Generator() {
   const [payDate, setPayDate] = useState('');
   const [payMethod, setPayMethod] = useState('');
   const [recordingPayment, setRecordingPayment] = useState(false);
+  const [receiptReady, setReceiptReady] = useState<any>(null);
   const [checklistDismissed, setChecklistDismissed] = useState(() => !!localStorage.getItem('krafo_checklist_done'));
   const [hasSent, setHasSent] = useState(() => !!localStorage.getItem('krafo_first_sent'));
   const [turnstileToken, setTurnstileToken] = useState<string | undefined>(undefined);
@@ -609,11 +610,20 @@ export default function Generator() {
       setSavedInvoice(updated);
       setForm(f => ({ ...f, status: updated.status, amount_paid: updated.amount_paid, paid_date: updated.paid_date || '' }));
       setInvoiceList(prev => prev.map(i => i.id === updated.id ? { ...i, ...updated } : i));
-      setShowPayModal(false);
       if (updated.status === 'paid') {
         fireConfetti();
-        showToast('Payment recorded — invoice marked as paid!', 'success');
+        // Auto-create a receipt and offer to send it
+        try {
+          const receipt = await api.invoicePayment.createReceipt(savedInvoice.id);
+          setInvoiceList(prev => [receipt, ...prev]);
+          setReceiptReady(receipt);
+          // Keep modal open — show receipt-ready state
+        } catch {
+          setShowPayModal(false);
+          showToast('Payment recorded — invoice marked as paid!', 'success');
+        }
       } else {
+        setShowPayModal(false);
         showToast(`Partial payment of ${org?.currency_symbol || '$'}${amount.toFixed(2)} recorded`, 'success');
       }
     } catch (err) {
@@ -1922,56 +1932,95 @@ export default function Generator() {
       {showPayModal && savedInvoice && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm animate-bounce-in overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-              <h2 className="text-base font-black text-slate-800 flex items-center gap-2">
-                <DollarSign className="w-4 h-4 text-emerald-500" /> Record Payment
-              </h2>
-              <button onClick={() => setShowPayModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="px-6 py-5 space-y-4">
-              <div>
-                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5 block">Amount received ({sym})</label>
-                <input
-                  type="number" min="0" step="0.01"
-                  value={payAmount}
-                  onChange={e => setPayAmount(e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-400"
-                  placeholder={String(balanceDue)}
-                />
-                <p className="text-[11px] text-slate-400 mt-1">Balance due: {formatCurrency(balanceDue, sym)}</p>
+            {receiptReady ? (
+              /* Receipt-ready state — payment confirmed, offer to send receipt */
+              <div className="px-6 py-7 text-center">
+                <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle className="w-7 h-7 text-emerald-500" />
+                </div>
+                <h2 className="text-base font-black text-slate-800 mb-1">Payment recorded</h2>
+                <p className="text-slate-500 text-sm mb-1">Receipt <span className="font-bold text-slate-700">{receiptReady.number}</span> is ready.</p>
+                <p className="text-xs text-slate-400 mb-6">Send it to your client now, or find it in your document list.</p>
+                <div className="space-y-2">
+                  <button
+                    onClick={() => {
+                      setSavedInvoice(receiptReady);
+                      setForm(f => ({ ...f, type: 'receipt' }));
+                      setReceiptReady(null);
+                      setShowPayModal(false);
+                      setShowSend(true);
+                    }}
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-black text-white bg-indigo-600 hover:bg-indigo-700 transition-all"
+                  >
+                    <Send className="w-4 h-4" /> Send receipt now
+                  </button>
+                  <button
+                    onClick={() => {
+                      setReceiptReady(null);
+                      setShowPayModal(false);
+                      showToast('Payment recorded — receipt saved to your list', 'success');
+                    }}
+                    className="w-full py-2.5 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-50 transition-all"
+                  >
+                    Not now
+                  </button>
+                </div>
               </div>
-              <div>
-                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5 block">Payment date</label>
-                <input
-                  type="date" value={payDate} onChange={e => setPayDate(e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
-                />
-              </div>
-              <div>
-                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5 block">Payment method (optional)</label>
-                <select value={payMethod} onChange={e => setPayMethod(e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white">
-                  <option value="">Select method</option>
-                  <option>Bank Transfer</option>
-                  <option>Mobile Money</option>
-                  <option>Cash</option>
-                  <option>Card</option>
-                  <option>PayPal</option>
-                  <option>Cheque</option>
-                  <option>Other</option>
-                </select>
-              </div>
-              <button
-                onClick={handleRecordPayment}
-                disabled={recordingPayment}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-black text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 transition-all"
-              >
-                {recordingPayment ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-                {recordingPayment ? 'Saving…' : 'Confirm Payment'}
-              </button>
-            </div>
+            ) : (
+              /* Normal payment recording form */
+              <>
+                <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                  <h2 className="text-base font-black text-slate-800 flex items-center gap-2">
+                    <DollarSign className="w-4 h-4 text-emerald-500" /> Record Payment
+                  </h2>
+                  <button onClick={() => setShowPayModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="px-6 py-5 space-y-4">
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5 block">Amount received ({sym})</label>
+                    <input
+                      type="number" min="0" step="0.01"
+                      value={payAmount}
+                      onChange={e => setPayAmount(e.target.value)}
+                      className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                      placeholder={String(balanceDue)}
+                    />
+                    <p className="text-[11px] text-slate-400 mt-1">Balance due: {formatCurrency(balanceDue, sym)}</p>
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5 block">Payment date</label>
+                    <input
+                      type="date" value={payDate} onChange={e => setPayDate(e.target.value)}
+                      className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5 block">Payment method (optional)</label>
+                    <select value={payMethod} onChange={e => setPayMethod(e.target.value)}
+                      className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white">
+                      <option value="">Select method</option>
+                      <option>Bank Transfer</option>
+                      <option>Mobile Money</option>
+                      <option>Cash</option>
+                      <option>Card</option>
+                      <option>PayPal</option>
+                      <option>Cheque</option>
+                      <option>Other</option>
+                    </select>
+                  </div>
+                  <button
+                    onClick={handleRecordPayment}
+                    disabled={recordingPayment}
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-black text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 transition-all"
+                  >
+                    {recordingPayment ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                    {recordingPayment ? 'Saving…' : 'Confirm Payment'}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

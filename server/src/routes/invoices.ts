@@ -210,6 +210,51 @@ router.delete('/:id', (req: Request, res: Response) => {
   res.json({ success: true });
 });
 
+// Create a receipt from a fully-paid invoice — copies all client/item data
+router.post('/:id/receipt', (req: Request, res: Response) => {
+  const invoice = db.prepare('SELECT * FROM invoices WHERE id = ? AND org_id = ?').get(req.params.id, req.auth!.orgId) as any;
+  if (!invoice) return res.status(404).json({ error: 'Invoice not found' });
+  if (invoice.type !== 'invoice') return res.status(400).json({ error: 'Can only create a receipt from an invoice' });
+
+  const org = db.prepare('SELECT * FROM organizations WHERE id = ?').get(invoice.org_id) as any;
+  const items = db.prepare('SELECT * FROM invoice_items WHERE invoice_id = ? ORDER BY sort_order').all(invoice.id) as any[];
+
+  const receiptCount = (db.prepare("SELECT COUNT(*) as c FROM invoices WHERE org_id = ? AND type = 'receipt'").get(invoice.org_id) as any).c;
+  const prefix = org.receipt_prefix || 'REC';
+  const year = new Date().getFullYear();
+  const number = `${prefix}-${year}-${String(receiptCount + 1).padStart(4, '0')}`;
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const paidDate = invoice.paid_date || todayStr;
+
+  const receiptId = uuidv4();
+  db.prepare(`
+    INSERT INTO invoices (
+      id, org_id, client_id, type, number, status, issue_date, paid_date,
+      client_name, client_email, client_phone, client_address, client_city,
+      client_state, client_zip, client_company,
+      subtotal, discount_type, discount_value, discount_amount,
+      tax_rate, tax_amount, total, amount_paid, balance_due,
+      currency, currency_symbol, notes, terms, footer_text
+    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+  `).run(
+    receiptId, invoice.org_id, invoice.client_id || null, 'receipt', number, 'paid', todayStr, paidDate,
+    invoice.client_name, invoice.client_email, invoice.client_phone, invoice.client_address,
+    invoice.client_city, invoice.client_state, invoice.client_zip, invoice.client_company,
+    invoice.subtotal, invoice.discount_type || 'none', invoice.discount_value || 0, invoice.discount_amount || 0,
+    invoice.tax_rate || 0, invoice.tax_amount || 0, invoice.total, invoice.total, 0,
+    invoice.currency, invoice.currency_symbol, invoice.notes, invoice.terms, invoice.footer_text
+  );
+
+  items.forEach((item: any, idx: number) => {
+    db.prepare(`INSERT INTO invoice_items (id, invoice_id, description, quantity, unit, unit_price, amount, sort_order)
+      VALUES (?,?,?,?,?,?,?,?)`).run(uuidv4(), receiptId, item.description, item.quantity, item.unit || 'unit', item.unit_price, item.amount, idx);
+  });
+
+  const receipt = db.prepare('SELECT * FROM invoices WHERE id = ?').get(receiptId) as any;
+  const receiptItems = db.prepare('SELECT * FROM invoice_items WHERE invoice_id = ? ORDER BY sort_order').all(receiptId);
+  res.status(201).json({ ...receipt, items: receiptItems });
+});
+
 // Record a payment against an invoice (full or partial)
 router.patch('/:id/payment', (req: Request, res: Response) => {
   const invoice = db.prepare('SELECT * FROM invoices WHERE id = ? AND org_id = ?').get(req.params.id, req.auth!.orgId) as any;
