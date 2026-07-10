@@ -67,8 +67,8 @@
     <!-- Cloudflare Turnstile (bot protection) -->
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-2WSCXQNTKN"></script>
+    <!-- Google Analytics — defer to avoid blocking main thread -->
+    <script defer src="https://www.googletagmanager.com/gtag/js?id=G-2WSCXQNTKN"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
