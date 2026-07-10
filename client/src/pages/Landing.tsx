@@ -251,7 +251,7 @@ function HowItWorksStepper() {
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
   const [progress, setProgress] = useState(0);
-  const STEP_MS = 4500;
+  const STEP_MS = 3000;
   const TICK_MS = 60;
 
   useEffect(() => {
@@ -364,7 +364,7 @@ function HeroCrossfade() {
         const next = (prev + 1) % 4;
         return loadedRef.current[next] ? next : prev;
       });
-    }, 7500);
+    }, 4500);
     return () => clearInterval(interval);
   }, []);
 
