@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, Palette, Download, CheckCircle, ArrowRight, FileText, Receipt, Send, Globe, Star, TrendingUp, Mail, MessageSquare, Zap, Monitor } from 'lucide-react';
+import { Sparkles, Palette, Download, CheckCircle, ArrowRight, FileText, Receipt, Send, Globe, Star, TrendingUp, Mail, MessageSquare, Zap } from 'lucide-react';
 import { Logo, LogoMark } from '../components/Logo';
 import { api } from '../utils/api';
 import StoryPlayer from '../components/StoryPlayer';
@@ -752,23 +752,6 @@ export default function Landing() {
             <p className="text-slate-500">No learning curve. No complicated setup. Just results.</p>
           </div>
           <HowItWorksStepper />
-          {/* desktop-tailor placement — slot wired for when image arrives */}
-          <div className="grid lg:grid-cols-5 gap-6 mb-10 items-center">
-            <div className="lg:col-span-2 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 flex flex-col items-center justify-center py-10 px-6 text-center min-h-[220px]">
-              <Monitor className="w-8 h-8 text-slate-300 mb-3" />
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Image coming</p>
-              <p className="text-xs text-slate-300 leading-relaxed">desktop-tailor — Lagos tailor at laptop, warm evening workshop</p>
-            </div>
-            <div className="lg:col-span-3 space-y-2">
-              <p className="text-xs font-bold text-indigo-500 uppercase tracking-widest">Works on every device</p>
-              <h3 className="text-2xl font-black text-slate-900 tracking-tight">Phone on the job. Laptop in the evening.</h3>
-              <p className="text-slate-500 leading-relaxed text-sm">
-                Create an invoice from your van after a job. Review your numbers from your laptop that evening.
-                KraaFo adapts to how you work — not the other way around.
-              </p>
-            </div>
-          </div>
-
           <div className="flex items-center gap-4 mb-10">
             <div className="flex-1 h-px bg-slate-200" />
             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest shrink-0">Everything you get</p>
