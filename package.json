@@ -7,8 +7,8 @@
     "dev": "npx concurrently -n SERVER,CLIENT -c blue,green \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
     "dev:server": "npm run dev --prefix server",
     "dev:client": "npm run dev --prefix client",
-    "build": "npm run build --prefix server && npm run build --prefix client && (node scripts/prerender.cjs || echo '[prerender] skipped')",
-    "start": "NODE_ENV=production node server/dist/index.js"
+    "build": "npm run build --prefix server && npm run build --prefix client",
+    "start": "(node scripts/prerender.cjs || echo '[prerender] skipped — serving SPA shell') && NODE_ENV=production node server/dist/index.js"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
