@@ -148,8 +148,8 @@ if (isProd && fs.existsSync(clientDist)) {
     h = patchMeta(h, 'twitter:title', cfg.twitterTitle);
     h = patchMeta(h, 'twitter:description', cfg.twitterDescription);
     h = h.replace(/(<link\s+rel="canonical"\s+href=")[^"]*"/, `$1${cfg.canonical}"`);
-    if (cfg.injectH1) {
-      // Inject right after <body> — invisible to sighted users, readable by crawlers
+    if (cfg.injectH1 && !h.includes('<h1')) {
+      // Only inject when no h1 exists — guards against double-h1 when Puppeteer prerender ran
       const hiddenStyle = 'position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border-width:0';
       h = h.replace('<body>', `<body><h1 style="${hiddenStyle}">${cfg.injectH1}</h1>`);
     }
@@ -187,6 +187,7 @@ if (isProd && fs.existsSync(clientDist)) {
       ogDescription: "The latest updates and new features in KraaFo — your free invoice and receipt generator.",
       twitterTitle: "What's New in KraaFo",
       twitterDescription: "Latest updates and new features in KraaFo — free invoice and receipt generator.",
+      injectH1: "What&#39;s New in KraaFo",
     },
   };
 
