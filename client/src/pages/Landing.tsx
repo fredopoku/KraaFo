@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, Palette, Download, CheckCircle, ArrowRight, FileText, Receipt, Send, Globe, Star, TrendingUp, Mail, MessageSquare, Zap } from 'lucide-react';
+import { Sparkles, Palette, Download, CheckCircle, ArrowRight, FileText, Receipt, Send, Globe, Star, TrendingUp, Mail, MessageSquare, Zap, Monitor } from 'lucide-react';
 import { Logo, LogoMark } from '../components/Logo';
 import { api } from '../utils/api';
+import StoryPlayer from '../components/StoryPlayer';
 
 
 const features = [
@@ -328,6 +329,86 @@ function HowItWorksStepper() {
   );
 }
 
+/* ─── Part 1: Living-portrait hero crossfade ───────────────── */
+
+const PORTRAITS = [
+  { src: '/phase3/portrait-accra.jpg',     alt: 'A cleaning business owner smiles at a payment received notification on her phone', label: 'Accra · GHS' },
+  { src: '/phase3/portrait-lagos.jpg',     alt: 'A tailor checks a payment confirmation on his phone outside his shop',              label: 'Lagos · NGN' },
+  { src: '/phase3/portrait-saopaulo.jpg',  alt: 'A food truck owner smiles at a payment received notification on her phone',         label: 'São Paulo · BRL' },
+  { src: '/phase3/portrait-manchester.jpg',alt: 'A plumber smiles at a payment received notification on his phone',                  label: 'Manchester · GBP' },
+];
+
+function HeroCrossfade() {
+  const [current, setCurrent] = useState(0);
+  const loadedRef = useRef([true, false, false, false]);
+  const [, tick] = useState(0);
+  const reducedMotion = useRef(
+    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
+
+  useEffect(() => {
+    if (reducedMotion.current) return;
+
+    const loadDeferred = () => {
+      [1, 2, 3].forEach(i => {
+        const img = new Image();
+        img.src = PORTRAITS[i].src;
+        img.onload = () => { loadedRef.current[i] = true; tick(n => n + 1); };
+      });
+    };
+    if (document.readyState === 'complete') loadDeferred();
+    else window.addEventListener('load', loadDeferred, { once: true });
+
+    const interval = setInterval(() => {
+      setCurrent(prev => {
+        const next = (prev + 1) % 4;
+        return loadedRef.current[next] ? next : prev;
+      });
+    }, 7500);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div
+      className="relative w-full overflow-hidden rounded-3xl shadow-2xl shadow-slate-300/50"
+      style={{ maxHeight: '680px', aspectRatio: '3/4' }}
+    >
+      {PORTRAITS.map((p, i) => (
+        <div
+          key={p.src}
+          className="absolute inset-0"
+          aria-hidden={i !== current}
+          style={{
+            opacity: i === current ? 1 : 0,
+            transition: reducedMotion.current ? 'none' : 'opacity 1.1s ease-in-out',
+            zIndex: i === current ? 2 : 1,
+          }}
+        >
+          <img
+            src={p.src}
+            alt={p.alt}
+            className="w-full h-full object-cover"
+            style={{ objectPosition: 'center 12%' }}
+            loading={i === 0 ? 'eager' : 'lazy'}
+            width={1086}
+            height={1448}
+            {...(i === 0 ? { fetchPriority: 'high' } as any : {})}
+          />
+        </div>
+      ))}
+      {/* Location/currency caption */}
+      <div className="absolute bottom-4 right-4 z-10 pointer-events-none">
+        <span
+          className="bg-black/40 backdrop-blur-sm text-white/90 text-[10px] font-bold px-2.5 py-1 rounded-full transition-opacity duration-500"
+          style={{ opacity: loadedRef.current[current] ? 1 : 0 }}
+        >
+          {PORTRAITS[current].label}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Footer newsletter — quiet single line ─────────────────── */
 
 function FooterUpdatesLine() {
@@ -460,15 +541,9 @@ export default function Landing() {
               </div>
             </div>
 
-            {/* ── Right: Hero photo ── */}
+            {/* ── Right: Living portrait crossfade ── */}
             <div className="animate-hero delay-200 mt-6 lg:mt-0">
-              <img
-                src="/hero-photo.jpg"
-                alt="Small business owner smiling at a payment received notification after sending an invoice"
-                className="w-full rounded-3xl object-cover shadow-2xl shadow-slate-300/50"
-                style={{ maxHeight: '680px', objectPosition: 'center 12%' }}
-                fetchPriority="high"
-              />
+              <HeroCrossfade />
             </div>
 
           </div>
@@ -500,6 +575,9 @@ export default function Landing() {
           </div>
         </div>
       </section>
+
+      {/* ── Part 2: Story player ─────────────────────────────── */}
+      <StoryPlayer />
 
       {/* ── Triple Channel Delivery ───────────────────────────── */}
       <section className="bg-slate-950 py-16 md:py-24 px-6 overflow-hidden">
@@ -674,6 +752,23 @@ export default function Landing() {
             <p className="text-slate-500">No learning curve. No complicated setup. Just results.</p>
           </div>
           <HowItWorksStepper />
+          {/* desktop-tailor placement — slot wired for when image arrives */}
+          <div className="grid lg:grid-cols-5 gap-6 mb-10 items-center">
+            <div className="lg:col-span-2 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 flex flex-col items-center justify-center py-10 px-6 text-center min-h-[220px]">
+              <Monitor className="w-8 h-8 text-slate-300 mb-3" />
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Image coming</p>
+              <p className="text-xs text-slate-300 leading-relaxed">desktop-tailor — Lagos tailor at laptop, warm evening workshop</p>
+            </div>
+            <div className="lg:col-span-3 space-y-2">
+              <p className="text-xs font-bold text-indigo-500 uppercase tracking-widest">Works on every device</p>
+              <h3 className="text-2xl font-black text-slate-900 tracking-tight">Phone on the job. Laptop in the evening.</h3>
+              <p className="text-slate-500 leading-relaxed text-sm">
+                Create an invoice from your van after a job. Review your numbers from your laptop that evening.
+                KraaFo adapts to how you work — not the other way around.
+              </p>
+            </div>
+          </div>
+
           <div className="flex items-center gap-4 mb-10">
             <div className="flex-1 h-px bg-slate-200" />
             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest shrink-0">Everything you get</p>
