@@ -15,6 +15,7 @@ const InvoiceView = lazy(() => import('./pages/InvoiceView'));
 const Login = lazy(() => import('./pages/Login'));
 const Join = lazy(() => import('./pages/Join'));
 const Team = lazy(() => import('./pages/Team'));
+const Trash = lazy(() => import('./pages/Trash'));
 const InvoiceGeneratorPage = lazy(() => import('./pages/InvoiceGeneratorPage'));
 const ReceiptGeneratorPage = lazy(() => import('./pages/ReceiptGeneratorPage'));
 const QuoteGeneratorPage = lazy(() => import('./pages/QuoteGeneratorPage'));
@@ -69,6 +70,7 @@ export default function App() {
           <Route path="/unsubscribe" element={<Unsubscribe />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/changelog" element={<Changelog />} />
+          <Route path="/trash" element={<Trash />} />
           <Route path="/invoice-generator" element={<InvoiceGeneratorPage />} />
           <Route path="/receipt-generator" element={<ReceiptGeneratorPage />} />
           <Route path="/quote-generator" element={<QuoteGeneratorPage />} />

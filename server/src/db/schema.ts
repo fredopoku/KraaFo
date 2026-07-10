@@ -289,6 +289,14 @@ addCol('invoices', 'recurring_next_date', 'TEXT');
 addCol('invoices', 'recurring_end_date', 'TEXT');
 addCol('invoices', 'recurring_parent_id', 'TEXT'); // points to original template invoice
 
+// Recycle bin / soft delete
+addCol('invoices', 'deleted_at', 'TEXT');
+addCol('invoices', 'deleted_by', 'TEXT');
+addCol('quotes', 'deleted_at', 'TEXT');
+addCol('quotes', 'deleted_by', 'TEXT');
+addCol('clients', 'deleted_at', 'TEXT');
+addCol('clients', 'deleted_by', 'TEXT');
+
 // Seed initial changelog entries (INSERT OR IGNORE — safe to run on every boot)
 db.exec(`
   INSERT OR IGNORE INTO changelog (id, title, description, tag, published_at) VALUES

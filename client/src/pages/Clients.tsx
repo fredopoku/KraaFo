@@ -82,7 +82,7 @@ export default function Clients() {
       await api.clients.delete(id);
       if (selected?.id === id) setSelected(null);
       setDeleteTarget(null);
-      showToast('Client deleted');
+      showToast('Client moved to Trash');
       load();
     } catch (err) {
       showToast((err as Error).message || 'Delete failed — please try again');
@@ -427,10 +427,10 @@ export default function Clients() {
               <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mb-4">
                 <Trash2 className="w-5 h-5 text-red-500" />
               </div>
-              <h3 className="text-base font-black text-slate-800 mb-1">Delete client?</h3>
+              <h3 className="text-base font-black text-slate-800 mb-1">Move client to Trash?</h3>
               <p className="text-sm text-slate-500 leading-relaxed">
                 <span className="font-semibold text-slate-700">{deleteTarget.name}</span>
-                {deleteTarget.company ? ` · ${deleteTarget.company}` : ''} will be permanently removed. This cannot be undone.
+                {deleteTarget.company ? ` · ${deleteTarget.company}` : ''} will be moved to Trash. You can restore them from there.
               </p>
             </div>
             <div className="px-6 pb-6 flex gap-3">
@@ -445,7 +445,7 @@ export default function Clients() {
                 disabled={deleting}
                 className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 disabled:opacity-60 text-white text-sm font-bold transition-colors flex items-center justify-center gap-2"
               >
-                {deleting ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Deleting…</> : 'Delete'}
+                {deleting ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Moving…</> : 'Move to Trash'}
               </button>
             </div>
           </div>

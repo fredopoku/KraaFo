@@ -8,7 +8,7 @@ router.get('/', (req: Request, res: Response) => {
   const { type, status, client_id, limit = 50, offset = 0 } = req.query;
   const org_id = req.auth!.orgId;
 
-  let query = 'SELECT * FROM invoices WHERE org_id = ?';
+  let query = 'SELECT * FROM invoices WHERE org_id = ? AND deleted_at IS NULL';
   const params: unknown[] = [org_id];
 
   if (type) { query += ' AND type = ?'; params.push(type); }
@@ -23,10 +23,10 @@ router.get('/', (req: Request, res: Response) => {
 
 // Public — no auth, safe org fields only
 router.get('/:id/public', (req: Request, res: Response) => {
-  let doc = db.prepare('SELECT * FROM invoices WHERE id = ?').get(req.params.id) as any;
+  let doc = db.prepare('SELECT * FROM invoices WHERE id = ? AND deleted_at IS NULL').get(req.params.id) as any;
   let isQuote = false;
   if (!doc) {
-    doc = db.prepare('SELECT * FROM quotes WHERE id = ?').get(req.params.id) as any;
+    doc = db.prepare('SELECT * FROM quotes WHERE id = ? AND deleted_at IS NULL').get(req.params.id) as any;
     isQuote = true;
   }
   if (!doc) return res.status(404).json({ error: 'Not found' });
@@ -205,7 +205,9 @@ router.put('/:id', (req: Request, res: Response) => {
 });
 
 router.delete('/:id', (req: Request, res: Response) => {
-  const r = db.prepare('DELETE FROM invoices WHERE id = ? AND org_id = ?').run(req.params.id, req.auth!.orgId);
+  const r = db.prepare(
+    "UPDATE invoices SET deleted_at = datetime('now'), deleted_by = ? WHERE id = ? AND org_id = ? AND deleted_at IS NULL"
+  ).run(req.auth!.email, req.params.id, req.auth!.orgId);
   if (r.changes === 0) return res.status(404).json({ error: 'Invoice not found' });
   res.json({ success: true });
 });

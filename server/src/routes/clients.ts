@@ -9,7 +9,7 @@ router.get('/', (req: Request, res: Response) => {
   const org_id = req.auth!.orgId;
   const search = q ? `%${q}%` : '%';
   const clients = db.prepare(`
-    SELECT * FROM clients WHERE org_id = ? AND (name LIKE ? OR company LIKE ? OR email LIKE ?)
+    SELECT * FROM clients WHERE org_id = ? AND deleted_at IS NULL AND (name LIKE ? OR company LIKE ? OR email LIKE ?)
     ORDER BY name ASC LIMIT 50
   `).all(org_id, search, search, search);
   res.json(clients);
@@ -80,10 +80,10 @@ router.get('/:id/statement', (req: Request, res: Response) => {
 });
 
 router.delete('/:id', (req: Request, res: Response) => {
-  const existing = db.prepare('SELECT id FROM clients WHERE id = ? AND org_id = ?').get(req.params.id, req.auth!.orgId);
-  if (!existing) return res.status(404).json({ error: 'Client not found' });
-  db.prepare('UPDATE invoices SET client_id = NULL WHERE client_id = ?').run(req.params.id);
-  db.prepare('DELETE FROM clients WHERE id = ?').run(req.params.id);
+  const r = db.prepare(
+    "UPDATE clients SET deleted_at = datetime('now'), deleted_by = ? WHERE id = ? AND org_id = ? AND deleted_at IS NULL"
+  ).run(req.auth!.email, req.params.id, req.auth!.orgId);
+  if (r.changes === 0) return res.status(404).json({ error: 'Client not found' });
   res.json({ success: true });
 });
 

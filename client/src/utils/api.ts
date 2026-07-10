@@ -125,6 +125,15 @@ export const api = {
     delete: (id: string) => request<any>(`/quotes/${id}`, { method: 'DELETE' }),
   },
 
+  trash: {
+    list: () => request<{ invoices: any[]; quotes: any[]; clients: any[] }>('/trash'),
+    count: () => request<{ count: number }>('/trash/count'),
+    restore: (type: 'invoices' | 'quotes' | 'clients', id: string) =>
+      request<{ success: boolean }>(`/trash/${type}/${id}/restore`, { method: 'POST' }),
+    permanentDelete: (type: 'invoices' | 'quotes' | 'clients', id: string) =>
+      request<{ success: boolean }>(`/trash/${type}/${id}`, { method: 'DELETE' }),
+  },
+
   invoicePayment: {
     record: (id: string, amount_paid: number, paid_date: string, payment_method?: string) =>
       request<any>(`/invoices/${id}/payment`, { method: 'PATCH', body: JSON.stringify({ amount_paid, paid_date, payment_method }) }),

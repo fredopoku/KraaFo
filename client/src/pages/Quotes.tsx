@@ -54,7 +54,7 @@ export default function Quotes() {
       await api.quotes.delete(deleteTarget.id);
       setQuotes(prev => prev.filter(q => q.id !== deleteTarget.id));
       setDeleteTarget(null);
-      showToast(`Quote ${deleteTarget.number} deleted`);
+      showToast(`Quote ${deleteTarget.number} moved to Trash`);
     } catch {
       showToast('Delete failed — please try again');
     } finally {
@@ -161,15 +161,15 @@ export default function Quotes() {
             <div className="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <Trash2 className="w-5 h-5 text-red-500" />
             </div>
-            <h3 className="text-base font-black text-slate-800 mb-1">Delete quote?</h3>
+            <h3 className="text-base font-black text-slate-800 mb-1">Move to Trash?</h3>
             <p className="text-sm text-slate-500 mb-5">
               <span className="font-semibold text-slate-700">{deleteTarget.number}</span>
-              {deleteTarget.client_name ? ` · ${deleteTarget.client_name}` : ''} will be permanently deleted.
+              {deleteTarget.client_name ? ` · ${deleteTarget.client_name}` : ''} will be moved to Trash. You can restore it from there.
             </p>
             <div className="flex gap-2">
               <button onClick={() => setDeleteTarget(null)} disabled={deleting} className="flex-1 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-50">Cancel</button>
               <button onClick={handleDelete} disabled={deleting} className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-1.5">
-                {deleting ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Deleting…</> : 'Delete'}
+                {deleting ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Moving…</> : 'Move to Trash'}
               </button>
             </div>
           </div>

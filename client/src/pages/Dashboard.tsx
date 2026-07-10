@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock, AlertCircle, FileText, Receipt, Users, Quote, Plus, Settings, ArrowRight, ArrowLeft, CheckCircle, Zap, X, DollarSign, BarChart2 } from 'lucide-react';
+import { Clock, AlertCircle, FileText, Receipt, Users, Quote, Plus, Settings, ArrowRight, ArrowLeft, CheckCircle, Zap, X, DollarSign, BarChart2, Trash2 } from 'lucide-react';
 import { useOrg } from '../hooks/useOrg';
 import { api, formatCurrency } from '../utils/api';
 import { LogoMark, Logo } from '../components/Logo';
@@ -112,6 +112,9 @@ export default function Dashboard() {
               {hasUnread && (
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-indigo-500 rounded-full" />
               )}
+            </button>
+            <button onClick={() => navigate('/trash')} className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all" title="Trash">
+              <Trash2 className="w-4 h-4" />
             </button>
             <button onClick={() => navigate('/setup')} className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all">
               <Settings className="w-4 h-4" />

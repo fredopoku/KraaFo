@@ -6,7 +6,7 @@ const router = Router();
 
 router.get('/', (req: Request, res: Response) => {
   const org_id = req.auth!.orgId;
-  const quotes = db.prepare('SELECT * FROM quotes WHERE org_id = ? ORDER BY created_at DESC').all(org_id);
+  const quotes = db.prepare('SELECT * FROM quotes WHERE org_id = ? AND deleted_at IS NULL ORDER BY created_at DESC').all(org_id);
   res.json(quotes);
 });
 
@@ -132,7 +132,9 @@ router.post('/:id/convert', (req: Request, res: Response) => {
 });
 
 router.delete('/:id', (req: Request, res: Response) => {
-  const r = db.prepare('DELETE FROM quotes WHERE id = ? AND org_id = ?').run(req.params.id, req.auth!.orgId);
+  const r = db.prepare(
+    "UPDATE quotes SET deleted_at = datetime('now'), deleted_by = ? WHERE id = ? AND org_id = ? AND deleted_at IS NULL"
+  ).run(req.auth!.email, req.params.id, req.auth!.orgId);
   if (r.changes === 0) return res.status(404).json({ error: 'Quote not found' });
   res.json({ success: true });
 });
