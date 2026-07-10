@@ -251,7 +251,7 @@ function HowItWorksStepper() {
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
   const [progress, setProgress] = useState(0);
-  const STEP_MS = 3000;
+  const STEP_MS = 2500;
   const TICK_MS = 60;
 
   useEffect(() => {
@@ -364,7 +364,7 @@ function HeroCrossfade() {
         const next = (prev + 1) % 4;
         return loadedRef.current[next] ? next : prev;
       });
-    }, 4500);
+    }, 2800);
     return () => clearInterval(interval);
   }, []);
 
@@ -380,7 +380,7 @@ function HeroCrossfade() {
           aria-hidden={i !== current}
           style={{
             opacity: i === current ? 1 : 0,
-            transition: reducedMotion.current ? 'none' : 'opacity 1.1s ease-in-out',
+            transition: reducedMotion.current ? 'none' : 'opacity 0.7s ease-in-out',
             zIndex: i === current ? 2 : 1,
           }}
         >
