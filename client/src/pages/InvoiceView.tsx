@@ -292,13 +292,27 @@ export default function InvoiceView() {
         <div className="border-t border-slate-100 px-8 py-4 flex items-center justify-between">
           <span className="text-xs text-slate-400">Thank you for your business.</span>
           <a
-            href="https://kraafo.com"
+            href="https://kraafo.com?ref=docview"
             target="_blank"
             rel="noreferrer"
             className="text-xs text-slate-400 hover:text-indigo-600 font-medium transition-colors print:no-underline"
           >
             Powered by <span className="font-black text-indigo-500">KraaFo</span>
           </a>
+        </div>
+        {/* Quiet recipient CTA — highest-intent surface; no popup, just a whisper */}
+        <div className="px-8 py-3 text-center border-t border-slate-50 print:hidden">
+          <p className="text-xs text-slate-400">
+            Like this invoice?{' '}
+            <a
+              href="https://kraafo.com?ref=docview"
+              target="_blank"
+              rel="noreferrer"
+              className="text-indigo-500 hover:text-indigo-700 font-semibold transition-colors"
+            >
+              Create yours free with KraaFo.
+            </a>
+          </p>
         </div>
       </div>
     </div>

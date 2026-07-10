@@ -15,6 +15,9 @@ const InvoiceView = lazy(() => import('./pages/InvoiceView'));
 const Login = lazy(() => import('./pages/Login'));
 const Join = lazy(() => import('./pages/Join'));
 const Team = lazy(() => import('./pages/Team'));
+const InvoiceGeneratorPage = lazy(() => import('./pages/InvoiceGeneratorPage'));
+const ReceiptGeneratorPage = lazy(() => import('./pages/ReceiptGeneratorPage'));
+const QuoteGeneratorPage = lazy(() => import('./pages/QuoteGeneratorPage'));
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state = { error: null };
@@ -66,6 +69,9 @@ export default function App() {
           <Route path="/unsubscribe" element={<Unsubscribe />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/changelog" element={<Changelog />} />
+          <Route path="/invoice-generator" element={<InvoiceGeneratorPage />} />
+          <Route path="/receipt-generator" element={<ReceiptGeneratorPage />} />
+          <Route path="/quote-generator" element={<QuoteGeneratorPage />} />
           <Route path="/view/:id" element={<InvoiceView />} />
           <Route path="/login" element={<Login />} />
           <Route path="/join/:token" element={<Join />} />

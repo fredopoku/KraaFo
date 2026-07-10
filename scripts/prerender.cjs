@@ -22,9 +22,12 @@ const PORT = 3098;
 // required: true  → build fails if word count < minWords or if render throws
 // required: false → best-effort; warns but does not fail the build
 const ROUTES = [
-  { route: '/',          out: 'index.html',           wait: 6000, canonical: 'https://kraafo.com/',          required: true,  minWords: 300 },
-  { route: '/generator', out: 'generator/index.html', wait: 5000, canonical: 'https://kraafo.com/generator', required: false, minWords: 100 },
-  { route: '/changelog', out: 'changelog/index.html', wait: 3000, canonical: 'https://kraafo.com/changelog', required: false, minWords: 50  },
+  { route: '/',                   out: 'index.html',                    wait: 6000, canonical: 'https://kraafo.com/',                   required: true,  minWords: 300 },
+  { route: '/generator',          out: 'generator/index.html',          wait: 5000, canonical: 'https://kraafo.com/generator',           required: false, minWords: 100 },
+  { route: '/changelog',          out: 'changelog/index.html',          wait: 3000, canonical: 'https://kraafo.com/changelog',           required: false, minWords: 50  },
+  { route: '/invoice-generator',  out: 'invoice-generator/index.html',  wait: 4000, canonical: 'https://kraafo.com/invoice-generator',   required: false, minWords: 100 },
+  { route: '/receipt-generator',  out: 'receipt-generator/index.html',  wait: 4000, canonical: 'https://kraafo.com/receipt-generator',   required: false, minWords: 100 },
+  { route: '/quote-generator',    out: 'quote-generator/index.html',    wait: 4000, canonical: 'https://kraafo.com/quote-generator',     required: false, minWords: 100 },
 ];
 
 const MIME = {

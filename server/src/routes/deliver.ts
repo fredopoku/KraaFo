@@ -76,7 +76,9 @@ router.get('/whatsapp/:invoiceId', (req: Request, res: Response) => {
     (invoice.due_date ? `*Due:* ${invoice.due_date}\n` : '') +
     `\nView & download: ${pdfUrl}\n\n` +
     `Thank you for your business,\n` +
-    `${orgName}`
+    `${orgName}\n\n` +
+    `_Sent with KraaFo (kraafo.com?ref=msg)_`
+    // TODO(backlog): paid tier removes this credit line
   );
 
   // If org has a WhatsApp number, use it as recipient

@@ -350,7 +350,7 @@ export function generateInvoiceHTML(data: InvoiceTemplateData): string {
 
   <!-- KraaFo branding -->
   <div style="text-align:center;padding:8px 0 10px;font-size:9px;color:#D1D5DB;letter-spacing:0.02em;">
-    Created with <a href="https://kraafo.com" style="color:#9CA3AF;text-decoration:none;font-weight:600;">KraaFo</a> &mdash; Professional Invoicing
+    Created with <a href="https://kraafo.com?ref=pdf" style="color:#9CA3AF;text-decoration:none;font-weight:600;">KraaFo</a> &mdash; Professional Invoicing
   </div>
 
   <!-- Bottom colour bars -->
