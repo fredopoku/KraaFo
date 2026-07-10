@@ -392,7 +392,6 @@ function HeroCrossfade() {
             loading={i === 0 ? 'eager' : 'lazy'}
             width={1086}
             height={1448}
-            {...(i === 0 ? { fetchPriority: 'high' } as any : {})}
           />
         </div>
       ))}
@@ -438,8 +437,9 @@ function FooterUpdatesLine() {
 
   return (
     <form onSubmit={submit} className="border-t border-slate-100 pt-4 flex flex-col sm:flex-row items-center justify-center gap-2">
-      <span className="text-xs text-slate-400 shrink-0">Get product updates</span>
+      <label htmlFor="footer-email" className="text-xs text-slate-400 shrink-0">Get product updates</label>
       <input
+        id="footer-email" name="email"
         type="email" required value={email} onChange={e => setEmail(e.target.value)}
         placeholder="your@email.com"
         className="text-xs px-3 py-1.5 border border-slate-200 rounded-lg w-48 focus:outline-none focus:ring-2 focus:ring-indigo-300"

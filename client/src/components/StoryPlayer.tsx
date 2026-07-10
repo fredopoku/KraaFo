@@ -348,7 +348,8 @@ export default function StoryPlayer() {
           </div>
 
           <p className="text-xs text-slate-400 mt-4">
-            Tap to advance · Hold to pause · ← → keys
+            Tap to advance · Hold to pause
+            <span className="hidden [@media(pointer:fine)]:inline"> · ← → keys</span>
           </p>
         </div>
       </div>

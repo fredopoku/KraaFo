@@ -19,15 +19,16 @@ const STATUS_META: Record<string, { label: string; cls: string }> = {
 export default function Quotes() {
   const navigate = useNavigate();
   const { org, loading } = useOrg();
-
-  if (!loading && !org) { navigate('/login'); return null; }
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [converting, setConverting] = useState<string | null>(null);
   const [toast, setToast] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<Quote | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  useEffect(() => { if (!loading && !org) navigate('/login'); }, [loading, org, navigate]);
   useEffect(() => { if (org) load(); }, [org]);
+
+  if (loading || !org) return null;
 
   const load = async () => {
     if (!org) return;

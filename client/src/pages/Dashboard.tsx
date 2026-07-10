@@ -15,6 +15,8 @@ export default function Dashboard() {
   const [hasUnread, setHasUnread] = useState(false);
   const [showWhatsNew, setShowWhatsNew] = useState(false);
 
+  useEffect(() => { if (!loading && !org) navigate('/setup'); }, [loading, org, navigate]);
+
   useEffect(() => {
     if (!org) return;
     api.analytics.get().then(d => { setData(d); setFetching(false); }).catch(() => setFetching(false));
@@ -42,7 +44,7 @@ export default function Dashboard() {
     </div>
   );
 
-  if (!org) { navigate('/setup'); return null; }
+  if (!org) return null;
 
   const sym = org.currency_symbol;
   const primary = org.primary_color;

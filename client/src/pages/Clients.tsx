@@ -24,8 +24,6 @@ const STATUS_COLORS: Record<string, string> = {
 export default function Clients() {
   const navigate = useNavigate();
   const { org, loading } = useOrg();
-
-  if (!loading && !org) { navigate('/login'); return null; }
   const [clients, setClients] = useState<Client[]>([]);
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState<Partial<Client> | null>(null);
@@ -33,13 +31,14 @@ export default function Clients() {
   const [toast, setToast] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<Client | null>(null);
   const [deleting, setDeleting] = useState(false);
-
-  // Client profile panel
   const [selected, setSelected] = useState<Client | null>(null);
   const [clientDocs, setClientDocs] = useState<Invoice[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
 
+  useEffect(() => { if (!loading && !org) navigate('/login'); }, [loading, org, navigate]);
   useEffect(() => { if (org) load(); }, [org, search]);
+
+  if (loading || !org) return null;
 
   const load = async () => {
     if (!org) return;
