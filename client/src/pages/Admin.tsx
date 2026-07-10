@@ -456,7 +456,7 @@ export default function Admin() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
               { label: 'Total orgs', value: usersData.summary.total_orgs, sub: `${usersData.summary.new_this_week} new this week`, icon: Building2, color: 'text-indigo-500', bg: 'bg-indigo-50', ring: 'ring-indigo-100' },
-              { label: 'Invoices', value: usersData.summary.total_invoices, sub: `+ ${usersData.summary.total_receipts} receipts · ${usersData.summary.total_quotes} quotes`, icon: FileText, color: 'text-blue-600', bg: 'bg-blue-50', ring: 'ring-blue-100' },
+              { label: 'Invoices', value: usersData.summary.total_invoices, sub: `+ ${usersData.summary.total_receipts} receipts · ${usersData.summary.total_quotes} quotes${usersData.summary.total_trashed > 0 ? ` · ${usersData.summary.total_trashed} in trash` : ''}`, icon: FileText, color: 'text-blue-600', bg: 'bg-blue-50', ring: 'ring-blue-100' },
               { label: 'Collected', value: `$${Number(usersData.summary.total_collected || 0).toLocaleString()}`, sub: `$${Number(usersData.summary.total_outstanding || 0).toLocaleString()} outstanding`, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50', ring: 'ring-emerald-100' },
               { label: 'Team members', value: usersData.summary.total_team_members, sub: `${usersData.summary.team_accounts} team accounts`, icon: Users, color: 'text-violet-600', bg: 'bg-violet-50', ring: 'ring-violet-100' },
             ].map(card => (
@@ -734,7 +734,10 @@ export default function Admin() {
                         </td>
                         <td className="px-3 py-3 text-right">
                           <div className="font-bold text-slate-700">{totalDocs}</div>
-                          <div className="text-[10px] text-slate-400">{org.invoice_count}i · {org.receipt_count}r · {org.quote_count}q</div>
+                          <div className="text-[10px] text-slate-400">
+                            {org.invoice_count}i · {org.receipt_count}r · {org.quote_count}q
+                            {org.trash_count > 0 && <span className="text-slate-300"> · {org.trash_count} trashed</span>}
+                          </div>
                         </td>
                         <td className="px-3 py-3 text-right hidden sm:table-cell">
                           {org.account_type === 'team'

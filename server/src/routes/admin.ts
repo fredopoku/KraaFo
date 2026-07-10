@@ -8,25 +8,31 @@ router.get('/users', adminAuth, (_req: Request, res: Response) => {
   const orgs = db.prepare(`
     SELECT
       o.id, o.name, o.email, o.country, o.account_type, o.created_at, COALESCE(o.last_active_at, o.created_at) as last_active_at,
-      -- Document counts
-      (SELECT COUNT(*) FROM invoices WHERE org_id = o.id AND type = 'invoice') as invoice_count,
-      (SELECT COUNT(*) FROM invoices WHERE org_id = o.id AND type = 'receipt') as receipt_count,
-      (SELECT COUNT(*) FROM quotes WHERE org_id = o.id) as quote_count,
-      (SELECT COUNT(*) FROM clients WHERE org_id = o.id) as client_count,
+      -- Document counts (active only)
+      (SELECT COUNT(*) FROM invoices WHERE org_id = o.id AND type = 'invoice' AND deleted_at IS NULL) as invoice_count,
+      (SELECT COUNT(*) FROM invoices WHERE org_id = o.id AND type = 'receipt' AND deleted_at IS NULL) as receipt_count,
+      (SELECT COUNT(*) FROM quotes WHERE org_id = o.id AND deleted_at IS NULL) as quote_count,
+      (SELECT COUNT(*) FROM clients WHERE org_id = o.id AND deleted_at IS NULL) as client_count,
       -- Team
       (SELECT COUNT(*) FROM team_members WHERE org_id = o.id AND invite_accepted = 1) as team_member_count,
       (SELECT COUNT(*) FROM team_members WHERE org_id = o.id AND invite_accepted = 0) as pending_invites,
-      -- Financials
-      (SELECT COALESCE(SUM(total),0) FROM invoices WHERE org_id = o.id AND type = 'invoice') as total_invoiced,
-      (SELECT COALESCE(SUM(amount_paid),0) FROM invoices WHERE org_id = o.id AND type = 'invoice') as total_collected,
-      (SELECT COALESCE(SUM(total),0) FROM invoices WHERE org_id = o.id AND type = 'invoice' AND status = 'paid') as total_paid_invoices,
-      (SELECT COALESCE(SUM(total - amount_paid),0) FROM invoices WHERE org_id = o.id AND type = 'invoice' AND status IN ('sent','overdue')) as outstanding,
-      (SELECT COUNT(*) FROM invoices WHERE org_id = o.id AND type = 'invoice' AND status = 'overdue') as overdue_count,
-      (SELECT COALESCE(SUM(total),0) FROM invoices WHERE org_id = o.id AND type = 'receipt') as receipt_revenue,
-      -- Quote pipeline
-      (SELECT COUNT(*) FROM quotes WHERE org_id = o.id AND status IN ('accepted','invoiced')) as accepted_quotes,
-      (SELECT COUNT(*) FROM quotes WHERE org_id = o.id AND status = 'declined') as declined_quotes,
-      (SELECT COUNT(*) FROM quotes WHERE org_id = o.id AND status IN ('draft','sent')) as pending_quotes
+      -- Financials (active only)
+      (SELECT COALESCE(SUM(total),0) FROM invoices WHERE org_id = o.id AND type = 'invoice' AND deleted_at IS NULL) as total_invoiced,
+      (SELECT COALESCE(SUM(amount_paid),0) FROM invoices WHERE org_id = o.id AND type = 'invoice' AND deleted_at IS NULL) as total_collected,
+      (SELECT COALESCE(SUM(total),0) FROM invoices WHERE org_id = o.id AND type = 'invoice' AND status = 'paid' AND deleted_at IS NULL) as total_paid_invoices,
+      (SELECT COALESCE(SUM(total - amount_paid),0) FROM invoices WHERE org_id = o.id AND type = 'invoice' AND status IN ('sent','overdue') AND deleted_at IS NULL) as outstanding,
+      (SELECT COUNT(*) FROM invoices WHERE org_id = o.id AND type = 'invoice' AND status = 'overdue' AND deleted_at IS NULL) as overdue_count,
+      (SELECT COALESCE(SUM(total),0) FROM invoices WHERE org_id = o.id AND type = 'receipt' AND deleted_at IS NULL) as receipt_revenue,
+      -- Quote pipeline (active only)
+      (SELECT COUNT(*) FROM quotes WHERE org_id = o.id AND status IN ('accepted','invoiced') AND deleted_at IS NULL) as accepted_quotes,
+      (SELECT COUNT(*) FROM quotes WHERE org_id = o.id AND status = 'declined' AND deleted_at IS NULL) as declined_quotes,
+      (SELECT COUNT(*) FROM quotes WHERE org_id = o.id AND status IN ('draft','sent') AND deleted_at IS NULL) as pending_quotes,
+      -- Trash
+      (
+        (SELECT COUNT(*) FROM invoices WHERE org_id = o.id AND deleted_at IS NOT NULL) +
+        (SELECT COUNT(*) FROM quotes WHERE org_id = o.id AND deleted_at IS NOT NULL) +
+        (SELECT COUNT(*) FROM clients WHERE org_id = o.id AND deleted_at IS NOT NULL)
+      ) as trash_count
     FROM organizations o
     ORDER BY COALESCE(o.last_active_at, o.created_at) DESC
   `).all() as any[];
@@ -34,16 +40,21 @@ router.get('/users', adminAuth, (_req: Request, res: Response) => {
   const summary = db.prepare(`
     SELECT
       COUNT(*) as total_orgs,
-      (SELECT COUNT(*) FROM invoices WHERE type = 'invoice') as total_invoices,
-      (SELECT COUNT(*) FROM invoices WHERE type = 'receipt') as total_receipts,
-      (SELECT COUNT(*) FROM quotes) as total_quotes,
-      (SELECT COALESCE(SUM(amount_paid),0) FROM invoices WHERE type = 'invoice') as total_collected,
-      (SELECT COALESCE(SUM(total),0) FROM invoices WHERE type = 'invoice') as total_invoiced,
-      (SELECT COALESCE(SUM(total - amount_paid),0) FROM invoices WHERE type = 'invoice' AND status IN ('sent','overdue')) as total_outstanding,
-      (SELECT COUNT(*) FROM invoices WHERE type = 'invoice' AND status = 'overdue') as total_overdue,
+      (SELECT COUNT(*) FROM invoices WHERE type = 'invoice' AND deleted_at IS NULL) as total_invoices,
+      (SELECT COUNT(*) FROM invoices WHERE type = 'receipt' AND deleted_at IS NULL) as total_receipts,
+      (SELECT COUNT(*) FROM quotes WHERE deleted_at IS NULL) as total_quotes,
+      (SELECT COALESCE(SUM(amount_paid),0) FROM invoices WHERE type = 'invoice' AND deleted_at IS NULL) as total_collected,
+      (SELECT COALESCE(SUM(total),0) FROM invoices WHERE type = 'invoice' AND deleted_at IS NULL) as total_invoiced,
+      (SELECT COALESCE(SUM(total - amount_paid),0) FROM invoices WHERE type = 'invoice' AND status IN ('sent','overdue') AND deleted_at IS NULL) as total_outstanding,
+      (SELECT COUNT(*) FROM invoices WHERE type = 'invoice' AND status = 'overdue' AND deleted_at IS NULL) as total_overdue,
       (SELECT COUNT(*) FROM team_members WHERE invite_accepted = 1) as total_team_members,
       (SELECT COUNT(*) FROM organizations WHERE account_type = 'team') as team_accounts,
-      (SELECT COUNT(*) FROM organizations WHERE account_type = 'solo' OR account_type IS NULL) as solo_accounts
+      (SELECT COUNT(*) FROM organizations WHERE account_type = 'solo' OR account_type IS NULL) as solo_accounts,
+      (
+        (SELECT COUNT(*) FROM invoices WHERE deleted_at IS NOT NULL) +
+        (SELECT COUNT(*) FROM quotes WHERE deleted_at IS NOT NULL) +
+        (SELECT COUNT(*) FROM clients WHERE deleted_at IS NOT NULL)
+      ) as total_trashed
     FROM organizations
   `).get() as any;
 
@@ -57,7 +68,7 @@ router.get('/users', adminAuth, (_req: Request, res: Response) => {
            o.name as org_name, o.currency_symbol
     FROM invoices i
     JOIN organizations o ON o.id = i.org_id
-    WHERE i.status = 'paid' AND i.paid_date IS NOT NULL
+    WHERE i.status = 'paid' AND i.paid_date IS NOT NULL AND i.deleted_at IS NULL
     ORDER BY i.paid_date DESC, i.updated_at DESC
     LIMIT 20
   `).all() as any[];
@@ -78,12 +89,12 @@ router.get('/orgs/:id', adminAuth, (req: Request, res: Response) => {
   const recentDocs = db.prepare(`
     SELECT id, number, type, status, client_name, total, amount_paid, balance_due,
            issue_date, due_date, paid_date, currency_symbol, created_at
-    FROM invoices WHERE org_id = ? ORDER BY created_at DESC LIMIT 25
+    FROM invoices WHERE org_id = ? AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 25
   `).all(req.params.id) as any[];
 
   const recentQuotes = db.prepare(`
     SELECT id, number, status, client_name, total, issue_date, expiry_date
-    FROM quotes WHERE org_id = ? ORDER BY created_at DESC LIMIT 15
+    FROM quotes WHERE org_id = ? AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 15
   `).all(req.params.id) as any[];
 
   const clients = db.prepare(`
@@ -91,8 +102,8 @@ router.get('/orgs/:id', adminAuth, (req: Request, res: Response) => {
            COUNT(i.id) as doc_count,
            COALESCE(SUM(CASE WHEN i.type='invoice' THEN i.amount_paid ELSE 0 END), 0) as total_paid
     FROM clients c
-    LEFT JOIN invoices i ON i.client_id = c.id
-    WHERE c.org_id = ?
+    LEFT JOIN invoices i ON i.client_id = c.id AND i.deleted_at IS NULL
+    WHERE c.org_id = ? AND c.deleted_at IS NULL
     GROUP BY c.id ORDER BY doc_count DESC LIMIT 20
   `).all(req.params.id) as any[];
 
@@ -108,7 +119,7 @@ router.get('/orgs/:id', adminAuth, (req: Request, res: Response) => {
            COALESCE(SUM(CASE WHEN type='receipt' THEN total ELSE 0 END),0) as receipts,
            COUNT(CASE WHEN type='invoice' THEN 1 END) as invoice_count,
            COUNT(CASE WHEN type='receipt' THEN 1 END) as receipt_count
-    FROM invoices WHERE org_id = ?
+    FROM invoices WHERE org_id = ? AND deleted_at IS NULL
     GROUP BY month ORDER BY month DESC LIMIT 6
   `).all(req.params.id) as any[];
 
@@ -382,13 +393,13 @@ router.get('/activity', adminAuth, (_req: Request, res: Response) => {
       CASE WHEN i.status = 'paid' THEN i.amount_paid ELSE i.total END as amount,
       i.currency_symbol
     FROM invoices i
-    WHERE i.status IN ('sent', 'paid')
+    WHERE i.status IN ('sent', 'paid') AND i.deleted_at IS NULL
       AND COALESCE(i.paid_date, i.updated_at, i.created_at) >= datetime('now', '-30 days')
     UNION ALL
     SELECT 'quote' as type, id, 'Quote ' || number as title, client_name as subtitle,
            NULL as country, created_at as ts, total as amount, NULL as currency_symbol
     FROM quotes
-    WHERE status IN ('sent', 'accepted', 'invoiced')
+    WHERE status IN ('sent', 'accepted', 'invoiced') AND deleted_at IS NULL
       AND created_at >= datetime('now', '-30 days')
     ORDER BY ts DESC
     LIMIT 25
