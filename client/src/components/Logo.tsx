@@ -1,9 +1,10 @@
 interface LogoMarkProps {
   size?: number;
   className?: string;
+  dark?: boolean;
 }
 
-export function LogoMark({ size = 40, className = '' }: LogoMarkProps) {
+export function LogoMark({ size = 40, className = '', dark = false }: LogoMarkProps) {
   return (
     <img
       src="/krafo-logo.png"
@@ -11,7 +12,7 @@ export function LogoMark({ size = 40, className = '' }: LogoMarkProps) {
       width={size}
       height={size}
       className={`object-contain ${className}`}
-      style={{ width: size, height: size }}
+      style={{ width: size, height: size, filter: dark ? 'brightness(0) invert(1)' : 'none' }}
     />
   );
 }
@@ -31,7 +32,7 @@ export function Logo({ size = 'md', dark = false, className = '' }: LogoProps) {
 
   return (
     <div className={`flex items-center gap-2.5 ${className}`}>
-      <LogoMark size={iconSize} />
+      <LogoMark size={iconSize} dark={dark} />
       <span className={`font-black tracking-tight leading-none ${textCls} ${dark ? 'text-white' : 'text-slate-900'}`}>
         KraaFo
       </span>
