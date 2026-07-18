@@ -2,6 +2,13 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, CheckCircle, FileText, Zap, MessageSquare, Receipt } from 'lucide-react';
 import { Logo } from '../components/Logo';
 
+const PORTRAITS = [
+  { src: '/phase3/portrait-accra.jpg',      name: 'Abena K.',  city: 'Accra, Ghana',        role: 'Cleaning services' },
+  { src: '/phase3/portrait-lagos.jpg',      name: 'Chidi O.',  city: 'Lagos, Nigeria',       role: 'Tailoring' },
+  { src: '/phase3/portrait-manchester.jpg', name: 'Tom H.',    city: 'Manchester, UK',       role: 'Plumbing' },
+  { src: '/phase3/portrait-saopaulo.jpg',   name: 'Ana M.',    city: 'São Paulo, Brazil',    role: 'Food & catering' },
+];
+
 export default function QuoteGeneratorPage() {
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
@@ -18,34 +25,125 @@ export default function QuoteGeneratorPage() {
         </div>
       </nav>
 
-      <section className="bg-gradient-to-br from-white via-violet-50/30 to-indigo-50/20 pt-16 pb-20 px-6">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-violet-50 border border-violet-100 text-violet-600 text-xs font-bold px-4 py-1.5 rounded-full mb-6">
-            <Zap className="w-3.5 h-3.5" /> Free · No account needed to download
-          </div>
-          <h1 className="text-4xl md:text-5xl lg:text-[56px] font-black text-slate-900 tracking-tight leading-[1.08] mb-5">
-            Free Quote Generator: Professional Quotes That Win Jobs
-          </h1>
-          <p className="text-lg text-slate-500 mb-8 leading-relaxed max-w-2xl mx-auto">
-            Send a professional quote that stands out. When the client says yes, convert it to an invoice in one tap, no re-entering data. Record payment and send a receipt. The complete job lifecycle, in one tool.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link to="/generator" className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3.5 rounded-xl font-bold text-base transition-all shadow-lg shadow-indigo-200">
-              Create your first quote, free <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link to="/setup" className="inline-flex items-center justify-center gap-2 text-slate-600 px-8 py-3.5 rounded-xl font-bold text-base border border-slate-200 bg-white/80 hover:bg-white hover:border-slate-300 transition-all">
-              Sign up to save &amp; send
-            </Link>
+      {/* ── Hero ─────────────────────────────────────────────── */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-white via-violet-50/40 to-indigo-50/30 pt-16 pb-20 px-6">
+        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #ede9fe 1px, transparent 1px)', backgroundSize: '32px 32px', opacity: 0.5 }} />
+        <div className="relative max-w-6xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+
+            {/* Left: text */}
+            <div>
+              <div className="inline-flex items-center gap-2 bg-violet-50 border border-violet-100 text-violet-600 text-xs font-bold px-4 py-1.5 rounded-full mb-6">
+                <Zap className="w-3.5 h-3.5" /> Free · No account needed to download
+              </div>
+              <h1 className="text-4xl md:text-5xl lg:text-[56px] font-black text-slate-900 tracking-tight leading-[1.08] mb-5">
+                Free Quote Generator: Professional Quotes That Win Jobs
+              </h1>
+              <p className="text-lg text-slate-500 mb-8 leading-relaxed">
+                Send a professional quote that stands out. When the client says yes, convert it to an invoice in one tap, no re-entering data. Record payment and send a receipt. The complete job lifecycle, in one tool.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 mb-7">
+                <Link to="/generator" className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3.5 rounded-xl font-bold text-base transition-all shadow-lg shadow-indigo-200">
+                  Create your first quote, free <ArrowRight className="w-4 h-4" />
+                </Link>
+                <Link to="/setup" className="inline-flex items-center justify-center gap-2 text-slate-600 px-8 py-3.5 rounded-xl font-bold text-base border border-slate-200 bg-white/80 hover:bg-white hover:border-slate-300 transition-all">
+                  Sign up to save &amp; send
+                </Link>
+              </div>
+              <div className="flex flex-wrap gap-x-5 gap-y-2">
+                {['Works in 30+ countries', 'No credit card needed', 'Quote to invoice in 1 tap'].map(t => (
+                  <div key={t} className="flex items-center gap-1.5 text-slate-500 text-sm">
+                    <CheckCircle className="w-3.5 h-3.5 text-violet-500 shrink-0" />
+                    {t}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Right: quote mockup */}
+            <div className="hidden lg:flex items-center justify-center">
+              <div className="relative">
+                <div className="absolute -inset-6 bg-violet-100/60 rounded-3xl blur-2xl" />
+                <div className="relative bg-white rounded-2xl shadow-2xl shadow-slate-200 border border-slate-100 overflow-hidden w-80">
+                  <div className="h-1.5 bg-gradient-to-r from-violet-500 to-indigo-500" />
+                  <div className="p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-9 h-9 rounded-xl bg-violet-600 flex items-center justify-center text-white font-black text-sm">A</div>
+                        <div>
+                          <div className="font-black text-slate-800 text-sm">Ade Builders</div>
+                          <div className="text-xs text-slate-400">Lagos, Nigeria</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">QUOTE</div>
+                        <div className="font-black text-violet-600 text-sm">#QT-0018</div>
+                      </div>
+                    </div>
+                    <div className="bg-slate-50 rounded-xl p-3 mb-3">
+                      <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Prepared for</div>
+                      <div className="font-bold text-slate-800 text-sm">Emeka Construction Ltd</div>
+                      <div className="text-xs text-slate-500">emeka@buildco.ng</div>
+                    </div>
+                    <div className="space-y-1.5 mb-4">
+                      {[
+                        ['Foundation laying (per sqm)', '₦320,000'],
+                        ['Brick &amp; block work', '₦580,000'],
+                        ['Roofing (materials + labour)', '₦450,000'],
+                      ].map(([d, a]) => (
+                        <div key={d} className="flex justify-between text-xs py-1 border-b border-slate-50">
+                          <span className="text-slate-600" dangerouslySetInnerHTML={{ __html: d }} />
+                          <span className="font-bold text-slate-800 tabular-nums">{a}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="rounded-xl bg-violet-600 px-4 py-2.5 flex justify-between items-center mb-3">
+                      <span className="text-white/80 text-xs font-bold">Quote Total</span>
+                      <span className="text-white font-black tabular-nums">₦1,350,000</span>
+                    </div>
+                    <div className="flex justify-between text-[10px] text-slate-400">
+                      <span>Valid until 1 Aug 2026</span>
+                      <span className="flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-violet-400 inline-block" />
+                        Pending approval
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="absolute -bottom-3 right-4 bg-indigo-600 text-white text-[10px] font-black px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1">
+                  <Zap className="w-3 h-3" /> Convert to invoice in 1 tap
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
 
-      {/* Lifecycle story — the core differentiator for this page */}
+      {/* Social proof */}
+      <section className="py-6 px-6 bg-white border-b border-slate-100">
+        <div className="max-w-5xl mx-auto">
+          <p className="text-center text-xs font-bold text-slate-400 uppercase tracking-widest mb-5">Used by small businesses in 30+ countries</p>
+          <div className="flex flex-wrap items-center justify-center gap-6">
+            {PORTRAITS.map(({ src, name, city, role }) => (
+              <div key={name} className="flex items-center gap-2.5">
+                <img src={src} alt={`${name}, ${role}, uses KraaFo`} className="w-10 h-10 rounded-full object-cover ring-2 ring-white shadow-sm" loading="lazy" />
+                <div>
+                  <div className="text-xs font-bold text-slate-700">{name}</div>
+                  <div className="text-[10px] text-slate-400">{city}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Lifecycle story */}
       <section className="py-16 px-6 bg-white">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <p className="text-xs font-bold text-violet-500 uppercase tracking-widest mb-3">The complete job lifecycle</p>
-            <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-3">Quote → Invoice → Receipt: no re-entering data</h2>
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-3">Quote, Invoice, Receipt: no re-entering data</h2>
             <p className="text-slate-500 max-w-xl mx-auto">Most tools make you start from scratch at each stage. KraaFo connects the whole job.</p>
           </div>
           <div className="grid md:grid-cols-3 gap-6">
