@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 
 const CAPTIONS = [
-  'Friday. Job done. Now the hard part — the paperwork.',
+  'Friday. Job done. Now the hard part: the paperwork.',
   'Or… 60 seconds in KraaFo.',
-  'One tap. All channels — or just the one your client uses.',
+  'One tap. All channels, or just the one your client uses.',
   'Delivered. No "did you get my invoice?"',
   'Paid. That\'s the whole story.',
 ];
@@ -29,7 +29,7 @@ function SendModalFrame() {
             <div className="border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-700">abena.mensah@example.com</div>
           </div>
           <div>
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Phone — WhatsApp &amp; SMS</div>
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Phone (WhatsApp &amp; SMS)</div>
             <div className="border-2 border-violet-400 rounded-xl px-3 py-2.5 text-xs text-slate-700 shadow-[0_0_0_3px_rgba(139,92,246,0.12)]">+233 55 794 4637</div>
           </div>
           <div className="flex gap-1.5">
@@ -335,7 +335,7 @@ export default function StoryPlayer() {
                   onClick={e => e.stopPropagation()}
                   className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-xl font-bold text-sm transition-all btn-glow shadow-xl"
                 >
-                  Create your first invoice — free <ArrowRight className="w-4 h-4" />
+                  Create your first invoice, free <ArrowRight className="w-4 h-4" />
                 </Link>
                 <button
                   onClick={e => { e.stopPropagation(); goTo(0); }}

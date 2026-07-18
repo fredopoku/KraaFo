@@ -83,7 +83,7 @@ export default function ReceiptGeneratorPage() {
               </h1>
 
               <p className="text-lg text-slate-400 mb-8 leading-relaxed animate-hero" style={{ animationDelay: '160ms' }}>
-                Generate professional, branded receipts that clients trust and keep. Fill in the details, download free — or sign up to send by WhatsApp, SMS, or email instantly.
+                Generate professional, branded receipts that clients trust and keep. Fill in the details and download free. Or sign up to send by WhatsApp, SMS, or email instantly.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 mb-8 animate-hero" style={{ animationDelay: '240ms' }}>
@@ -213,7 +213,7 @@ export default function ReceiptGeneratorPage() {
             {[
               { Icon: Shield,   bg: '#ecfdf5', ic: '#10b981', title: 'Proof of payment clients trust', desc: 'Numbered receipts with date, itemised breakdown, and payment method. Looks like it came from a big company.' },
               { Icon: FileText, bg: '#f0fdf4', ic: '#0d9488', title: 'Branded PDF every time',          desc: 'Upload your logo once and KraaFo extracts your colors. Every receipt carries your brand identity.' },
-              { Icon: Zap,      bg: '#eef2ff', ic: '#6366f1', title: 'Send in seconds',                 desc: 'Send by WhatsApp, SMS, or email. WhatsApp opens pre-filled — tap Send. No copying and pasting.' },
+              { Icon: Zap,      bg: '#eef2ff', ic: '#6366f1', title: 'Send in seconds',                 desc: 'Send by WhatsApp, SMS, or email. WhatsApp opens pre-filled, then tap Send. No copying and pasting.'},
             ].map(({ Icon, bg, ic, title, desc }, i) => (
               <div key={title}
                 className={`p-7 rounded-2xl border border-slate-100 group cursor-default transition-all duration-300 ${feat.on ? 'animate-fade-up opacity-100' : 'opacity-0'}`}

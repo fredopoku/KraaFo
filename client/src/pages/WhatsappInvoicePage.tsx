@@ -83,7 +83,7 @@ export default function WhatsappInvoicePage() {
               </h1>
 
               <p className="text-lg text-slate-400 mb-8 leading-relaxed animate-hero" style={{ animationDelay: '160ms' }}>
-                Your clients are on WhatsApp. Meet them there. KraaFo sends a professional invoice with one tap — message pre-filled, PDF attached, ready to read on any phone.
+                Your clients are on WhatsApp. Meet them there. KraaFo sends a professional invoice with one tap: message pre-filled, PDF attached, ready to read on any phone.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 mb-8 animate-hero" style={{ animationDelay: '240ms' }}>
@@ -157,7 +157,7 @@ export default function WhatsappInvoicePage() {
                               <div className="text-[8px]" style={{ color: 'rgba(255,255,255,0.55)' }}>KraaFo · 54 KB</div>
                             </div>
                           </div>
-                          <p className="text-[10px] text-white leading-tight">Hi James — here's your invoice for the kitchen fix. Total: £340. Due 25 Jul.</p>
+                          <p className="text-[10px] text-white leading-tight">Hi James, here's your invoice for the kitchen fix. Total: £340. Due 25 Jul.</p>
                           <div className="flex items-center justify-end gap-1 mt-0.5">
                             <p className="text-[8px]" style={{ color: 'rgba(255,255,255,0.55)' }}>9:41</p>
                             <svg width="14" height="8" viewBox="0 0 14 8" fill="none"><path d="M1 4L4 7L9 1" stroke="#53bdeb" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M5 4L8 7L13 1" stroke="#53bdeb" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -226,7 +226,7 @@ export default function WhatsappInvoicePage() {
         <div ref={feat.ref} className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
             <p className="text-[10px] font-black uppercase tracking-[0.14em] mb-3" style={{ color: '#22c55e' }}>What you get</p>
-            <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-3">Invoice by WhatsApp —<br className="hidden md:block" /> the way business works</h2>
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-3">Invoice by WhatsApp:<br className="hidden md:block" /> the way business works</h2>
             <p className="text-slate-500 max-w-md mx-auto text-sm">Your clients live on WhatsApp. Send your invoice where they already are, and get paid faster.</p>
           </div>
           <div className="grid md:grid-cols-3 gap-5">
@@ -299,7 +299,7 @@ export default function WhatsappInvoicePage() {
           '@context':'https://schema.org','@type':'FAQPage',
           mainEntity:[
             { '@type':'Question',name:'How do I send an invoice by WhatsApp?',acceptedAnswer:{'@type':'Answer',text:'Create your invoice in KraaFo, then tap "Send via WhatsApp." KraaFo opens WhatsApp with your message pre-filled and the PDF ready. You confirm and tap Send.'} },
-            { '@type':'Question',name:'Do I need a WhatsApp Business account?',acceptedAnswer:{'@type':'Answer',text:'No. KraaFo works with any WhatsApp account — personal or Business. No API access or special setup required.'} },
+            { '@type':'Question',name:'Do I need a WhatsApp Business account?',acceptedAnswer:{'@type':'Answer',text:'No. KraaFo works with any WhatsApp account, personal or Business. No API access or special setup required.'} },
             { '@type':'Question',name:'Can I send the invoice by SMS and email too?',acceptedAnswer:{'@type':'Answer',text:'Yes. Use "Send via all channels" and KraaFo sends WhatsApp, SMS, and email in one action. Or send each channel separately.'} },
             { '@type':'Question',name:'What countries does WhatsApp invoicing work in?',acceptedAnswer:{'@type':'Answer',text:'Anywhere WhatsApp is used. KraaFo supports 30+ currencies including GHS, NGN, KES, GBP, USD, EUR, BRL, and more.'} },
           ],
@@ -312,7 +312,7 @@ export default function WhatsappInvoicePage() {
           <div className="space-y-3">
             {[
               { q:'How do I send an invoice by WhatsApp?', a:'Create your invoice in KraaFo, then tap "Send via WhatsApp." KraaFo opens WhatsApp with your message pre-filled and the PDF ready. You confirm and tap Send.' },
-              { q:'Do I need a WhatsApp Business account?', a:'No. KraaFo works with any WhatsApp account — personal or Business. No API access or special setup required.' },
+              { q:'Do I need a WhatsApp Business account?', a:'No. KraaFo works with any WhatsApp account, personal or Business. No API access or special setup required.' },
               { q:'Can I send the invoice by SMS and email too?', a:'Yes. Use "Send via all channels" and KraaFo sends WhatsApp, SMS, and email in one action. Or send each channel separately.' },
               { q:'What countries does WhatsApp invoicing work in?', a:'Anywhere WhatsApp is used. KraaFo supports 30+ currencies including GHS, NGN, KES, GBP, USD, EUR, BRL, and more.' },
             ].map(({ q, a }, i) => (

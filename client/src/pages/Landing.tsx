@@ -530,7 +530,7 @@ export default function Landing() {
               <p className="text-lg text-slate-400 mb-8 leading-relaxed max-w-lg animate-hero" style={{ animationDelay: '160ms' }}>
                 Create professional invoices in under a minute.{' '}
                 <span className="text-slate-200 font-semibold">Download free, no account needed.</span>{' '}
-                Sign up free to send by WhatsApp, SMS, or email — all three at once, or just the one your client uses.
+                Sign up free to send by WhatsApp, SMS, or email: all three at once, or just the one your client uses.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 mb-8 animate-hero" style={{ animationDelay: '240ms' }}>

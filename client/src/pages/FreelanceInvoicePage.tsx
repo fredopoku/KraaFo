@@ -83,7 +83,7 @@ export default function FreelanceInvoicePage() {
               </h1>
 
               <p className="text-lg text-slate-400 mb-8 leading-relaxed animate-hero" style={{ animationDelay: '160ms' }}>
-                Freelancers who send professional invoices get paid faster. KraaFo builds a branded invoice in under a minute — no accounting software, no subscription, no watermarks.
+                Freelancers who send professional invoices get paid faster. KraaFo builds a branded invoice in under a minute. No accounting software, no subscription, no watermarks.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 mb-8 animate-hero" style={{ animationDelay: '240ms' }}>
@@ -211,7 +211,7 @@ export default function FreelanceInvoicePage() {
           </div>
           <div className="grid md:grid-cols-3 gap-5">
             {[
-              { Icon: FileText, bg: '#fdf4ff', ic: '#8b5cf6', title: 'Branded PDF, no watermark',     desc: 'Your logo, your colors. A polished invoice that positions you as a professional — even on your first project.' },
+              { Icon: FileText, bg: '#fdf4ff', ic: '#8b5cf6', title: 'Branded PDF, no watermark',     desc: 'Your logo, your colors. A polished invoice that positions you as a professional, even on your first project.'},
               { Icon: Clock,    bg: '#f5f3ff', ic: '#7c3aed', title: 'Net terms, milestones, deposits', desc: 'Set Net 7, 14, or 30 terms. Add a deposit amount or split payment milestones. Works for any project structure.' },
               { Icon: Zap,      bg: '#fdf2f8', ic: '#d946ef', title: 'Send by WhatsApp, email, or SMS', desc: 'Chase your payment where your client is. WhatsApp, SMS, and email in one tap. No email threads to manage.' },
             ].map(({ Icon, bg, ic, title, desc }, i) => (

@@ -83,7 +83,7 @@ export default function GhanaInvoicePage() {
               </h1>
 
               <p className="text-lg text-slate-400 mb-8 leading-relaxed animate-hero" style={{ animationDelay: '160ms' }}>
-                Create professional GHS invoices for Ghanaian clients in under a minute. Include MTN MoMo and Vodafone Cash payment details. Send by WhatsApp or SMS — the way Ghana does business.
+                Create professional GHS invoices for Ghanaian clients in under a minute. Include MTN MoMo and Vodafone Cash payment details. Send by WhatsApp or SMS, the way Ghana does business.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 mb-8 animate-hero" style={{ animationDelay: '240ms' }}>
@@ -242,7 +242,7 @@ export default function GhanaInvoicePage() {
                 Stop sending WhatsApp voice notes as invoices. KraaFo gives you a branded PDF with GHS amounts and MoMo details that clients respect and pay.
               </p>
               <ul className="space-y-3">
-                {['GHS currency with accurate formatting','MTN MoMo / Vodafone Cash payment fields','Send by WhatsApp — no email needed','No account required to download PDF'].map(item => (
+                {['GHS currency with accurate formatting','MTN MoMo / Vodafone Cash payment fields','Send by WhatsApp with no email needed','No account required to download PDF'].map(item => (
                   <li key={item} className="flex items-center gap-2.5 text-slate-600 text-sm">
                     <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-[10px] text-white font-black"
                       style={{ background: 'linear-gradient(135deg,#6366f1,#4f46e5)' }}>✓</div>
@@ -256,7 +256,7 @@ export default function GhanaInvoicePage() {
               {[
                 { n:'1', t:'Enter your client and services', d:'Fill in the client name, services rendered, and GHS amounts. Add your MoMo number in the payment section.' },
                 { n:'2', t:'Preview your branded invoice', d:'Your logo and colors appear instantly. The invoice shows GHS totals and your payment details.' },
-                { n:'3', t:'Send by WhatsApp or download', d:'Tap "Send via WhatsApp" and it opens pre-filled. Or download the PDF free — no account needed.' },
+                { n:'3', t:'Send by WhatsApp or download', d:'Tap "Send via WhatsApp" and it opens pre-filled. Or download the PDF free, no account needed.' },
               ].map(({ n, t, d }) => (
                 <div key={n} className="flex gap-4 mb-6 last:mb-0">
                   <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-black text-white"

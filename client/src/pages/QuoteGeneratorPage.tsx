@@ -206,7 +206,7 @@ export default function QuoteGeneratorPage() {
         <div ref={feat.ref} className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
             <p className="text-[10px] font-black uppercase tracking-[0.14em] mb-3" style={{ color: '#8b5cf6' }}>What you get</p>
-            <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-3">Quote, approve, invoice —<br className="hidden md:block" /> zero friction</h2>
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-3">Quote, approve, invoice:<br className="hidden md:block" /> zero friction</h2>
             <p className="text-slate-500 max-w-md mx-auto text-sm">Professional quotes that win jobs, and convert to invoices the moment the client says yes.</p>
           </div>
           <div className="grid md:grid-cols-3 gap-5">
@@ -238,7 +238,7 @@ export default function QuoteGeneratorPage() {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className={steps.on ? 'animate-fade-up' : 'opacity-0'}>
               <p className="text-[10px] font-black uppercase tracking-[0.14em] mb-3" style={{ color: '#8b5cf6' }}>From quote to paid in 3 steps</p>
-              <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-4">Quote, win, invoice —<br />it's that simple</h2>
+              <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-4">Quote, win, invoice.<br />It's that simple</h2>
               <p className="text-slate-500 leading-relaxed mb-6 text-sm">
                 Stop sending quotes that look like text messages. KraaFo produces a document that makes clients say yes.
               </p>
@@ -257,7 +257,7 @@ export default function QuoteGeneratorPage() {
               {[
                 { n:'1', t:'Fill in your quote', d:"Client name, services, prices, expiry. KraaFo's Smart Fill pre-loads line items for your trade." },
                 { n:'2', t:'Send and await approval', d:'Send by WhatsApp, SMS, or email. Your client reviews the branded PDF and responds.' },
-                { n:'3', t:'Convert to invoice in 1 tap', d:'When approved, tap Convert. Everything carries over — no retyping, no double entry.' },
+                { n:'3', t:'Convert to invoice in 1 tap', d:'When approved, tap Convert. Everything carries over: no retyping, no double entry.' },
               ].map(({ n, t, d }) => (
                 <div key={n} className="flex gap-4 mb-6 last:mb-0">
                   <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-black text-white"
@@ -280,7 +280,7 @@ export default function QuoteGeneratorPage() {
           mainEntity:[
             { '@type':'Question',name:'Is the quote generator free?',acceptedAnswer:{'@type':'Answer',text:'Yes. Create and download quotes as PDF completely free, no account needed. Sign up free to save and send quotes and convert them to invoices.'} },
             { '@type':'Question',name:'What should a quote include?',acceptedAnswer:{'@type':'Answer',text:'A quote should include your business name, client name, a list of services with prices, an expiry date, and payment terms. KraaFo handles layout, numbering, and VAT automatically.'} },
-            { '@type':'Question',name:'Can I convert a quote to an invoice?',acceptedAnswer:{'@type':'Answer',text:'Yes. When a client approves, tap Convert in KraaFo. All line items, prices, and client details carry over automatically — no retyping.'} },
+            { '@type':'Question',name:'Can I convert a quote to an invoice?',acceptedAnswer:{'@type':'Answer',text:'Yes. When a client approves, tap Convert in KraaFo. All line items, prices, and client details carry over automatically, with no retyping.'} },
             { '@type':'Question',name:'Can I send a quote by WhatsApp?',acceptedAnswer:{'@type':'Answer',text:'Yes. Sign up free and KraaFo opens WhatsApp with your quote ready to send. You can also send SMS and email in the same action.'} },
           ],
         }) }} />
@@ -293,7 +293,7 @@ export default function QuoteGeneratorPage() {
             {[
               { q:'Is the quote generator free?', a:'Yes. Create and download quotes as PDF completely free, no account needed. Sign up free to save and send quotes and convert them to invoices.' },
               { q:'What should a quote include?', a:'A quote should include your business name, client name, a list of services with prices, an expiry date, and payment terms. KraaFo handles layout, numbering, and VAT automatically.' },
-              { q:'Can I convert a quote to an invoice?', a:'Yes. When a client approves, tap Convert in KraaFo. All line items, prices, and client details carry over automatically — no retyping.' },
+              { q:'Can I convert a quote to an invoice?', a:'Yes. When a client approves, tap Convert in KraaFo. All line items, prices, and client details carry over automatically, with no retyping.' },
               { q:'Can I send a quote by WhatsApp?', a:'Yes. Sign up free and KraaFo opens WhatsApp with your quote ready to send. You can also send SMS and email in the same action.' },
             ].map(({ q, a }, i) => (
               <details key={q}
