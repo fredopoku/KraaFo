@@ -5,19 +5,19 @@ import { Logo } from '../components/Logo';
 const faqs = [
   {
     q: 'How do I send an invoice on WhatsApp?',
-    a: 'Create your invoice in KraaFo, then tap "Send via WhatsApp". WhatsApp opens on your phone with the invoice message pre-filled — including a link your client can tap to view and download the PDF. You just confirm and press Send.',
+    a: 'Create your invoice in KraaFo, then tap "Send via WhatsApp". WhatsApp opens on your phone with the invoice message pre-filled, including a link your client can tap to view and download the PDF. You just confirm and press Send.',
   },
   {
     q: 'Does my client need WhatsApp to receive the invoice?',
-    a: 'Yes — your client needs WhatsApp to receive the message. If they don\'t use WhatsApp, KraaFo also sends by SMS (works on any phone, no app needed) and email, all from the same screen.',
+    a: 'Yes, your client needs WhatsApp to receive the message. If they don\'t use WhatsApp, KraaFo also sends by SMS (works on any phone, no app needed) and email, all from the same screen.',
   },
   {
     q: 'Is the WhatsApp invoice free to send?',
-    a: 'Yes. Creating and sending invoices by WhatsApp is free. Sign up free — no credit card needed.',
+    a: 'Yes. Creating and sending invoices by WhatsApp is free. Sign up free, no credit card needed.',
   },
   {
     q: 'Can I send a receipt by WhatsApp too?',
-    a: 'Yes. KraaFo generates professional "PAYMENT RECEIVED" receipts that you can send the same way — WhatsApp, SMS, or email.',
+    a: 'Yes. KraaFo generates professional "PAYMENT RECEIVED" receipts that you can send the same way: WhatsApp, SMS, or email.',
   },
 ];
 
@@ -43,14 +43,14 @@ export default function WhatsappInvoicePage() {
             <MessageSquare className="w-3.5 h-3.5" /> Free · No account needed to download
           </div>
           <h1 className="text-4xl md:text-5xl lg:text-[56px] font-black text-slate-900 tracking-tight leading-[1.08] mb-5">
-            WhatsApp Invoice Generator — Send Invoices Directly on WhatsApp
+            WhatsApp Invoice Generator: Send Invoices Directly on WhatsApp
           </h1>
           <p className="text-lg text-slate-500 mb-8 leading-relaxed max-w-2xl mx-auto">
-            Create a professional invoice in under 60 seconds and send it straight to your client on WhatsApp, SMS, or email — all three at once, or just the one they use. Your client taps a link to view and download the PDF. No back-and-forth.
+            Create a professional invoice in under 60 seconds and send it straight to your client on WhatsApp, SMS, or email. All three at once, or just the one they use. Your client taps a link to view and download the PDF. No back-and-forth.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link to="/generator" className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3.5 rounded-xl font-bold text-base transition-all shadow-lg shadow-indigo-200">
-              Create your first invoice — free <ArrowRight className="w-4 h-4" />
+              Create your first invoice, free <ArrowRight className="w-4 h-4" />
             </Link>
             <Link to="/setup" className="inline-flex items-center justify-center gap-2 text-slate-600 px-8 py-3.5 rounded-xl font-bold text-base border border-slate-200 bg-white/80 hover:bg-white hover:border-slate-300 transition-all">
               Sign up free
@@ -75,7 +75,7 @@ export default function WhatsappInvoicePage() {
               {
                 step: '2',
                 title: 'Preview and confirm',
-                desc: 'See the branded PDF update in real time as you type. Adjust rates, add a discount, toggle tax — all in one screen.',
+                desc: 'See the branded PDF update in real time as you type. Adjust rates, add a discount, toggle tax, all in one screen.',
               },
               {
                 step: '3',
@@ -102,14 +102,14 @@ export default function WhatsappInvoicePage() {
               <p className="text-xs font-bold text-indigo-500 uppercase tracking-widest mb-3">Why WhatsApp?</p>
               <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-4">Your client already lives on WhatsApp</h2>
               <p className="text-slate-500 leading-relaxed mb-6">
-                Email gets ignored. WhatsApp messages get opened. When you send an invoice by WhatsApp, your client sees it the moment it arrives. They tap the link, view the PDF, and can pay — all without leaving WhatsApp.
+                Email gets ignored. WhatsApp messages get opened. When you send an invoice by WhatsApp, your client sees it the moment it arrives. They tap the link, view the PDF, and can pay, all without leaving WhatsApp.
               </p>
               <ul className="space-y-3">
                 {[
-                  'WhatsApp message opens pre-filled — you confirm and send',
+                  'WhatsApp message opens pre-filled. You confirm and send.',
                   'Client gets a direct link to view and download the branded PDF',
                   'Send SMS and email at the same time if you want',
-                  'Works in any country — GHS, NGN, USD, GBP, EUR and more',
+                  'Works in any country: GHS, NGN, USD, GBP, EUR and more',
                 ].map(item => (
                   <li key={item} className="flex items-start gap-2 text-slate-600 text-sm">
                     <CheckCircle className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
@@ -208,7 +208,7 @@ export default function WhatsappInvoicePage() {
           <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Ready to send your first WhatsApp invoice?</h2>
           <p className="text-slate-500 mb-6">Free to create and download. Sign up free to send.</p>
           <Link to="/generator" className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3.5 rounded-xl font-bold text-base transition-all shadow-lg shadow-indigo-200">
-            Create your first invoice — free <ArrowRight className="w-4 h-4" />
+            Create your first invoice, free <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </section>

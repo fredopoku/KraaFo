@@ -216,7 +216,7 @@ function GetPaidVisual() {
             <CheckCircle className="w-6 h-6 text-emerald-500" />
           </div>
           <div>
-            <div className="font-black text-slate-900 text-sm">Invoice #0042 — Paid</div>
+            <div className="font-black text-slate-900 text-sm">Invoice #0042 · Paid</div>
             <div className="text-xs text-slate-400 mt-0.5">Sarah Thompson · $482.58 received</div>
           </div>
         </div>
@@ -277,7 +277,7 @@ function HowItWorksStepper() {
     },
     {
       n: '03', title: 'Get paid, stay in control',
-      desc: "See what you've earned, what's outstanding, and what's overdue. No spreadsheets — just the numbers you need, when you need them.",
+      desc: "See what you've earned, what's outstanding, and what's overdue. No spreadsheets. Just the numbers you need, when you need them.",
       visual: <GetPaidVisual />,
     },
   ];
@@ -315,7 +315,7 @@ function HowItWorksStepper() {
               <p className="text-slate-500 leading-relaxed mb-8">{step.desc}</p>
               {i === 2 && (
                 <Link to="/setup" className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-7 py-3.5 rounded-xl font-bold text-base transition-all shadow-lg shadow-indigo-200 btn-glow">
-                  Create your first invoice — free <ArrowRight className="w-4 h-4" />
+                  Create your first invoice, free <ArrowRight className="w-4 h-4" />
                 </Link>
               )}
             </div>
@@ -430,7 +430,7 @@ function FooterUpdatesLine() {
     return (
       <div className="border-t border-slate-100 pt-4 text-center text-xs text-slate-400">
         <CheckCircle className="inline w-3.5 h-3.5 text-emerald-500 mr-1 -mt-0.5" />
-        You're subscribed — we'll keep you posted.
+        You're subscribed. We'll keep you posted.
       </div>
     );
   }
@@ -519,12 +519,12 @@ export default function Landing() {
               </h1>
 
               <p className="text-lg text-slate-500 mb-8 leading-relaxed max-w-lg animate-hero delay-200">
-                Create professional invoices in under a minute. <strong className="text-slate-700 font-semibold">Download free — no account needed.</strong> Sign up free to save your work and send by WhatsApp, SMS, or email — all three at once, or just the one your client uses.
+                Create professional invoices in under a minute. <strong className="text-slate-700 font-semibold">Download free, no account needed.</strong> Sign up free to save your work and send by WhatsApp, SMS, or email. All three at once, or just the one your client uses.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 mb-8 animate-hero delay-300">
                 <Link to="/setup" className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3.5 rounded-xl font-bold text-base transition-all shadow-lg shadow-indigo-200 btn-glow">
-                  Create your first invoice — free <ArrowRight className="w-4 h-4" />
+                  Create your first invoice, free <ArrowRight className="w-4 h-4" />
                 </Link>
                 <Link to="/generator?demo=true" className="flex items-center justify-center gap-2 text-slate-600 px-8 py-3.5 rounded-xl font-bold text-base border border-slate-200 bg-white/80 hover:bg-white hover:border-slate-300 transition-all">
                   Try without signing up
@@ -592,7 +592,7 @@ export default function Landing() {
               Your client can't say<br />they didn't get it.
             </h2>
             <p className="text-slate-400 text-lg max-w-2xl mx-auto leading-relaxed">
-              One tap in KraaFo opens WhatsApp and SMS pre-filled for your confirmation, and sends the email automatically — all three channels at once. Every other invoicing app sends an email and waits.
+              One tap in KraaFo opens WhatsApp and SMS pre-filled for your confirmation, and sends the email automatically. All three channels at once. Every other invoicing app sends an email and waits.
             </p>
           </div>
 
@@ -645,7 +645,7 @@ export default function Landing() {
                   <p className="text-slate-200 text-xs leading-relaxed">
                     Hi James! Your Invoice from Acme Services is ready.<br /><br />
                     📄 INV-0042 · 💰 $482.58 · 📅 Due 26 Jul 2026<br /><br />
-                    Your PDF invoice has been sent to your email. Please check your inbox. — Acme Services
+                    Your PDF invoice has been sent to your email. Please check your inbox.<br />Acme Services
                   </p>
                   <div className="text-right text-[9px] text-slate-500 mt-2">Delivered</div>
                 </div>
@@ -689,7 +689,7 @@ export default function Landing() {
           <div className="rounded-2xl p-6 mb-8 text-center" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
             <p className="text-white font-black text-xl mb-3">Or send it exactly one way.</p>
             <p className="text-slate-400 text-sm leading-relaxed max-w-xl mx-auto">
-              You know your clients. The corporate office that wants email only. The client without a smartphone who lives on SMS. Pick the channel — KraaFo opens WhatsApp or SMS pre-filled, or fires the email automatically.
+              You know your clients. The corporate office that wants email only. The client without a smartphone who lives on SMS. Pick the channel. KraaFo opens WhatsApp or SMS pre-filled, or fires the email automatically.
             </p>
             <div className="flex items-center justify-center gap-3 mt-4 text-xs font-semibold">
               <span className="text-indigo-400">Send via all channels</span>
@@ -735,7 +735,7 @@ export default function Landing() {
           {/* CTA */}
           <div className="text-center">
             <Link to="/setup" className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3.5 rounded-xl font-bold text-base transition-all shadow-lg shadow-indigo-900/50 btn-glow">
-              Create your first invoice — free <ArrowRight className="w-4 h-4" />
+              Create your first invoice, free <ArrowRight className="w-4 h-4" />
             </Link>
             <p className="text-slate-600 text-xs mt-3 font-semibold">Free to use · No credit card · 2-minute setup</p>
           </div>
@@ -839,8 +839,8 @@ export default function Landing() {
           mainEntity: [
             { '@type': 'Question', name: 'Is KraaFo really free?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Creating and downloading invoices, receipts and quotes is completely free. No credit card needed. You need a free account to send documents by email or WhatsApp and to save your history.' } },
             { '@type': 'Question', name: 'Do I need an account to download a PDF?', acceptedAnswer: { '@type': 'Answer', text: 'No. You can fill in your invoice and download the PDF without signing up. Create an account (also free) to save your documents and send them to clients.' } },
-            { '@type': 'Question', name: 'Can I send invoices on WhatsApp?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Use "Send via all channels" to open WhatsApp and SMS pre-filled for your confirmation, and send the email automatically — one action, all three channels. Or use the individual send buttons to pick just WhatsApp, just SMS, or just email.' } },
-            { '@type': 'Question', name: 'Can I send to just one channel?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Use the individual send buttons to choose exactly one channel — WhatsApp, SMS, or email. Great for corporate clients who want email only, or clients without smartphones who are best reached by SMS.' } },
+            { '@type': 'Question', name: 'Can I send invoices on WhatsApp?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Use "Send via all channels" to open WhatsApp and SMS pre-filled for your confirmation, and send the email automatically. One action, all three channels. Or use the individual send buttons to pick just WhatsApp, just SMS, or just email.' } },
+            { '@type': 'Question', name: 'Can I send to just one channel?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Use the individual send buttons to choose exactly one channel: WhatsApp, SMS, or email. Great for corporate clients who want email only, or clients without smartphones who are best reached by SMS.' } },
             { '@type': 'Question', name: 'Can I add my logo and brand colors?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Upload your logo and KraaFo automatically extracts your brand colors. Every invoice, receipt and quote reflects your brand without any manual setup.' } },
             { '@type': 'Question', name: 'Does it work in my country and currency?', acceptedAnswer: { '@type': 'Answer', text: 'KraaFo works worldwide. You can set any currency symbol and accept mobile money (M-Pesa, MTN, Airtel, Telecel), PayPal, and bank transfer.' } },
           ],
@@ -854,8 +854,8 @@ export default function Landing() {
             {[
               { q: 'Is KraaFo really free?', a: 'Yes. Creating and downloading invoices, receipts and quotes is completely free. No credit card needed. You need a free account to send documents by email or WhatsApp and to save your history.' },
               { q: 'Do I need an account to download a PDF?', a: 'No. Fill in your invoice and download the PDF without signing up. Create an account (also free) to save your documents and send them to clients.' },
-              { q: 'Can I send invoices on WhatsApp?', a: 'Yes. Use "Send via all channels" to open WhatsApp and SMS pre-filled for your confirmation, and send the email automatically — one action, all three channels. Or use the individual send buttons to pick just WhatsApp, just SMS, or just email.' },
-              { q: 'Can I send to just one channel?', a: 'Yes. Use the individual send buttons to choose exactly one — WhatsApp, SMS, or email. Great for corporate clients who want email only, or clients without smartphones who are best reached by SMS.' },
+              { q: 'Can I send invoices on WhatsApp?', a: 'Yes. Use "Send via all channels" to open WhatsApp and SMS pre-filled for your confirmation, and send the email automatically. One action, all three channels. Or use the individual send buttons to pick just WhatsApp, just SMS, or just email.' },
+              { q: 'Can I send to just one channel?', a: 'Yes. Use the individual send buttons to choose exactly one: WhatsApp, SMS, or email. Great for corporate clients who want email only, or clients without smartphones who are best reached by SMS.' },
               { q: 'Can I add my logo and brand colors?', a: 'Yes. Upload your logo and KraaFo automatically extracts your brand colors. Every document reflects your brand without any manual setup.' },
               { q: 'Does it work in my country and currency?', a: 'KraaFo works worldwide. Set any currency symbol and accept mobile money (M-Pesa, MTN, Airtel, Telecel), PayPal, or bank transfer.' },
             ].map(({ q, a }) => (
@@ -876,9 +876,9 @@ export default function Landing() {
         <div className="max-w-lg mx-auto">
           <LogoMark size={96} className="mx-auto mb-6 animate-float" />
           <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Ready to send your first document?</h2>
-          <p className="text-slate-500 mb-7 leading-relaxed">Takes under 2 minutes to set up. Free to use — no credit card needed.</p>
+          <p className="text-slate-500 mb-7 leading-relaxed">Takes under 2 minutes to set up. Free to use, no credit card needed.</p>
           <Link to="/setup" className="inline-flex items-center gap-2.5 bg-indigo-600 hover:bg-indigo-700 text-white px-10 py-3.5 rounded-xl font-bold text-base transition-all shadow-2xl shadow-indigo-200 btn-glow">
-            Create your first invoice — free <ArrowRight className="w-4 h-4" />
+            Create your first invoice, free <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </section>

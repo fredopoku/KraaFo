@@ -24,14 +24,14 @@ export default function ReceiptGeneratorPage() {
             <Zap className="w-3.5 h-3.5" /> Free · No account needed to download
           </div>
           <h1 className="text-4xl md:text-5xl lg:text-[56px] font-black text-slate-900 tracking-tight leading-[1.08] mb-5">
-            Free Receipt Maker — Instant Payment Receipts
+            Free Receipt Maker: Instant Payment Receipts
           </h1>
           <p className="text-lg text-slate-500 mb-8 leading-relaxed max-w-2xl mx-auto">
             The moment a client pays, generate a professional "PAYMENT RECEIVED" receipt in seconds. No templates, no re-entering data. Download free as a branded PDF, or send it by WhatsApp, SMS, or email.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link to="/generator" className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3.5 rounded-xl font-bold text-base transition-all shadow-lg shadow-indigo-200">
-              Create your first receipt — free <ArrowRight className="w-4 h-4" />
+              Create your first receipt, free <ArrowRight className="w-4 h-4" />
             </Link>
             <Link to="/setup" className="inline-flex items-center justify-center gap-2 text-slate-600 px-8 py-3.5 rounded-xl font-bold text-base border border-slate-200 bg-white/80 hover:bg-white hover:border-slate-300 transition-all">
               Sign up to save &amp; send
@@ -44,19 +44,19 @@ export default function ReceiptGeneratorPage() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-3">A receipt your client actually trusts</h2>
-            <p className="text-slate-500 max-w-xl mx-auto">Professional proof of payment — delivered instantly, branded with your business.</p>
+            <p className="text-slate-500 max-w-xl mx-auto">Professional proof of payment, delivered instantly and branded with your business.</p>
           </div>
           <div className="grid md:grid-cols-3 gap-6">
             {[
               {
                 Icon: Receipt,
                 title: 'PAYMENT RECEIVED stamp',
-                desc: 'KraaFo receipts carry a bold "PAYMENT RECEIVED" header so there is no ambiguity — the job is done, the money is in.',
+                desc: 'KraaFo receipts carry a bold "PAYMENT RECEIVED" header so there is no ambiguity: the job is done, the money is in.',
               },
               {
                 Icon: Zap,
                 title: 'No re-entering data',
-                desc: 'Record a payment against an existing invoice and the receipt pulls everything across — client name, services, total, dates — in one tap.',
+                desc: 'Record a payment against an existing invoice and the receipt pulls in everything automatically: client name, services, total, and dates.',
               },
               {
                 Icon: MessageSquare,
@@ -83,12 +83,12 @@ export default function ReceiptGeneratorPage() {
               <p className="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-3">Why receipts matter</p>
               <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-4">Close the loop on every job</h2>
               <p className="text-slate-500 leading-relaxed mb-6">
-                A receipt is proof the job is done and the money changed hands. Without one, disputed payments become "I never confirmed that" conversations. KraaFo sends one the moment you record payment — so both sides have a record.
+                A receipt is proof the job is done and the money changed hands. Without one, disputed payments become "I never confirmed that" conversations. KraaFo sends one the moment you record payment, so both sides have a record.
               </p>
               <ul className="space-y-3">
                 {[
                   'Branded PDF with your logo and colors',
-                  '"PAYMENT RECEIVED" header — no ambiguity',
+                  '"PAYMENT RECEIVED" header, no ambiguity',
                   'Automatically pulls from your invoice data',
                   'Delivered by WhatsApp, SMS, or email',
                 ].map(item => (
@@ -101,8 +101,8 @@ export default function ReceiptGeneratorPage() {
             </div>
             <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
               {[
-                { n: '1', t: 'Record the payment', d: 'Mark an invoice as paid in KraaFo — or create a standalone receipt directly from the Receipt tab.' },
-                { n: '2', t: 'Review the receipt', d: 'KraaFo generates a professional branded PDF. Preview it before sending — or download immediately.' },
+                { n: '1', t: 'Record the payment', d: 'Mark an invoice as paid in KraaFo, or create a standalone receipt directly from the Receipt tab.' },
+                { n: '2', t: 'Review the receipt', d: 'KraaFo generates a professional branded PDF. Preview it before sending, or download immediately.' },
                 { n: '3', t: 'Send to your client', d: 'Tap "Send via all channels" for WhatsApp + SMS + email at once, or pick the channel your client prefers.' },
               ].map(({ n, t, d }) => (
                 <div key={n} className="flex gap-4 mb-5 last:mb-0">
@@ -123,10 +123,10 @@ export default function ReceiptGeneratorPage() {
           '@context': 'https://schema.org',
           '@type': 'FAQPage',
           mainEntity: [
-            { '@type': 'Question', name: "What's the difference between an invoice and a receipt?", acceptedAnswer: { '@type': 'Answer', text: 'An invoice is a payment request sent before the client pays. A receipt is proof of payment sent after the client pays. KraaFo handles both — in the same tool, with the same branding.' } },
-            { '@type': 'Question', name: 'Can I create a receipt without an invoice?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Use the Receipt tab in KraaFo to create a standalone "PAYMENT RECEIVED" receipt at any time — no invoice required.' } },
+            { '@type': 'Question', name: "What's the difference between an invoice and a receipt?", acceptedAnswer: { '@type': 'Answer', text: 'An invoice is a payment request sent before the client pays. A receipt is proof of payment sent after the client pays. KraaFo handles both, in the same tool, with the same branding.' } },
+            { '@type': 'Question', name: 'Can I create a receipt without an invoice?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Use the Receipt tab in KraaFo to create a standalone "PAYMENT RECEIVED" receipt at any time, no invoice required.' } },
             { '@type': 'Question', name: 'Can I send receipts by WhatsApp or SMS?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. KraaFo can broadcast receipts to WhatsApp, SMS, and email all at once, or you can pick a single channel. SMS reaches clients without smartphones or mobile data.' } },
-            { '@type': 'Question', name: 'Is the receipt PDF professional-looking?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. KraaFo receipts use your logo and brand colors automatically, include a "PAYMENT RECEIVED" header, and list the services paid — the same professional layout as your invoices.' } },
+            { '@type': 'Question', name: 'Is the receipt PDF professional-looking?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. KraaFo receipts use your logo and brand colors automatically, include a "PAYMENT RECEIVED" header, and list the services paid, using the same professional layout as your invoices.' } },
           ],
         }) }} />
         <div className="max-w-3xl mx-auto">
@@ -136,10 +136,10 @@ export default function ReceiptGeneratorPage() {
           </div>
           <div className="space-y-3">
             {[
-              { q: "What's the difference between an invoice and a receipt?", a: 'An invoice is a payment request sent before the client pays. A receipt is proof of payment sent after the client pays. KraaFo handles both — in the same tool, with the same branding.' },
-              { q: 'Can I create a receipt without an invoice?', a: 'Yes. Use the Receipt tab in KraaFo to create a standalone "PAYMENT RECEIVED" receipt at any time — no invoice required.' },
+              { q: "What's the difference between an invoice and a receipt?", a: 'An invoice is a payment request sent before the client pays. A receipt is proof of payment sent after the client pays. KraaFo handles both, in the same tool, with the same branding.' },
+              { q: 'Can I create a receipt without an invoice?', a: 'Yes. Use the Receipt tab in KraaFo to create a standalone "PAYMENT RECEIVED" receipt at any time, no invoice required.' },
               { q: 'Can I send receipts by WhatsApp or SMS?', a: 'Yes. KraaFo can broadcast receipts to WhatsApp, SMS, and email all at once, or you can pick a single channel. SMS reaches clients without smartphones or mobile data.' },
-              { q: 'Is the receipt PDF professional-looking?', a: 'Yes. KraaFo receipts use your logo and brand colors automatically, include a "PAYMENT RECEIVED" header, and list the services paid — the same professional layout as your invoices.' },
+              { q: 'Is the receipt PDF professional-looking?', a: 'Yes. KraaFo receipts use your logo and brand colors automatically, include a "PAYMENT RECEIVED" header, and list the services paid, using the same professional layout as your invoices.' },
             ].map(({ q, a }) => (
               <details key={q} className="group bg-white rounded-2xl border border-slate-100 px-5 py-4 cursor-pointer">
                 <summary className="flex items-center justify-between font-bold text-slate-800 text-sm list-none select-none">
@@ -158,7 +158,7 @@ export default function ReceiptGeneratorPage() {
           <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Close the loop on your next job.</h2>
           <p className="text-slate-500 mb-7 leading-relaxed">Create a professional receipt in seconds. Free, no credit card needed.</p>
           <Link to="/generator" className="inline-flex items-center gap-2.5 bg-indigo-600 hover:bg-indigo-700 text-white px-10 py-3.5 rounded-xl font-bold text-base transition-all shadow-2xl shadow-indigo-200">
-            Create your first receipt — free <ArrowRight className="w-4 h-4" />
+            Create your first receipt, free <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </section>

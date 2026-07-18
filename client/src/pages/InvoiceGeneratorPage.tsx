@@ -24,14 +24,14 @@ export default function InvoiceGeneratorPage() {
             <Zap className="w-3.5 h-3.5" /> Free · No account needed to download
           </div>
           <h1 className="text-4xl md:text-5xl lg:text-[56px] font-black text-slate-900 tracking-tight leading-[1.08] mb-5">
-            Free Invoice Generator — Branded PDF Invoices in 60 Seconds
+            Free Invoice Generator: Branded PDF Invoices in 60 Seconds
           </h1>
           <p className="text-lg text-slate-500 mb-8 leading-relaxed max-w-2xl mx-auto">
-            No design skills needed. Fill in your client details and services — KraaFo builds a professional, branded invoice in under a minute. Download the PDF free, or sign up free to send it by WhatsApp, SMS, or email.
+            No design skills needed. Fill in your client details and services. KraaFo builds a professional, branded invoice in under a minute. Download the PDF free, or sign up free to send it by WhatsApp, SMS, or email.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link to="/generator" className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3.5 rounded-xl font-bold text-base transition-all shadow-lg shadow-indigo-200">
-              Create your first invoice — free <ArrowRight className="w-4 h-4" />
+              Create your first invoice, free <ArrowRight className="w-4 h-4" />
             </Link>
             <Link to="/setup" className="inline-flex items-center justify-center gap-2 text-slate-600 px-8 py-3.5 rounded-xl font-bold text-base border border-slate-200 bg-white/80 hover:bg-white hover:border-slate-300 transition-all">
               Sign up to save &amp; send
@@ -44,7 +44,7 @@ export default function InvoiceGeneratorPage() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-3">Everything your invoice needs, nothing it doesn't</h2>
-            <p className="text-slate-500 max-w-xl mx-auto">Professional invoices in under 60 seconds — from blank to branded PDF.</p>
+            <p className="text-slate-500 max-w-xl mx-auto">Professional invoices in under 60 seconds, from blank to branded PDF.</p>
           </div>
           <div className="grid md:grid-cols-3 gap-6">
             {[
@@ -56,7 +56,7 @@ export default function InvoiceGeneratorPage() {
               {
                 Icon: FileText,
                 title: 'Branded PDF every time',
-                desc: 'Upload your logo once and KraaFo automatically extracts your brand colors. Every invoice carries your brand — itemized breakdown, due date, tax, and discounts included.',
+                desc: 'Upload your logo once and KraaFo automatically extracts your brand colors. Every invoice carries your brand: itemized breakdown, due date, tax, and discounts included.',
               },
               {
                 Icon: MessageSquare,
@@ -83,14 +83,14 @@ export default function InvoiceGeneratorPage() {
               <p className="text-xs font-bold text-indigo-500 uppercase tracking-widest mb-3">Your invoice in 3 steps</p>
               <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-4">From blank to paid in under a minute</h2>
               <p className="text-slate-500 leading-relaxed mb-6">
-                Most free invoice generators produce generic PDFs with watermarks. KraaFo produces a document that looks like it came from a company twice your size — because your brand is on the invoice, not ours.
+                Most free invoice generators produce generic PDFs with watermarks. KraaFo produces a document that looks like it came from a company twice your size, because your brand is on the invoice, not ours.
               </p>
               <ul className="space-y-3">
                 {[
                   'Auto-extracts brand colors from your logo',
                   'Professional layout with due dates, tax, and discounts',
                   'Send by WhatsApp, SMS, or email from the same screen',
-                  'Multi-currency — works in any country',
+                  'Multi-currency, works in any country',
                 ].map(item => (
                   <li key={item} className="flex items-center gap-2 text-slate-600 text-sm">
                     <CheckCircle className="w-4 h-4 text-indigo-500 shrink-0" />
@@ -102,7 +102,7 @@ export default function InvoiceGeneratorPage() {
             <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
               {[
                 { n: '1', t: 'Fill in your client and services', d: "Smart Fill pre-populates line items for your industry. Edit what you need, skip what you don't." },
-                { n: '2', t: 'Preview and adjust', d: 'Live preview updates as you type. Change rates, add items, toggle tax — all in real time.' },
+                { n: '2', t: 'Preview and adjust', d: 'Live preview updates as you type. Change rates, add items, toggle tax, all in real time.' },
                 { n: '3', t: 'Download or send', d: 'Download free as PDF, no account needed. Sign up free to send by WhatsApp, SMS, or email and save your history.' },
               ].map(({ n, t, d }) => (
                 <div key={n} className="flex gap-4 mb-5 last:mb-0">
@@ -134,7 +134,7 @@ export default function InvoiceGeneratorPage() {
             <div className="p-6 rounded-2xl border border-slate-100 bg-slate-50">
               <div className="text-slate-700 font-black mb-2">or send individually</div>
               <p className="text-slate-600 text-sm leading-relaxed">
-                The corporate client who wants email only. The client without a smartphone reachable by SMS. The WhatsApp-native who ignores email. Pick the one channel that fits — KraaFo delivers there.
+                The corporate client who wants email only. The client without a smartphone reachable by SMS. The WhatsApp-native who ignores email. Pick the one channel that fits. KraaFo delivers there.
               </p>
             </div>
           </div>
@@ -146,9 +146,9 @@ export default function InvoiceGeneratorPage() {
           '@context': 'https://schema.org',
           '@type': 'FAQPage',
           mainEntity: [
-            { '@type': 'Question', name: 'Is it really free to create an invoice?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Creating and downloading invoices as PDF is completely free — no account needed. Sign up free to save your invoices and send them by WhatsApp, SMS, or email.' } },
+            { '@type': 'Question', name: 'Is it really free to create an invoice?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Creating and downloading invoices as PDF is completely free, no account needed. Sign up free to save your invoices and send them by WhatsApp, SMS, or email.' } },
             { '@type': 'Question', name: 'Do I need an account to download the PDF?', acceptedAnswer: { '@type': 'Answer', text: 'No. Fill in your invoice and download the PDF without signing up. A free account lets you save your history and send invoices directly to clients.' } },
-            { '@type': 'Question', name: 'Can I send an invoice by WhatsApp?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. KraaFo opens WhatsApp with your invoice message pre-filled — you confirm and tap Send. Or use "Send via all channels" to trigger WhatsApp, SMS, and email in one action.' } },
+            { '@type': 'Question', name: 'Can I send an invoice by WhatsApp?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. KraaFo opens WhatsApp with your invoice message pre-filled. You confirm and tap Send. Or use "Send via all channels" to trigger WhatsApp, SMS, and email in one action.' } },
             { '@type': 'Question', name: 'What information does an invoice need?', acceptedAnswer: { '@type': 'Answer', text: 'At minimum: your business name, client name, a list of services with prices, and a due date. KraaFo handles layout, numbering, tax calculations, and currency formatting automatically.' } },
           ],
         }) }} />
@@ -159,9 +159,9 @@ export default function InvoiceGeneratorPage() {
           </div>
           <div className="space-y-3">
             {[
-              { q: 'Is it really free to create an invoice?', a: 'Yes. Creating and downloading invoices as PDF is completely free — no account needed. Sign up free to save your invoices and send them by WhatsApp, SMS, or email.' },
+              { q: 'Is it really free to create an invoice?', a: 'Yes. Creating and downloading invoices as PDF is completely free, no account needed. Sign up free to save your invoices and send them by WhatsApp, SMS, or email.' },
               { q: 'Do I need an account to download the PDF?', a: 'No. Fill in your invoice and download the PDF without signing up. A free account lets you save your history and send invoices directly to clients.' },
-              { q: 'Can I send an invoice by WhatsApp?', a: 'Yes. KraaFo opens WhatsApp with your invoice message pre-filled — you confirm and tap Send. Or use "Send via all channels" to trigger WhatsApp, SMS, and email in one action.' },
+              { q: 'Can I send an invoice by WhatsApp?', a: 'Yes. KraaFo opens WhatsApp with your invoice message pre-filled. You confirm and tap Send. Or use "Send via all channels" to trigger WhatsApp, SMS, and email in one action.' },
               { q: 'What information does an invoice need?', a: 'At minimum: your business name, client name, a list of services with prices, and a due date. KraaFo handles layout, numbering, tax calculations, and currency formatting automatically.' },
             ].map(({ q, a }) => (
               <details key={q} className="group bg-white rounded-2xl border border-slate-100 px-5 py-4 cursor-pointer">
@@ -181,7 +181,7 @@ export default function InvoiceGeneratorPage() {
           <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Ready to send your first invoice?</h2>
           <p className="text-slate-500 mb-7 leading-relaxed">Under 60 seconds to your first professional invoice. Free, no credit card needed.</p>
           <Link to="/generator" className="inline-flex items-center gap-2.5 bg-indigo-600 hover:bg-indigo-700 text-white px-10 py-3.5 rounded-xl font-bold text-base transition-all shadow-2xl shadow-indigo-200">
-            Create your first invoice — free <ArrowRight className="w-4 h-4" />
+            Create your first invoice, free <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </section>

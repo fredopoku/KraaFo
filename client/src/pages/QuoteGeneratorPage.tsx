@@ -24,14 +24,14 @@ export default function QuoteGeneratorPage() {
             <Zap className="w-3.5 h-3.5" /> Free · No account needed to download
           </div>
           <h1 className="text-4xl md:text-5xl lg:text-[56px] font-black text-slate-900 tracking-tight leading-[1.08] mb-5">
-            Free Quote Generator — Professional Quotes That Win Jobs
+            Free Quote Generator: Professional Quotes That Win Jobs
           </h1>
           <p className="text-lg text-slate-500 mb-8 leading-relaxed max-w-2xl mx-auto">
-            Send a professional quote that stands out. When the client says yes, convert it to an invoice in one tap — no re-entering data. Record payment and send a receipt. The complete job lifecycle, in one tool.
+            Send a professional quote that stands out. When the client says yes, convert it to an invoice in one tap, no re-entering data. Record payment and send a receipt. The complete job lifecycle, in one tool.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link to="/generator" className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3.5 rounded-xl font-bold text-base transition-all shadow-lg shadow-indigo-200">
-              Create your first quote — free <ArrowRight className="w-4 h-4" />
+              Create your first quote, free <ArrowRight className="w-4 h-4" />
             </Link>
             <Link to="/setup" className="inline-flex items-center justify-center gap-2 text-slate-600 px-8 py-3.5 rounded-xl font-bold text-base border border-slate-200 bg-white/80 hover:bg-white hover:border-slate-300 transition-all">
               Sign up to save &amp; send
@@ -45,7 +45,7 @@ export default function QuoteGeneratorPage() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <p className="text-xs font-bold text-violet-500 uppercase tracking-widest mb-3">The complete job lifecycle</p>
-            <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-3">Quote → Invoice → Receipt — no re-entering data</h2>
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-3">Quote → Invoice → Receipt: no re-entering data</h2>
             <p className="text-slate-500 max-w-xl mx-auto">Most tools make you start from scratch at each stage. KraaFo connects the whole job.</p>
           </div>
           <div className="grid md:grid-cols-3 gap-6">
@@ -54,13 +54,13 @@ export default function QuoteGeneratorPage() {
                 Icon: FileText,
                 step: '01',
                 title: 'Send a professional quote',
-                desc: 'Smart Fill pre-populates services and pricing for your industry. Your client receives a branded PDF quote by WhatsApp, SMS, or email — not a screenshot of a spreadsheet.',
+                desc: 'Smart Fill pre-populates services and pricing for your industry. Your client receives a branded PDF quote by WhatsApp, SMS, or email, not a screenshot of a spreadsheet.',
               },
               {
                 Icon: Zap,
                 step: '02',
                 title: 'Convert to invoice in one tap',
-                desc: "Client says yes? Tap 'Convert to Invoice' — KraaFo copies every line item, service, and price across. No re-entering data. The quote is marked as accepted; the invoice is ready to send.",
+                desc: "Client says yes? Tap 'Convert to Invoice'. KraaFo copies every line item, service, and price across. No re-entering data. The quote is marked as accepted; the invoice is ready to send.",
               },
               {
                 Icon: Receipt,
@@ -110,11 +110,11 @@ export default function QuoteGeneratorPage() {
               <div className="space-y-4">
                 <div className="p-4 rounded-xl border border-indigo-100 bg-indigo-50/40">
                   <div className="text-indigo-600 font-black text-sm mb-1">Send via all channels</div>
-                  <p className="text-slate-500 text-xs leading-relaxed">One tap opens WhatsApp and SMS pre-filled for your confirmation, and fires the email automatically — all three channels at once.</p>
+                  <p className="text-slate-500 text-xs leading-relaxed">One tap opens WhatsApp and SMS pre-filled for your confirmation, and fires the email automatically. All three channels at once.</p>
                 </div>
                 <div className="p-4 rounded-xl border border-slate-100 bg-slate-50">
                   <div className="text-slate-700 font-black text-sm mb-1">or send individually</div>
-                  <p className="text-slate-500 text-xs leading-relaxed">Pick exactly one channel — the corporate client who wants email only, or the WhatsApp-native who ignores email. SMS reaches clients without smartphones or mobile data.</p>
+                  <p className="text-slate-500 text-xs leading-relaxed">Pick exactly one channel: the corporate client who wants email only, or the WhatsApp-native who ignores email. SMS reaches clients without smartphones or mobile data.</p>
                 </div>
               </div>
             </div>
@@ -127,10 +127,10 @@ export default function QuoteGeneratorPage() {
           '@context': 'https://schema.org',
           '@type': 'FAQPage',
           mainEntity: [
-            { '@type': 'Question', name: 'Can I convert a quote to an invoice?', acceptedAnswer: { '@type': 'Answer', text: "Yes. When a client accepts your quote, tap 'Convert to Invoice' in KraaFo — every line item, service, and price copies across automatically. No re-entering data. The quote is marked as accepted and a new invoice is ready to send." } },
-            { '@type': 'Question', name: "What's the difference between a quote and an invoice?", acceptedAnswer: { '@type': 'Answer', text: 'A quote is sent before the job to agree on price and scope. An invoice is sent after the job (or as a payment request) with the amount due. KraaFo handles both and connects them — so you never re-enter the same data.' } },
-            { '@type': 'Question', name: 'How do I send a quote to a client?', acceptedAnswer: { '@type': 'Answer', text: 'Create your quote in KraaFo, then tap Send. Choose "Send via all channels" to open WhatsApp and SMS pre-filled and fire the email automatically — or pick a single channel. Your client receives a professional PDF quote.' } },
-            { '@type': 'Question', name: 'Can I create a receipt after the client pays?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Once the invoice is paid, record the payment in KraaFo and it generates a branded "PAYMENT RECEIVED" receipt. The full lifecycle — quote, invoice, receipt — happens in one tool.' } },
+            { '@type': 'Question', name: 'Can I convert a quote to an invoice?', acceptedAnswer: { '@type': 'Answer', text: "Yes. When a client accepts your quote, tap 'Convert to Invoice' in KraaFo. Every line item, service, and price copies across automatically. No re-entering data. The quote is marked as accepted and a new invoice is ready to send." } },
+            { '@type': 'Question', name: "What's the difference between a quote and an invoice?", acceptedAnswer: { '@type': 'Answer', text: 'A quote is sent before the job to agree on price and scope. An invoice is sent after the job (or as a payment request) with the amount due. KraaFo handles both and connects them, so you never re-enter the same data.' } },
+            { '@type': 'Question', name: 'How do I send a quote to a client?', acceptedAnswer: { '@type': 'Answer', text: 'Create your quote in KraaFo, then tap Send. Choose "Send via all channels" to open WhatsApp and SMS pre-filled and fire the email automatically, or pick a single channel. Your client receives a professional PDF quote.' } },
+            { '@type': 'Question', name: 'Can I create a receipt after the client pays?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Once the invoice is paid, record the payment in KraaFo and it generates a branded "PAYMENT RECEIVED" receipt. The full lifecycle (quote, invoice, receipt) happens in one tool.' } },
           ],
         }) }} />
         <div className="max-w-3xl mx-auto">
@@ -140,10 +140,10 @@ export default function QuoteGeneratorPage() {
           </div>
           <div className="space-y-3">
             {[
-              { q: 'Can I convert a quote to an invoice?', a: "Yes. When a client accepts your quote, tap 'Convert to Invoice' in KraaFo — every line item, service, and price copies across automatically. No re-entering data. The quote is marked as accepted and a new invoice is ready to send." },
-              { q: "What's the difference between a quote and an invoice?", a: 'A quote is sent before the job to agree on price and scope. An invoice is sent after the job (or as a payment request) with the amount due. KraaFo handles both and connects them — so you never re-enter the same data.' },
-              { q: 'How do I send a quote to a client?', a: 'Create your quote in KraaFo, then tap Send. Choose "Send via all channels" to open WhatsApp and SMS pre-filled and fire the email automatically — or pick a single channel. Your client receives a professional PDF quote.' },
-              { q: 'Can I create a receipt after the client pays?', a: 'Yes. Once the invoice is paid, record the payment in KraaFo and it generates a branded "PAYMENT RECEIVED" receipt. The full lifecycle — quote, invoice, receipt — happens in one tool.' },
+              { q: 'Can I convert a quote to an invoice?', a: "Yes. When a client accepts your quote, tap 'Convert to Invoice' in KraaFo. Every line item, service, and price copies across automatically. No re-entering data. The quote is marked as accepted and a new invoice is ready to send." },
+              { q: "What's the difference between a quote and an invoice?", a: 'A quote is sent before the job to agree on price and scope. An invoice is sent after the job (or as a payment request) with the amount due. KraaFo handles both and connects them, so you never re-enter the same data.' },
+              { q: 'How do I send a quote to a client?', a: 'Create your quote in KraaFo, then tap Send. Choose "Send via all channels" to open WhatsApp and SMS pre-filled and fire the email automatically, or pick a single channel. Your client receives a professional PDF quote.' },
+              { q: 'Can I create a receipt after the client pays?', a: 'Yes. Once the invoice is paid, record the payment in KraaFo and it generates a branded "PAYMENT RECEIVED" receipt. The full lifecycle (quote, invoice, receipt) happens in one tool.' },
             ].map(({ q, a }) => (
               <details key={q} className="group bg-white rounded-2xl border border-slate-100 px-5 py-4 cursor-pointer">
                 <summary className="flex items-center justify-between font-bold text-slate-800 text-sm list-none select-none">
@@ -162,7 +162,7 @@ export default function QuoteGeneratorPage() {
           <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Win the job. Send the invoice. Close with a receipt.</h2>
           <p className="text-slate-500 mb-7 leading-relaxed">The whole job lifecycle in one tool. Free, no credit card needed.</p>
           <Link to="/generator" className="inline-flex items-center gap-2.5 bg-indigo-600 hover:bg-indigo-700 text-white px-10 py-3.5 rounded-xl font-bold text-base transition-all shadow-2xl shadow-indigo-200">
-            Create your first quote — free <ArrowRight className="w-4 h-4" />
+            Create your first quote, free <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </section>

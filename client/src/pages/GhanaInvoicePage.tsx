@@ -13,11 +13,11 @@ const faqs = [
   },
   {
     q: 'Can I send invoices by WhatsApp in Ghana?',
-    a: 'Yes — this is one of KraaFo\'s most popular features in Ghana. WhatsApp is the primary messaging platform. KraaFo opens WhatsApp pre-filled with your invoice message and a link to the PDF.',
+    a: 'Yes, this is one of KraaFo\'s most popular features in Ghana. WhatsApp is the primary messaging platform. KraaFo opens WhatsApp pre-filled with your invoice message and a link to the PDF.',
   },
   {
     q: 'Is KraaFo free for Ghanaian businesses?',
-    a: 'Yes. Creating and downloading invoices as PDF is completely free — no account needed. Sign up free to save your history and send by WhatsApp, SMS, or email.',
+    a: 'Yes. Creating and downloading invoices as PDF is completely free, no account needed. Sign up free to save your history and send by WhatsApp, SMS, or email.',
   },
 ];
 
@@ -43,14 +43,14 @@ export default function GhanaInvoicePage() {
             <Zap className="w-3.5 h-3.5" /> Free · GHS · MTN MoMo · WhatsApp delivery
           </div>
           <h1 className="text-4xl md:text-5xl lg:text-[56px] font-black text-slate-900 tracking-tight leading-[1.08] mb-5">
-            Free Invoice Generator for Ghana — GHS, MTN MoMo & WhatsApp
+            Free Invoice Generator for Ghana: GHS, MTN MoMo & WhatsApp
           </h1>
           <p className="text-lg text-slate-500 mb-8 leading-relaxed max-w-2xl mx-auto">
-            Built for Ghanaian businesses. Create professional invoices in Ghana Cedis, include your MTN MoMo or bank details, and send directly to clients on WhatsApp, SMS, or email. No account needed to download — free forever.
+            Built for Ghanaian businesses. Create professional invoices in Ghana Cedis, include your MTN MoMo or bank details, and send directly to clients on WhatsApp, SMS, or email. No account needed to download. Free forever.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link to="/generator" className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3.5 rounded-xl font-bold text-base transition-all shadow-lg shadow-indigo-200">
-              Create your first invoice — free <ArrowRight className="w-4 h-4" />
+              Create your first invoice, free <ArrowRight className="w-4 h-4" />
             </Link>
             <Link to="/setup" className="inline-flex items-center justify-center gap-2 text-slate-600 px-8 py-3.5 rounded-xl font-bold text-base border border-slate-200 bg-white/80 hover:bg-white hover:border-slate-300 transition-all">
               Sign up free
@@ -128,7 +128,7 @@ export default function GhanaInvoicePage() {
               <div className="text-lg font-black text-slate-800">Kofi Mensah Services</div>
               <div className="space-y-2">
                 {[
-                  { label: 'Cleaning — 3 bedroom home', amount: 'GHS 250.00' },
+                  { label: 'Cleaning: 3 bedroom home', amount: 'GHS 250.00' },
                   { label: 'Window cleaning (inside & out)', amount: 'GHS 80.00' },
                   { label: 'Carpet steam clean', amount: 'GHS 120.00' },
                 ].map(row => (
@@ -187,7 +187,7 @@ export default function GhanaInvoicePage() {
           <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Start invoicing in Ghana today</h2>
           <p className="text-slate-500 mb-6">Free to create and download. Sign up free to save and send.</p>
           <Link to="/generator" className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3.5 rounded-xl font-bold text-base transition-all shadow-lg shadow-indigo-200">
-            Create your first invoice — free <ArrowRight className="w-4 h-4" />
+            Create your first invoice, free <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </section>

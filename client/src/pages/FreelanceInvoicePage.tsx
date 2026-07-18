@@ -5,7 +5,7 @@ import { Logo } from '../components/Logo';
 const faqs = [
   {
     q: 'Is KraaFo free for freelancers?',
-    a: 'Yes. Creating and downloading invoices as PDF is completely free — no account required. Sign up free to save your invoice history and send by WhatsApp, SMS, or email.',
+    a: 'Yes. Creating and downloading invoices as PDF is completely free, no account required. Sign up free to save your invoice history and send by WhatsApp, SMS, or email.',
   },
   {
     q: 'Can I add my freelance rate and hours to an invoice?',
@@ -13,7 +13,7 @@ const faqs = [
   },
   {
     q: 'Can I create recurring invoices for retainer clients?',
-    a: 'Yes. Sign up free to access recurring invoice templates — set your billing cycle and KraaFo reminds you to send on schedule.',
+    a: 'Yes. Sign up free to access recurring invoice templates. Set your billing cycle and KraaFo reminds you to send on schedule.',
   },
   {
     q: 'What currencies does KraaFo support for freelancers?',
@@ -43,14 +43,14 @@ export default function FreelanceInvoicePage() {
             <Zap className="w-3.5 h-3.5" /> Free · No account needed to download
           </div>
           <h1 className="text-4xl md:text-5xl lg:text-[56px] font-black text-slate-900 tracking-tight leading-[1.08] mb-5">
-            Free Invoice Generator for Freelancers — Get Paid Faster
+            Free Invoice Generator for Freelancers: Get Paid Faster
           </h1>
           <p className="text-lg text-slate-500 mb-8 leading-relaxed max-w-2xl mx-auto">
             Create professional freelance invoices in under 60 seconds. Branded PDF, multi-currency, and delivery by WhatsApp, SMS, or email. Spend less time on admin and more time on work that pays.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link to="/generator" className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3.5 rounded-xl font-bold text-base transition-all shadow-lg shadow-indigo-200">
-              Create your first invoice — free <ArrowRight className="w-4 h-4" />
+              Create your first invoice, free <ArrowRight className="w-4 h-4" />
             </Link>
             <Link to="/setup" className="inline-flex items-center justify-center gap-2 text-slate-600 px-8 py-3.5 rounded-xl font-bold text-base border border-slate-200 bg-white/80 hover:bg-white hover:border-slate-300 transition-all">
               Sign up free
@@ -105,7 +105,7 @@ export default function FreelanceInvoicePage() {
               <p className="text-xs font-bold text-indigo-500 uppercase tracking-widest mb-3">Works for your trade</p>
               <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-4">Smart Fill for freelancers</h2>
               <p className="text-slate-500 leading-relaxed mb-6">
-                Pick your freelance category and KraaFo pre-fills your most common line items, rates, and payment terms. Review, adjust, done — in under 60 seconds.
+                Pick your freelance category and KraaFo pre-fills your most common line items, rates, and payment terms. Review, adjust, done. In under 60 seconds.
               </p>
               <ul className="space-y-3">
                 {[
@@ -187,7 +187,7 @@ export default function FreelanceInvoicePage() {
           <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Stop chasing. Start getting paid.</h2>
           <p className="text-slate-500 mb-6">Free to create and download. Sign up free to send and save.</p>
           <Link to="/generator" className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3.5 rounded-xl font-bold text-base transition-all shadow-lg shadow-indigo-200">
-            Create your first invoice — free <ArrowRight className="w-4 h-4" />
+            Create your first invoice, free <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </section>
