@@ -19,6 +19,9 @@ const Trash = lazy(() => import('./pages/Trash'));
 const InvoiceGeneratorPage = lazy(() => import('./pages/InvoiceGeneratorPage'));
 const ReceiptGeneratorPage = lazy(() => import('./pages/ReceiptGeneratorPage'));
 const QuoteGeneratorPage = lazy(() => import('./pages/QuoteGeneratorPage'));
+const WhatsappInvoicePage = lazy(() => import('./pages/WhatsappInvoicePage'));
+const GhanaInvoicePage = lazy(() => import('./pages/GhanaInvoicePage'));
+const FreelanceInvoicePage = lazy(() => import('./pages/FreelanceInvoicePage'));
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state = { error: null };
@@ -74,6 +77,9 @@ export default function App() {
           <Route path="/invoice-generator" element={<InvoiceGeneratorPage />} />
           <Route path="/receipt-generator" element={<ReceiptGeneratorPage />} />
           <Route path="/quote-generator" element={<QuoteGeneratorPage />} />
+          <Route path="/whatsapp-invoice-generator" element={<WhatsappInvoicePage />} />
+          <Route path="/invoice-generator-ghana" element={<GhanaInvoicePage />} />
+          <Route path="/invoice-generator-for-freelancers" element={<FreelanceInvoicePage />} />
           <Route path="/view/:id" element={<InvoiceView />} />
           <Route path="/login" element={<Login />} />
           <Route path="/join/:token" element={<Join />} />

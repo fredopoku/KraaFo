@@ -64,6 +64,32 @@
     }
     </script>
 
+    <!-- Organization + WebSite schema — brand identity for Google -->
+    <script type="application/ld+json">
+    [
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "KraaFo",
+        "url": "https://kraafo.com",
+        "logo": "https://kraafo.com/krafo-logo.png",
+        "description": "Free invoice generator, receipt maker, and quote builder for freelancers and small businesses worldwide.",
+        "sameAs": []
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "KraaFo",
+        "url": "https://kraafo.com",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://kraafo.com/generator?q={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      }
+    ]
+    </script>
+
     <!-- Cloudflare Turnstile (bot protection) -->
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 

@@ -512,7 +512,7 @@ export default function Landing() {
               </div>
 
               <h1 className="text-[2.5rem] sm:text-5xl md:text-[58px] lg:text-[64px] font-black text-slate-900 tracking-tight leading-[1.08] lg:leading-[1.03] mb-6 animate-hero delay-100">
-                Send invoices your clients take seriously.{' '}
+                Free invoice generator &amp; receipt maker.{' '}
                 <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)' }}>
                   Get paid without chasing.
                 </span>
