@@ -76,6 +76,25 @@
     -webkit-backdrop-filter: blur(16px);
   }
 
+  /* Animated gradient text — set backgroundImage via inline style, this handles size + motion */
+  .animate-grad-text {
+    background-size: 200% auto;
+    animation: gradShift 5s ease infinite;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+
+  /* Scroll reveal — JS adds .revealed class via IntersectionObserver */
+  .reveal-item {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  .reveal-item.revealed {
+    animation: fadeUp 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
   /* Indigo noise texture gradient on dark hero */
   .hero-gradient {
     background: radial-gradient(ellipse 80% 60% at 20% 40%, rgba(99,102,241,0.35) 0%, transparent 60%),

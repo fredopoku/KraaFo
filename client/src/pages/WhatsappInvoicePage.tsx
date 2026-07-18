@@ -1,128 +1,189 @@
+import { useRef, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, CheckCircle, MessageSquare, Zap, Globe } from 'lucide-react';
 import { Logo } from '../components/Logo';
+import { use3DTilt } from '../hooks/use3DTilt';
 
 const PORTRAITS = [
-  { src: '/phase3/portrait-accra.jpg',      name: 'Abena K.',  city: 'Accra, Ghana',        role: 'Cleaning services' },
-  { src: '/phase3/portrait-lagos.jpg',      name: 'Chidi O.',  city: 'Lagos, Nigeria',       role: 'Tailoring' },
-  { src: '/phase3/portrait-manchester.jpg', name: 'Tom H.',    city: 'Manchester, UK',       role: 'Plumbing' },
-  { src: '/phase3/portrait-saopaulo.jpg',   name: 'Ana M.',    city: 'São Paulo, Brazil',    role: 'Food & catering' },
+  { src: '/phase3/portrait-accra.jpg',      name: 'Abena K.',  city: 'Accra, Ghana',     role: 'Cleaning services' },
+  { src: '/phase3/portrait-lagos.jpg',      name: 'Chidi O.',  city: 'Lagos, Nigeria',    role: 'Tailoring' },
+  { src: '/phase3/portrait-manchester.jpg', name: 'Tom H.',    city: 'Manchester, UK',    role: 'Plumbing' },
+  { src: '/phase3/portrait-saopaulo.jpg',   name: 'Ana M.',    city: 'São Paulo, Brazil', role: 'Food & catering' },
 ];
 
-const faqs = [
-  {
-    q: 'How do I send an invoice on WhatsApp?',
-    a: 'Create your invoice in KraaFo, then tap "Send via WhatsApp". WhatsApp opens on your phone with the invoice message pre-filled, including a link your client can tap to view and download the PDF. You just confirm and press Send.',
-  },
-  {
-    q: 'Does my client need WhatsApp to receive the invoice?',
-    a: "Yes, your client needs WhatsApp to receive the message. If they don't use WhatsApp, KraaFo also sends by SMS (works on any phone, no app needed) and email, all from the same screen.",
-  },
-  {
-    q: 'Is the WhatsApp invoice free to send?',
-    a: 'Yes. Creating and sending invoices by WhatsApp is free. Sign up free, no credit card needed.',
-  },
-  {
-    q: 'Can I send a receipt by WhatsApp too?',
-    a: 'Yes. KraaFo generates professional "PAYMENT RECEIVED" receipts that you can send the same way: WhatsApp, SMS, or email.',
-  },
-];
+function useReveal(threshold = 0.12) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) { setOn(true); obs.disconnect(); }
+    }, { threshold });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [threshold]);
+  return { ref, on };
+}
 
 export default function WhatsappInvoicePage() {
+  const tilt = use3DTilt();
+  const feat = useReveal();
+  const steps = useReveal();
+  const faq = useReveal();
+
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
 
-      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-100">
+      {/* ── Nav ── */}
+      <nav className="sticky top-0 z-50 border-b" style={{ background: 'rgba(2,6,23,0.88)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderColor: 'rgba(255,255,255,0.06)' }}>
         <div className="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between">
-          <Link to="/"><Logo size="lg" /></Link>
+          <Link to="/"><Logo size="lg" dark /></Link>
           <div className="flex items-center gap-3">
-            <Link to="/login" className="text-sm font-bold text-slate-600 hover:text-indigo-600 transition-colors hidden sm:block">Sign in</Link>
-            <Link to="/setup" className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm">
+            <Link to="/login" className="text-sm font-bold text-slate-400 hover:text-white transition-colors hidden sm:block">Sign in</Link>
+            <Link to="/setup" className="flex items-center gap-2 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all"
+              style={{ background: 'linear-gradient(135deg,#22c55e 0%,#16a34a 100%)', boxShadow: '0 4px 20px rgba(34,197,94,0.45)' }}>
               Get Started <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
         </div>
       </nav>
 
-      {/* ── Hero ─────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-white via-emerald-50/40 to-indigo-50/30 pt-16 pb-20 px-6">
-        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #d1fae5 1px, transparent 1px)', backgroundSize: '32px 32px', opacity: 0.5 }} />
-        <div className="relative max-w-6xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+      {/* ── Hero ── */}
+      <section className="relative overflow-hidden pt-20 pb-0 px-6" style={{ background: '#020617' }}>
+        <div className="absolute -top-20 left-1/2 -translate-x-1/3 w-[900px] h-[700px] rounded-full pointer-events-none animate-blob"
+          style={{ background: 'radial-gradient(ellipse at center,rgba(37,211,102,0.2) 0%,transparent 65%)' }} />
+        <div className="absolute top-10 -right-24 w-[550px] h-[550px] rounded-full pointer-events-none animate-blob-slow"
+          style={{ background: 'radial-gradient(ellipse at center,rgba(18,140,126,0.18) 0%,transparent 65%)' }} />
+        <div className="absolute bottom-0 -left-16 w-[380px] h-[380px] rounded-full pointer-events-none animate-blob-slower"
+          style={{ background: 'radial-gradient(ellipse at center,rgba(99,102,241,0.08) 0%,transparent 70%)' }} />
+        <div className="absolute inset-0 pointer-events-none"
+          style={{ backgroundImage: 'radial-gradient(circle,rgba(255,255,255,0.07) 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
 
-            {/* Left: text */}
+        <div className="relative max-w-6xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-12 items-start pt-4 pb-28">
+
+            {/* Left */}
             <div>
-              <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-bold px-4 py-1.5 rounded-full mb-6">
-                <MessageSquare className="w-3.5 h-3.5" /> Free · No account needed to download
+              <div className="inline-flex items-center gap-2.5 text-xs font-black uppercase tracking-widest px-4 py-2 rounded-full mb-8 animate-hero"
+                style={{ background: 'rgba(37,211,102,0.1)', border: '1px solid rgba(37,211,102,0.25)', color: '#86efac' }}>
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: '#4ade80' }} />
+                  <span className="relative inline-flex h-2 w-2 rounded-full" style={{ background: '#4ade80' }} />
+                </span>
+                Send invoices direct from WhatsApp
               </div>
-              <h1 className="text-4xl md:text-5xl lg:text-[56px] font-black text-slate-900 tracking-tight leading-[1.08] mb-5">
-                WhatsApp Invoice Generator: Send Invoices Directly on WhatsApp
+
+              <h1 className="text-4xl md:text-5xl lg:text-[58px] font-black tracking-tight leading-[1.05] mb-6 animate-hero" style={{ animationDelay: '80ms' }}>
+                <span className="text-white">WhatsApp Invoice: </span>
+                <span className="animate-grad-text"
+                  style={{ backgroundImage: 'linear-gradient(135deg,#86efac 0%,#bbf7d0 45%,#4ade80 100%)' }}>
+                  Send, Get Paid,<br />Move On.
+                </span>
               </h1>
-              <p className="text-lg text-slate-500 mb-8 leading-relaxed">
-                Create a professional invoice in under 60 seconds and send it straight to your client on WhatsApp, SMS, or email. All three at once, or just the one they use. Your client taps a link to view and download the PDF. No back-and-forth.
+
+              <p className="text-lg text-slate-400 mb-8 leading-relaxed animate-hero" style={{ animationDelay: '160ms' }}>
+                Your clients are on WhatsApp. Meet them there. KraaFo sends a professional invoice with one tap — message pre-filled, PDF attached, ready to read on any phone.
               </p>
-              <div className="flex flex-col sm:flex-row gap-3 mb-7">
-                <Link to="/generator" className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3.5 rounded-xl font-bold text-base transition-all shadow-lg shadow-indigo-200">
-                  Create your first invoice, free <ArrowRight className="w-4 h-4" />
+
+              <div className="flex flex-col sm:flex-row gap-3 mb-8 animate-hero" style={{ animationDelay: '240ms' }}>
+                <Link to="/generator"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-bold text-base text-white transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  style={{ background: 'linear-gradient(135deg,#25D366 0%,#128C7E 100%)', boxShadow: '0 8px 32px rgba(37,211,102,0.45)' }}>
+                  Send your first invoice, free <ArrowRight className="w-4 h-4" />
                 </Link>
-                <Link to="/setup" className="inline-flex items-center justify-center gap-2 text-slate-600 px-8 py-3.5 rounded-xl font-bold text-base border border-slate-200 bg-white/80 hover:bg-white hover:border-slate-300 transition-all">
-                  Sign up free
+                <Link to="/setup"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-bold text-base text-slate-300 transition-all hover:bg-white/10"
+                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  Sign up to save &amp; send
                 </Link>
               </div>
-              <div className="flex flex-wrap gap-x-5 gap-y-2">
-                {['Works in 30+ countries', 'No credit card needed', 'SMS + email too'].map(t => (
+
+              <div className="flex flex-wrap gap-x-5 gap-y-2 animate-hero" style={{ animationDelay: '320ms' }}>
+                {['Works on any phone','No credit card needed','30+ countries supported'].map(t => (
                   <div key={t} className="flex items-center gap-1.5 text-slate-500 text-sm">
-                    <CheckCircle className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                    <CheckCircle className="w-3.5 h-3.5 shrink-0" style={{ color: '#4ade80' }} />
                     {t}
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Right: WhatsApp phone mockup */}
-            <div className="hidden lg:flex items-center justify-center">
+            {/* Right: phone frame mockup with WhatsApp chat */}
+            <div className="hidden lg:flex items-center justify-center pt-6 animate-hero" style={{ animationDelay: '200ms' }}>
               <div className="relative">
-                <div className="absolute -inset-6 bg-emerald-100/60 rounded-3xl blur-2xl" />
-                <div className="relative w-64 bg-white rounded-3xl shadow-2xl shadow-slate-200 border-4 border-slate-800 overflow-hidden">
-                  {/* Phone status bar */}
-                  <div className="bg-slate-800 px-4 pt-2 pb-1 flex justify-between items-center">
-                    <span className="text-white text-[10px] font-bold">9:41</span>
-                    <div className="flex gap-1 items-center">
-                      <div className="w-3.5 h-2 rounded-sm border border-white/60 relative"><div className="absolute inset-[1px] right-1 bg-white/80 rounded-sm" /></div>
+                <div className="absolute -inset-16 rounded-full pointer-events-none"
+                  style={{ background: 'radial-gradient(ellipse at center,rgba(37,211,102,0.28) 0%,transparent 65%)' }} />
+                <div ref={tilt.ref} style={tilt.style} className="relative z-10 cursor-default">
+                  {/* Phone frame */}
+                  <div className="relative w-64 rounded-[40px] overflow-hidden"
+                    style={{ background: '#111b21', boxShadow: '0 40px 80px rgba(0,0,0,0.8), 0 0 0 2px rgba(255,255,255,0.08), inset 0 0 0 1px rgba(255,255,255,0.04)' }}>
+                    {/* Status bar */}
+                    <div className="flex items-center justify-between px-5 pt-3 pb-1" style={{ background: '#111b21' }}>
+                      <span className="text-[10px] text-white font-bold">9:41</span>
+                      <div className="w-20 h-4 rounded-full" style={{ background: '#1a1a2e' }} />
+                      <div className="flex items-center gap-1">
+                        <div className="w-4 h-2.5 rounded-sm border border-white/40 flex items-center pr-[1px] justify-end"><div className="w-2.5 h-1.5 rounded-sm bg-white/80" /></div>
+                      </div>
                     </div>
-                  </div>
-                  {/* WhatsApp header */}
-                  <div className="flex items-center gap-2.5 px-3 py-2.5" style={{ background: '#075E54' }}>
-                    <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-sm">K</div>
-                    <div>
-                      <div className="text-white text-xs font-semibold">Your Business</div>
-                      <div className="text-green-200 text-[10px]">online</div>
+                    {/* WhatsApp header */}
+                    <div className="flex items-center gap-2 px-3 py-2.5" style={{ background: '#202c33' }}>
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-black text-xs"
+                        style={{ background: 'linear-gradient(135deg,#25D366,#128C7E)' }}>K</div>
+                      <div className="flex-1">
+                        <div className="text-[11px] font-bold text-white">KraaFo Invoices</div>
+                        <div className="text-[9px]" style={{ color: '#8696a0' }}>online</div>
+                      </div>
+                      <MessageSquare className="w-4 h-4" style={{ color: '#8696a0' }} />
                     </div>
-                  </div>
-                  {/* Chat area */}
-                  <div className="px-3 py-3 space-y-2" style={{ background: '#e5ddd5', minHeight: '220px' }}>
-                    <div className="rounded-xl rounded-tl-sm px-3 py-2.5 shadow-sm" style={{ background: '#fff', maxWidth: '92%' }}>
-                      <p className="text-[11px] text-slate-800 leading-relaxed">
-                        Hi Kofi,<br /><br />
-                        Please find your invoice from <strong>Your Business</strong>.<br /><br />
-                        <strong>Invoice:</strong> INV-0042<br />
-                        <strong>Total:</strong> GHS 850.00<br />
-                        <strong>Due:</strong> 25 Jul 2026<br /><br />
-                        <span className="text-blue-500 underline">View &amp; download: kraafo.com/view/…</span>
-                      </p>
-                      <div className="text-right text-[9px] text-slate-400 mt-1">9:41 AM ✓✓</div>
+                    {/* Chat messages */}
+                    <div className="px-2 py-3 space-y-2 min-h-[260px]" style={{ background: '#0b141a', backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'100\' height=\'100\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3C/svg%3E")' }}>
+                      {/* Received */}
+                      <div className="flex justify-start">
+                        <div className="rounded-2xl rounded-tl-none px-3 py-2 max-w-[80%]" style={{ background: '#202c33' }}>
+                          <p className="text-[10px] text-white leading-tight">Hi! Can you send me the invoice for the plumbing job?</p>
+                          <p className="text-[8px] mt-1 text-right" style={{ color: '#8696a0' }}>9:30</p>
+                        </div>
+                      </div>
+                      {/* Sent */}
+                      <div className="flex justify-end">
+                        <div className="rounded-2xl rounded-tr-none px-3 py-2 max-w-[85%]" style={{ background: '#005c4b' }}>
+                          <div className="flex items-center gap-2 mb-1.5 p-1.5 rounded-lg" style={{ background: 'rgba(255,255,255,0.07)' }}>
+                            <div className="w-7 h-8 rounded flex items-center justify-center shrink-0" style={{ background: '#128C7E' }}>
+                              <span className="text-[8px] font-black text-white">PDF</span>
+                            </div>
+                            <div>
+                              <div className="text-[9px] font-bold text-white">Invoice #0042</div>
+                              <div className="text-[8px]" style={{ color: 'rgba(255,255,255,0.55)' }}>KraaFo · 54 KB</div>
+                            </div>
+                          </div>
+                          <p className="text-[10px] text-white leading-tight">Hi James — here's your invoice for the kitchen fix. Total: £340. Due 25 Jul.</p>
+                          <div className="flex items-center justify-end gap-1 mt-0.5">
+                            <p className="text-[8px]" style={{ color: 'rgba(255,255,255,0.55)' }}>9:41</p>
+                            <svg width="14" height="8" viewBox="0 0 14 8" fill="none"><path d="M1 4L4 7L9 1" stroke="#53bdeb" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M5 4L8 7L13 1" stroke="#53bdeb" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                          </div>
+                        </div>
+                      </div>
+                      {/* Received reply */}
+                      <div className="flex justify-start">
+                        <div className="rounded-2xl rounded-tl-none px-3 py-2 max-w-[70%]" style={{ background: '#202c33' }}>
+                          <p className="text-[10px] text-white leading-tight">Thanks! Paying now 👍</p>
+                          <p className="text-[8px] mt-1 text-right" style={{ color: '#8696a0' }}>9:43</p>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  {/* Message input bar */}
-                  <div className="px-2 py-2 flex items-center gap-2 bg-slate-100 border-t border-slate-200">
-                    <div className="flex-1 bg-white rounded-full px-3 py-1.5 text-[11px] text-slate-400">Message</div>
-                    <div className="w-7 h-7 rounded-full bg-emerald-500 flex items-center justify-center">
-                      <MessageSquare className="w-3.5 h-3.5 text-white" />
+                    {/* Input bar */}
+                    <div className="flex items-center gap-2 px-2 py-2" style={{ background: '#111b21' }}>
+                      <div className="flex-1 rounded-full px-3 py-1.5 text-[9px]" style={{ background: '#2a3942', color: '#8696a0' }}>Message</div>
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: '#00a884' }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                      </div>
                     </div>
                   </div>
                 </div>
-                <div className="absolute -bottom-3 right-2 bg-emerald-500 text-white text-[10px] font-black px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1">
-                  <CheckCircle className="w-3 h-3" /> Delivered
+                <div className="absolute -bottom-4 right-2 z-20 animate-float flex items-center gap-1.5 text-white text-[10px] font-black px-3 py-1.5 rounded-full"
+                  style={{ background: 'linear-gradient(135deg,#25D366,#128C7E)', boxShadow: '0 8px 24px rgba(37,211,102,0.55)' }}>
+                  <CheckCircle className="w-3 h-3" /> Delivered &amp; read
                 </div>
               </div>
             </div>
@@ -131,14 +192,25 @@ export default function WhatsappInvoicePage() {
         </div>
       </section>
 
-      {/* Social proof */}
-      <section className="py-6 px-6 bg-white border-b border-slate-100">
+      {/* ── Wave ── */}
+      <div style={{ background: '#020617', marginBottom: '-2px' }}>
+        <svg viewBox="0 0 1440 70" xmlns="http://www.w3.org/2000/svg" className="w-full block" preserveAspectRatio="none" style={{ height: 70 }}>
+          <path d="M0,0 C360,70 1080,0 1440,50 L1440,70 L0,70 Z" fill="white" />
+        </svg>
+      </div>
+
+      {/* ── Social proof ── */}
+      <section className="py-7 px-6 bg-white border-b border-slate-100">
         <div className="max-w-5xl mx-auto">
-          <p className="text-center text-xs font-bold text-slate-400 uppercase tracking-widest mb-5">Used by small businesses in 30+ countries</p>
-          <div className="flex flex-wrap items-center justify-center gap-6">
+          <p className="text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.14em] mb-5">
+            Used by small businesses in 30+ countries
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-7">
             {PORTRAITS.map(({ src, name, city, role }) => (
-              <div key={name} className="flex items-center gap-2.5">
-                <img src={src} alt={`${name}, ${role}, uses KraaFo`} className="w-10 h-10 rounded-full object-cover ring-2 ring-white shadow-sm" loading="lazy" />
+              <div key={name} className="flex items-center gap-3">
+                <img src={src} alt={`${name}, ${role}, uses KraaFo`}
+                  className="w-11 h-11 rounded-full object-cover shadow-md"
+                  style={{ border: '2.5px solid #bbf7d0' }} loading="lazy" />
                 <div>
                   <div className="text-xs font-bold text-slate-700">{name}</div>
                   <div className="text-[10px] text-slate-400">{city}</div>
@@ -149,109 +221,30 @@ export default function WhatsappInvoicePage() {
         </div>
       </section>
 
-      <section className="py-16 px-6 bg-white">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-3">How it works</h2>
-            <p className="text-slate-500 max-w-xl mx-auto">From blank to WhatsApp in under 60 seconds.</p>
+      {/* ── Features ── */}
+      <section className="py-20 px-6 bg-white">
+        <div ref={feat.ref} className="max-w-5xl mx-auto">
+          <div className="text-center mb-14">
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] mb-3" style={{ color: '#22c55e' }}>What you get</p>
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-3">Invoice by WhatsApp —<br className="hidden md:block" /> the way business works</h2>
+            <p className="text-slate-500 max-w-md mx-auto text-sm">Your clients live on WhatsApp. Send your invoice where they already are, and get paid faster.</p>
           </div>
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-5">
             {[
-              {
-                step: '1',
-                title: 'Create your invoice',
-                desc: 'Fill in your client name, services, and price. Smart Fill pre-populates line items for your trade. Logo upload extracts your brand colors automatically.',
-              },
-              {
-                step: '2',
-                title: 'Preview and confirm',
-                desc: 'See the branded PDF update in real time as you type. Adjust rates, add a discount, toggle tax, all in one screen.',
-              },
-              {
-                step: '3',
-                title: 'Send on WhatsApp',
-                desc: 'Tap "Send via WhatsApp". WhatsApp opens pre-filled with your invoice message and PDF link. Your client sees it immediately.',
-              },
-            ].map(({ step, title, desc }) => (
-              <div key={step} className="flex gap-4">
-                <div className="w-8 h-8 rounded-full bg-indigo-600 text-white text-sm font-black flex items-center justify-center shrink-0 mt-0.5">{step}</div>
-                <div>
-                  <div className="font-bold text-slate-800 mb-1">{title}</div>
-                  <p className="text-slate-500 text-sm leading-relaxed">{desc}</p>
+              { Icon: MessageSquare, bg: '#f0fdf4', ic: '#22c55e', title: 'Message pre-filled for you', desc: 'KraaFo writes the WhatsApp message and attaches the PDF. You confirm and tap Send. No composing, no copying.' },
+              { Icon: Globe,         bg: '#ecfdf5', ic: '#16a34a', title: 'Works in 30+ countries',     desc: 'Multi-currency support for GHS, NGN, KES, GBP, USD, BRL and more. Send invoices in the currency your client expects.' },
+              { Icon: Zap,           bg: '#eef2ff', ic: '#6366f1', title: 'SMS and email too',           desc: 'Use "Send via all channels" and KraaFo fires WhatsApp, SMS, and email simultaneously. Maximum reach, one tap.' },
+            ].map(({ Icon, bg, ic, title, desc }, i) => (
+              <div key={title}
+                className={`p-7 rounded-2xl border border-slate-100 group cursor-default transition-all duration-300 ${feat.on ? 'animate-fade-up opacity-100' : 'opacity-0'}`}
+                style={{ animationDelay: `${i * 110}ms` }}
+                onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = '#bbf7d0'; el.style.transform = 'translateY(-4px)'; el.style.boxShadow = '0 16px 48px rgba(34,197,94,0.12)'; }}
+                onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = ''; el.style.transform = ''; el.style.boxShadow = ''; }}>
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 transition-transform duration-200 group-hover:scale-110"
+                  style={{ background: bg }}>
+                  <Icon className="w-5 h-5" style={{ color: ic }} />
                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="py-16 px-6 bg-slate-50">
-        <div className="max-w-5xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-10 items-center">
-            <div>
-              <p className="text-xs font-bold text-indigo-500 uppercase tracking-widest mb-3">Why WhatsApp?</p>
-              <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-4">Your client already lives on WhatsApp</h2>
-              <p className="text-slate-500 leading-relaxed mb-6">
-                Email gets ignored. WhatsApp messages get opened. When you send an invoice by WhatsApp, your client sees it the moment it arrives. They tap the link, view the PDF, and can pay, all without leaving WhatsApp.
-              </p>
-              <ul className="space-y-3">
-                {[
-                  'WhatsApp message opens pre-filled. You confirm and send.',
-                  'Client gets a direct link to view and download the branded PDF',
-                  'Send SMS and email at the same time if you want',
-                  'Works in any country: GHS, NGN, USD, GBP, EUR and more',
-                ].map(item => (
-                  <li key={item} className="flex items-start gap-2 text-slate-600 text-sm">
-                    <CheckCircle className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
-              <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">What your client receives</div>
-              <div className="rounded-xl overflow-hidden border border-slate-100" style={{ background: '#e5ddd5' }}>
-                <div className="flex items-center gap-2.5 px-3 py-2.5" style={{ background: '#075E54' }}>
-                  <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-sm">K</div>
-                  <div>
-                    <div className="text-white text-xs font-semibold">Your Business</div>
-                    <div className="text-green-200 text-[10px]">WhatsApp message</div>
-                  </div>
-                </div>
-                <div className="p-3">
-                  <div className="rounded-xl rounded-tl-sm px-3 py-2.5 shadow-sm max-w-[90%]" style={{ background: '#fff' }}>
-                    <p className="text-[11px] text-slate-800 leading-relaxed">
-                      Hi Kofi,<br /><br />
-                      Please find your invoice from <strong>Your Business</strong>.<br /><br />
-                      <strong>Invoice:</strong> INV-0042<br />
-                      <strong>Total:</strong> GHS 850.00<br />
-                      <strong>Due:</strong> 25 Jul 2026<br /><br />
-                      <span className="text-blue-500 underline">View &amp; download: kraafo.com/view/…</span>
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="py-16 px-6 bg-white">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-10">
-            <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-3">Works everywhere your clients are</h2>
-          </div>
-          <div className="grid md:grid-cols-3 gap-6">
-            {[
-              { Icon: MessageSquare, color: 'text-emerald-600 bg-emerald-50', title: 'WhatsApp', desc: 'Opens pre-filled. Client taps a link to view and download the PDF.' },
-              { Icon: Zap, color: 'text-sky-600 bg-sky-50', title: 'SMS', desc: 'Works on any phone, no app. Reaches clients without smartphones.' },
-              { Icon: Globe, color: 'text-indigo-600 bg-indigo-50', title: 'Email', desc: 'Sends automatically with the PDF attached. Arrives in seconds.' },
-            ].map(({ Icon, color, title, desc }) => (
-              <div key={title} className="p-6 rounded-2xl border border-slate-100 hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-50 transition-all">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${color}`}>
-                  <Icon className="w-5 h-5" />
-                </div>
-                <h3 className="font-bold text-slate-800 mb-2">{title}</h3>
+                <h3 className="font-bold text-slate-800 mb-2 text-sm">{title}</h3>
                 <p className="text-slate-500 text-sm leading-relaxed">{desc}</p>
               </div>
             ))}
@@ -259,29 +252,73 @@ export default function WhatsappInvoicePage() {
         </div>
       </section>
 
-      <section className="py-16 px-6 bg-slate-50">
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              '@context': 'https://schema.org',
-              '@type': 'FAQPage',
-              mainEntity: faqs.map(({ q, a }) => ({
-                '@type': 'Question',
-                name: q,
-                acceptedAnswer: { '@type': 'Answer', text: a },
-              })),
-            }),
-          }}
-        />
-        <div className="max-w-3xl mx-auto">
+      {/* ── Steps ── */}
+      <section className="py-20 px-6 bg-slate-50">
+        <div ref={steps.ref} className="max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div className={steps.on ? 'animate-fade-up' : 'opacity-0'}>
+              <p className="text-[10px] font-black uppercase tracking-[0.14em] mb-3" style={{ color: '#22c55e' }}>Invoice by WhatsApp in 3 steps</p>
+              <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-4">Send a professional invoice<br />in under a minute</h2>
+              <p className="text-slate-500 leading-relaxed mb-6 text-sm">
+                Most businesses send invoices by email and wait. KraaFo puts your invoice in the app your client checks 50 times a day.
+              </p>
+              <ul className="space-y-3">
+                {['Pre-filled WhatsApp message, you just tap Send','PDF attached automatically','Works with any WhatsApp number, no API needed','Track open status and payment'].map(item => (
+                  <li key={item} className="flex items-center gap-2.5 text-slate-600 text-sm">
+                    <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-[10px] text-white font-black"
+                      style={{ background: 'linear-gradient(135deg,#25D366,#128C7E)' }}>✓</div>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className={`bg-white rounded-2xl border border-slate-100 p-7 shadow-sm ${steps.on ? 'animate-fade-up' : 'opacity-0'}`}
+              style={{ animationDelay: '130ms' }}>
+              {[
+                { n:'1', t:'Create your invoice', d:'Fill in client details and services. KraaFo pre-fills line items for your industry and builds the branded PDF.' },
+                { n:'2', t:'Tap "Send via WhatsApp"', d:'KraaFo opens WhatsApp with your message pre-filled and the PDF ready to attach. You tap Send.' },
+                { n:'3', t:'Get paid', d:'Your client sees your invoice in their WhatsApp. No email spam filters, no missed attachments. Just a clear message in an app they use all day.' },
+              ].map(({ n, t, d }) => (
+                <div key={n} className="flex gap-4 mb-6 last:mb-0">
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-black text-white"
+                    style={{ background: 'linear-gradient(135deg,#25D366,#128C7E)' }}>{n}</div>
+                  <div>
+                    <div className="font-bold text-slate-800 text-sm mb-1">{t}</div>
+                    <div className="text-slate-500 text-xs leading-relaxed">{d}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── FAQ ── */}
+      <section className="py-20 px-6 bg-white">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          '@context':'https://schema.org','@type':'FAQPage',
+          mainEntity:[
+            { '@type':'Question',name:'How do I send an invoice by WhatsApp?',acceptedAnswer:{'@type':'Answer',text:'Create your invoice in KraaFo, then tap "Send via WhatsApp." KraaFo opens WhatsApp with your message pre-filled and the PDF ready. You confirm and tap Send.'} },
+            { '@type':'Question',name:'Do I need a WhatsApp Business account?',acceptedAnswer:{'@type':'Answer',text:'No. KraaFo works with any WhatsApp account — personal or Business. No API access or special setup required.'} },
+            { '@type':'Question',name:'Can I send the invoice by SMS and email too?',acceptedAnswer:{'@type':'Answer',text:'Yes. Use "Send via all channels" and KraaFo sends WhatsApp, SMS, and email in one action. Or send each channel separately.'} },
+            { '@type':'Question',name:'What countries does WhatsApp invoicing work in?',acceptedAnswer:{'@type':'Answer',text:'Anywhere WhatsApp is used. KraaFo supports 30+ currencies including GHS, NGN, KES, GBP, USD, EUR, BRL, and more.'} },
+          ],
+        }) }} />
+        <div ref={faq.ref} className="max-w-3xl mx-auto">
           <div className="text-center mb-10">
-            <p className="text-xs font-bold text-indigo-500 uppercase tracking-widest mb-3">FAQ</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] mb-3" style={{ color: '#22c55e' }}>FAQ</p>
             <h2 className="text-2xl font-black text-slate-900 tracking-tight">Frequently asked questions</h2>
           </div>
           <div className="space-y-3">
-            {faqs.map(({ q, a }) => (
-              <details key={q} className="group bg-white rounded-2xl border border-slate-100 px-5 py-4 cursor-pointer">
+            {[
+              { q:'How do I send an invoice by WhatsApp?', a:'Create your invoice in KraaFo, then tap "Send via WhatsApp." KraaFo opens WhatsApp with your message pre-filled and the PDF ready. You confirm and tap Send.' },
+              { q:'Do I need a WhatsApp Business account?', a:'No. KraaFo works with any WhatsApp account — personal or Business. No API access or special setup required.' },
+              { q:'Can I send the invoice by SMS and email too?', a:'Yes. Use "Send via all channels" and KraaFo sends WhatsApp, SMS, and email in one action. Or send each channel separately.' },
+              { q:'What countries does WhatsApp invoicing work in?', a:'Anywhere WhatsApp is used. KraaFo supports 30+ currencies including GHS, NGN, KES, GBP, USD, EUR, BRL, and more.' },
+            ].map(({ q, a }, i) => (
+              <details key={q}
+                className={`group rounded-2xl border border-slate-100 px-6 py-4 cursor-pointer bg-slate-50 hover:border-green-200 hover:bg-white transition-all ${faq.on ? 'animate-fade-up' : 'opacity-0'}`}
+                style={{ animationDelay: `${i * 80}ms` }}>
                 <summary className="flex items-center justify-between font-bold text-slate-800 text-sm list-none select-none">
                   {q}
                   <span className="ml-3 text-slate-400 group-open:rotate-45 transition-transform duration-200 shrink-0 text-lg leading-none">+</span>
@@ -293,31 +330,43 @@ export default function WhatsappInvoicePage() {
         </div>
       </section>
 
-      <section className="py-16 px-6 text-center bg-white">
-        <div className="max-w-lg mx-auto">
-          <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Ready to send your first WhatsApp invoice?</h2>
-          <p className="text-slate-500 mb-6">Free to create and download. Sign up free to send.</p>
-          <Link to="/generator" className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3.5 rounded-xl font-bold text-base transition-all shadow-lg shadow-indigo-200">
-            Create your first invoice, free <ArrowRight className="w-4 h-4" />
+      {/* ── CTA ── */}
+      <section className="py-24 px-6 text-center relative overflow-hidden" style={{ background: '#020617' }}>
+        <div className="absolute inset-0 pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse 65% 55% at 50% 50%,rgba(37,211,102,0.18) 0%,transparent 70%)' }} />
+        <div className="absolute top-0 left-0 right-0 pointer-events-none">
+          <svg viewBox="0 0 1440 70" xmlns="http://www.w3.org/2000/svg" className="w-full block" preserveAspectRatio="none" style={{ height: 70, transform: 'rotate(180deg)' }}>
+            <path d="M0,0 C360,70 1080,0 1440,50 L1440,70 L0,70 Z" fill="white" />
+          </svg>
+        </div>
+        <div className="relative z-10 max-w-lg mx-auto pt-8">
+          <h2 className="text-3xl font-black tracking-tight mb-3 bg-clip-text text-transparent"
+            style={{ backgroundImage: 'linear-gradient(135deg,white 0%,#86efac 100%)' }}>
+            Send your first invoice by WhatsApp
+          </h2>
+          <p className="text-slate-500 mb-8 leading-relaxed">Create an invoice, send by WhatsApp. Free, no credit card needed.</p>
+          <Link to="/generator"
+            className="inline-flex items-center gap-2.5 text-white px-10 py-4 rounded-xl font-bold text-base transition-all hover:scale-[1.03] active:scale-[0.97]"
+            style={{ background: 'linear-gradient(135deg,#25D366 0%,#128C7E 100%)', boxShadow: '0 8px 40px rgba(37,211,102,0.5)' }}>
+            Send your first invoice, free <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </section>
 
-      <footer className="border-t border-slate-100 py-8 px-6 bg-white">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <Link to="/"><Logo size="lg" /></Link>
-            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
-              <Link to="/" className="text-xs text-slate-400 hover:text-indigo-600 transition-colors font-medium">Home</Link>
-              <span className="text-slate-200 hidden sm:inline">·</span>
-              <Link to="/invoice-generator" className="text-xs text-slate-400 hover:text-indigo-600 transition-colors font-medium">Invoice Generator</Link>
-              <span className="text-slate-200 hidden sm:inline">·</span>
-              <Link to="/receipt-generator" className="text-xs text-slate-400 hover:text-indigo-600 transition-colors font-medium">Receipt Maker</Link>
-              <span className="text-slate-200 hidden sm:inline">·</span>
-              <Link to="/quote-generator" className="text-xs text-slate-400 hover:text-indigo-600 transition-colors font-medium">Quote Generator</Link>
-            </div>
-            <p className="text-xs text-slate-300 font-medium">© {new Date().getFullYear()} KraaFo</p>
+      {/* ── Footer ── */}
+      <footer className="px-6 py-8 border-t" style={{ background: '#020617', borderColor: 'rgba(255,255,255,0.06)' }}>
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <Link to="/"><Logo size="lg" dark /></Link>
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+            <Link to="/" className="text-xs text-slate-500 hover:text-slate-300 transition-colors font-medium">Home</Link>
+            <span className="text-slate-700 hidden sm:inline">·</span>
+            <Link to="/invoice-generator" className="text-xs text-slate-500 hover:text-slate-300 transition-colors font-medium">Invoice Generator</Link>
+            <span className="text-slate-700 hidden sm:inline">·</span>
+            <Link to="/receipt-generator" className="text-xs text-slate-500 hover:text-slate-300 transition-colors font-medium">Receipt Maker</Link>
+            <span className="text-slate-700 hidden sm:inline">·</span>
+            <Link to="/generator" className="text-xs text-slate-500 hover:text-slate-300 transition-colors font-medium">Start Free</Link>
           </div>
+          <p className="text-xs font-medium" style={{ color: 'rgba(255,255,255,0.2)' }}>© {new Date().getFullYear()} KraaFo</p>
         </div>
       </footer>
 
