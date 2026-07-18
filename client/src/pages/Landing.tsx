@@ -370,7 +370,8 @@ function HeroCrossfade() {
 
   return (
     <div
-      className="relative w-full overflow-hidden rounded-3xl shadow-2xl shadow-slate-300/50"
+      className="relative w-full overflow-hidden rounded-3xl"
+      style={{ boxShadow: '0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06)' }}
       style={{ maxHeight: '680px', aspectRatio: '3/4' }}
     >
       {PORTRAITS.map((p, i) => (
@@ -428,7 +429,7 @@ function FooterUpdatesLine() {
 
   if (state === 'done') {
     return (
-      <div className="border-t border-slate-100 pt-4 text-center text-xs text-slate-400">
+      <div className="pt-4 text-center text-xs" style={{ borderTop: '1px solid rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.3)' }}>
         <CheckCircle className="inline w-3.5 h-3.5 text-emerald-500 mr-1 -mt-0.5" />
         You're subscribed. We'll keep you posted.
       </div>
@@ -436,15 +437,17 @@ function FooterUpdatesLine() {
   }
 
   return (
-    <form onSubmit={submit} className="border-t border-slate-100 pt-4 flex flex-col sm:flex-row items-center justify-center gap-2">
-      <label htmlFor="footer-email" className="text-xs text-slate-400 shrink-0">Get product updates</label>
+    <form onSubmit={submit} className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+      <label htmlFor="footer-email" className="text-xs font-medium shrink-0" style={{ color: 'rgba(255,255,255,0.3)' }}>Get product updates</label>
       <input
         id="footer-email" name="email"
         type="email" required value={email} onChange={e => setEmail(e.target.value)}
         placeholder="your@email.com"
-        className="text-xs px-3 py-1.5 border border-slate-200 rounded-lg w-48 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+        className="text-xs px-3 py-1.5 rounded-lg w-48 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)' }}
       />
-      <button type="submit" disabled={state === 'loading'} className="text-xs px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg font-medium transition-colors disabled:opacity-60">
+      <button type="submit" disabled={state === 'loading'} className="text-xs px-3 py-1.5 rounded-lg font-medium transition-colors disabled:opacity-60"
+        style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)' }}>
         {state === 'loading' ? 'Joining…' : 'Subscribe'}
       </button>
     </form>
@@ -477,13 +480,14 @@ export default function Landing() {
     <div className="min-h-screen bg-white overflow-x-hidden">
 
       {/* Nav */}
-      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-100">
+      <nav className="sticky top-0 z-50 border-b" style={{ background: 'rgba(2,6,23,0.9)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderColor: 'rgba(255,255,255,0.06)' }}>
         <div className="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between">
-          <Logo size="lg" />
+          <Logo size="lg" dark />
           <div className="flex items-center gap-3">
-            <Link to="/generator?demo=true" className="text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors hidden sm:block">Demo</Link>
-            <Link to="/login" className="text-sm font-bold text-slate-600 hover:text-indigo-600 transition-colors hidden sm:block">Sign in</Link>
-            <Link to="/setup" className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all btn-glow shadow-sm">
+            <Link to="/generator?demo=true" className="text-sm font-semibold text-slate-400 hover:text-white transition-colors hidden sm:block">Demo</Link>
+            <Link to="/login" className="text-sm font-bold text-slate-400 hover:text-white transition-colors hidden sm:block">Sign in</Link>
+            <Link to="/setup" className="flex items-center gap-2 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all hover:scale-[1.02]"
+              style={{ background: 'linear-gradient(135deg,#6366f1 0%,#7c3aed 100%)', boxShadow: '0 4px 20px rgba(99,102,241,0.4)' }}>
               Get Started <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
@@ -491,9 +495,15 @@ export default function Landing() {
       </nav>
 
       {/* ── Hero ─────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-white via-indigo-50/40 to-violet-50/30 pt-12 pb-0 px-6">
-        {/* Subtle dot-grid */}
-        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #e2e8f0 1px, transparent 1px)', backgroundSize: '32px 32px', opacity: 0.5 }} />
+      <section className="relative overflow-hidden pt-12 pb-0 px-6" style={{ background: '#020617' }}>
+        {/* Soft ambient glow — behind the text column only */}
+        <div className="absolute top-0 left-0 w-[700px] h-[700px] pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse at 20% 40%,rgba(99,102,241,0.18) 0%,transparent 65%)' }} />
+        <div className="absolute bottom-0 left-1/4 w-[400px] h-[400px] pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse at center,rgba(139,92,246,0.1) 0%,transparent 70%)' }} />
+        {/* Dot grid */}
+        <div className="absolute inset-0 pointer-events-none"
+          style={{ backgroundImage: 'radial-gradient(circle,rgba(255,255,255,0.06) 1px,transparent 1px)', backgroundSize: '36px 36px' }} />
 
         <div className="relative max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center lg:min-h-[88vh] pb-16 lg:pb-20">
@@ -501,40 +511,46 @@ export default function Landing() {
             {/* ── Left: Text ───────────────────────────────── */}
             <div className="relative z-10 pt-6 lg:pt-0">
 
-              {/* Trust bullets */}
-              <div className="flex flex-wrap gap-x-5 gap-y-2 mb-7 animate-hero">
-                {['Free to use', 'No credit card', 'Sends via WhatsApp, SMS & email'].map(t => (
-                  <div key={t} className="flex items-center gap-1.5 text-slate-500 text-sm">
-                    <CheckCircle className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
-                    {t}
-                  </div>
-                ))}
+              {/* Live badge */}
+              <div className="inline-flex items-center gap-2.5 text-xs font-black uppercase tracking-widest px-4 py-2 rounded-full mb-7 animate-hero"
+                style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.25)', color: '#a5b4fc' }}>
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: '#818cf8' }} />
+                  <span className="relative inline-flex h-2 w-2 rounded-full" style={{ background: '#818cf8' }} />
+                </span>
+                Free · WhatsApp · SMS · Email
               </div>
 
-              <h1 className="text-[2.5rem] sm:text-5xl md:text-[58px] lg:text-[64px] font-black text-slate-900 tracking-tight leading-[1.08] lg:leading-[1.03] mb-6 animate-hero delay-100">
-                Free invoice generator &amp; receipt maker.{' '}
-                <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)' }}>
+              <h1 className="text-[2.5rem] sm:text-5xl md:text-[58px] lg:text-[62px] font-black tracking-tight leading-[1.06] mb-6 animate-hero" style={{ animationDelay: '80ms' }}>
+                <span className="text-white">Free invoice generator &amp; receipt maker. </span>
+                <span className="animate-grad-text" style={{ backgroundImage: 'linear-gradient(135deg,#a5b4fc 0%,#c4b5fd 50%,#93c5fd 100%)' }}>
                   Get paid without chasing.
                 </span>
               </h1>
 
-              <p className="text-lg text-slate-500 mb-8 leading-relaxed max-w-lg animate-hero delay-200">
-                Create professional invoices in under a minute. <strong className="text-slate-700 font-semibold">Download free, no account needed.</strong> Sign up free to save your work and send by WhatsApp, SMS, or email. All three at once, or just the one your client uses.
+              <p className="text-lg text-slate-400 mb-8 leading-relaxed max-w-lg animate-hero" style={{ animationDelay: '160ms' }}>
+                Create professional invoices in under a minute.{' '}
+                <span className="text-slate-200 font-semibold">Download free, no account needed.</span>{' '}
+                Sign up free to send by WhatsApp, SMS, or email — all three at once, or just the one your client uses.
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-3 mb-8 animate-hero delay-300">
-                <Link to="/setup" className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3.5 rounded-xl font-bold text-base transition-all shadow-lg shadow-indigo-200 btn-glow">
+              <div className="flex flex-col sm:flex-row gap-3 mb-8 animate-hero" style={{ animationDelay: '240ms' }}>
+                <Link to="/setup"
+                  className="flex items-center justify-center gap-2 text-white px-8 py-3.5 rounded-xl font-bold text-base transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  style={{ background: 'linear-gradient(135deg,#6366f1 0%,#7c3aed 100%)', boxShadow: '0 8px 32px rgba(99,102,241,0.45)' }}>
                   Create your first invoice, free <ArrowRight className="w-4 h-4" />
                 </Link>
-                <Link to="/generator?demo=true" className="flex items-center justify-center gap-2 text-slate-600 px-8 py-3.5 rounded-xl font-bold text-base border border-slate-200 bg-white/80 hover:bg-white hover:border-slate-300 transition-all">
+                <Link to="/generator?demo=true"
+                  className="flex items-center justify-center gap-2 text-slate-300 px-8 py-3.5 rounded-xl font-bold text-base transition-all hover:bg-white/10"
+                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
                   Try without signing up
                 </Link>
               </div>
 
-              <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm animate-hero delay-400">
+              <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm animate-hero" style={{ animationDelay: '320ms' }}>
                 {['Download free, no sign-up', 'Sign up free to send', '12+ industries', 'Works worldwide'].map(t => (
                   <div key={t} className="flex items-center gap-1.5 text-slate-500">
-                    <CheckCircle className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                    <CheckCircle className="w-3.5 h-3.5 shrink-0" style={{ color: '#818cf8' }} />
                     {t}
                   </div>
                 ))}
@@ -542,7 +558,7 @@ export default function Landing() {
             </div>
 
             {/* ── Right: Living portrait crossfade ── */}
-            <div className="animate-hero delay-200 mt-6 lg:mt-0">
+            <div className="animate-hero mt-6 lg:mt-0" style={{ animationDelay: '120ms' }}>
               <HeroCrossfade />
             </div>
 
@@ -550,6 +566,13 @@ export default function Landing() {
         </div>
 
       </section>
+
+      {/* ── Wave: dark → white ── */}
+      <div style={{ background: '#020617', marginBottom: '-2px' }}>
+        <svg viewBox="0 0 1440 70" xmlns="http://www.w3.org/2000/svg" className="w-full block" preserveAspectRatio="none" style={{ height: 70 }}>
+          <path d="M0,0 C360,70 1080,0 1440,50 L1440,70 L0,70 Z" fill="white" />
+        </svg>
+      </div>
 
       {/* ── Pain section ─────────────────────────────────────── */}
       <section className="py-16 px-6 bg-white">
@@ -872,36 +895,49 @@ export default function Landing() {
       </section>
 
       {/* ── CTA ─────────────────────────────────────────────── */}
-      <section className="py-16 px-6 text-center bg-white">
-        <div className="max-w-lg mx-auto">
-          <LogoMark size={96} className="mx-auto mb-6 animate-float" />
-          <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Ready to send your first document?</h2>
-          <p className="text-slate-500 mb-7 leading-relaxed">Takes under 2 minutes to set up. Free to use, no credit card needed.</p>
-          <Link to="/setup" className="inline-flex items-center gap-2.5 bg-indigo-600 hover:bg-indigo-700 text-white px-10 py-3.5 rounded-xl font-bold text-base transition-all shadow-2xl shadow-indigo-200 btn-glow">
+      <section className="py-24 px-6 text-center relative overflow-hidden" style={{ background: '#020617' }}>
+        <div className="absolute inset-0 pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse 60% 55% at 50% 50%,rgba(99,102,241,0.2) 0%,transparent 70%)' }} />
+        <div className="absolute top-0 left-0 right-0 pointer-events-none">
+          <svg viewBox="0 0 1440 70" xmlns="http://www.w3.org/2000/svg" className="w-full block" preserveAspectRatio="none" style={{ height: 70, transform: 'rotate(180deg)' }}>
+            <path d="M0,0 C360,70 1080,0 1440,50 L1440,70 L0,70 Z" fill="#f8fafc" />
+          </svg>
+        </div>
+        <div className="relative z-10 max-w-lg mx-auto pt-8">
+          <LogoMark size={72} className="mx-auto mb-6 animate-float opacity-90" />
+          <h2 className="text-3xl font-black tracking-tight mb-3 bg-clip-text text-transparent"
+            style={{ backgroundImage: 'linear-gradient(135deg,white 0%,#c4b5fd 100%)' }}>
+            Ready to send your first document?
+          </h2>
+          <p className="text-slate-500 mb-8 leading-relaxed">Takes under 2 minutes to set up. Free, no credit card needed.</p>
+          <Link to="/setup"
+            className="inline-flex items-center gap-2.5 text-white px-10 py-4 rounded-xl font-bold text-base transition-all hover:scale-[1.03] active:scale-[0.97]"
+            style={{ background: 'linear-gradient(135deg,#6366f1 0%,#7c3aed 100%)', boxShadow: '0 8px 40px rgba(99,102,241,0.5)' }}>
             Create your first invoice, free <ArrowRight className="w-4 h-4" />
           </Link>
+          <p className="text-slate-600 text-xs mt-4 font-semibold">Free to use · No credit card · 2-minute setup</p>
         </div>
       </section>
 
       {/* ── Footer ──────────────────────────────────────────── */}
-      <footer className="border-t border-slate-100 py-8 px-6 bg-white">
+      <footer className="border-t py-8 px-6" style={{ background: '#020617', borderColor: 'rgba(255,255,255,0.06)' }}>
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
-            <Logo size="lg" />
+            <Logo size="lg" dark />
             <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
-              <Link to="/invoice-generator" className="text-xs text-slate-400 hover:text-indigo-600 transition-colors font-medium">Invoice Generator</Link>
-              <span className="text-slate-200 hidden sm:inline">·</span>
-              <Link to="/receipt-generator" className="text-xs text-slate-400 hover:text-indigo-600 transition-colors font-medium">Receipt Maker</Link>
-              <span className="text-slate-200 hidden sm:inline">·</span>
-              <Link to="/quote-generator" className="text-xs text-slate-400 hover:text-indigo-600 transition-colors font-medium">Quote Generator</Link>
-              <span className="text-slate-200 hidden sm:inline">·</span>
-              <Link to="/changelog" className="text-xs text-slate-400 hover:text-indigo-600 transition-colors font-medium">What's New</Link>
-              <span className="text-slate-200 hidden sm:inline">·</span>
-              <a href="mailto:kraafo.invoice.receipt@gmail.com" className="text-xs text-slate-400 hover:text-indigo-600 transition-colors font-medium">
-                Questions? kraafo.invoice.receipt@gmail.com
+              <Link to="/invoice-generator" className="text-xs text-slate-500 hover:text-slate-300 transition-colors font-medium">Invoice Generator</Link>
+              <span className="text-slate-700 hidden sm:inline">·</span>
+              <Link to="/receipt-generator" className="text-xs text-slate-500 hover:text-slate-300 transition-colors font-medium">Receipt Maker</Link>
+              <span className="text-slate-700 hidden sm:inline">·</span>
+              <Link to="/quote-generator" className="text-xs text-slate-500 hover:text-slate-300 transition-colors font-medium">Quote Generator</Link>
+              <span className="text-slate-700 hidden sm:inline">·</span>
+              <Link to="/changelog" className="text-xs text-slate-500 hover:text-slate-300 transition-colors font-medium">What's New</Link>
+              <span className="text-slate-700 hidden sm:inline">·</span>
+              <a href="mailto:kraafo.invoice.receipt@gmail.com" className="text-xs text-slate-500 hover:text-slate-300 transition-colors font-medium">
+                kraafo.invoice.receipt@gmail.com
               </a>
             </div>
-            <p className="text-xs text-slate-300 font-medium">© {new Date().getFullYear()} KraaFo</p>
+            <p className="text-xs font-medium" style={{ color: 'rgba(255,255,255,0.2)' }}>© {new Date().getFullYear()} KraaFo</p>
           </div>
           <FooterUpdatesLine />
         </div>
