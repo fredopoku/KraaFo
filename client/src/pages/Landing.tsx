@@ -371,8 +371,7 @@ function HeroCrossfade() {
   return (
     <div
       className="relative w-full overflow-hidden rounded-3xl"
-      style={{ boxShadow: '0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06)' }}
-      style={{ maxHeight: '680px', aspectRatio: '3/4' }}
+      style={{ maxHeight: '680px', aspectRatio: '3/4', boxShadow: '0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06)' }}
     >
       {PORTRAITS.map((p, i) => (
         <div
@@ -904,7 +903,7 @@ export default function Landing() {
           </svg>
         </div>
         <div className="relative z-10 max-w-lg mx-auto pt-8">
-          <LogoMark size={72} className="mx-auto mb-6 animate-float opacity-90" />
+          <LogoMark size={72} className="mx-auto mb-6 animate-float opacity-90" dark />
           <h2 className="text-3xl font-black tracking-tight mb-3 bg-clip-text text-transparent"
             style={{ backgroundImage: 'linear-gradient(135deg,white 0%,#c4b5fd 100%)' }}>
             Ready to send your first document?

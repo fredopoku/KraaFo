@@ -341,7 +341,7 @@ export default function GhanaInvoicePage() {
             <span className="text-slate-700 hidden sm:inline">·</span>
             <Link to="/invoice-generator" className="text-xs text-slate-500 hover:text-slate-300 transition-colors font-medium">Invoice Generator</Link>
             <span className="text-slate-700 hidden sm:inline">·</span>
-            <Link to="/whatsapp-invoice" className="text-xs text-slate-500 hover:text-slate-300 transition-colors font-medium">WhatsApp Invoice</Link>
+            <Link to="/whatsapp-invoice-generator" className="text-xs text-slate-500 hover:text-slate-300 transition-colors font-medium">WhatsApp Invoice</Link>
             <span className="text-slate-700 hidden sm:inline">·</span>
             <Link to="/generator" className="text-xs text-slate-500 hover:text-slate-300 transition-colors font-medium">Start Free</Link>
           </div>
