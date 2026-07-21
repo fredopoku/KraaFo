@@ -104,6 +104,11 @@
 - **Broadcast Composer** — in the dashboard, write a subject and message body and send to all active subscribers in one click; supports multi-paragraph plain-text formatting
 - **Send History** — recent broadcasts shown below the composer with subject line and recipient count
 
+### SEO Landing Pages
+- **6 targeted landing pages** — dedicated pages for invoice generator, receipt generator, quote generator, WhatsApp invoice, Ghana invoice (GHS + MTN MoMo), and freelance invoice; each has a unique colour theme, live 3D invoice card mockup (mouse-driven perspective tilt), animated gradient blobs, scroll-triggered section reveals, and social proof
+- **Dark hero** — `#020617` background with radial gradient blobs, white dot grid, pulsing live badge, and an animated gradient headline across all landing pages and the main marketing page
+- **Live mockup cards** — 3D-tilting invoice/receipt/quote mockups using a `mousemove` perspective hook to demonstrate the product without requiring sign-up
+
 ### What's New / Changelog
 - **In-app changelog** — users see recent feature releases on the landing page and dashboard
 - **Admin-managed** — publish and remove entries from the admin panel; no redeployment needed
@@ -241,21 +246,34 @@ KraaFo/
 │   │   └── manifest.json            # Web App Manifest (home screen icon)
 │   └── src/
 │       ├── components/
-│       │   ├── Logo.tsx             # KraaFo logo component
+│       │   ├── Logo.tsx             # KraaFo logo component (supports dark prop for inverted logo)
 │       │   ├── SignaturePad.tsx     # Draw / upload signature modal
+│       │   ├── StoryPlayer.tsx      # WhatsApp-Status style story player for the landing page
 │       │   └── Turnstile.tsx        # Cloudflare Turnstile widget (reusable)
 │       ├── pages/
-│       │   ├── Landing.tsx          # Marketing page + feedback widget + newsletter signup
+│       │   ├── Landing.tsx          # Marketing page — dark hero, animated blobs, crossfade portraits, feedback widget, newsletter
 │       │   ├── Setup.tsx            # Organisation setup wizard (Turnstile gate for new users)
+│       │   ├── Login.tsx            # Sign-in page
+│       │   ├── Join.tsx             # Team invite / join page
 │       │   ├── Dashboard.tsx        # Business overview + feedback panel + broadcast composer
 │       │   ├── Generator.tsx        # Invoice / receipt / quote builder
+│       │   ├── InvoiceView.tsx      # Hosted invoice preview (shareable via WhatsApp / SMS link)
 │       │   ├── Admin.tsx            # Admin dashboard — users, analytics, feedback, subscribers
 │       │   ├── Clients.tsx          # Client address book
 │       │   ├── Quotes.tsx           # Quotes list + status management
+│       │   ├── Trash.tsx            # Recycle bin — soft-deleted documents with restore
+│       │   ├── Team.tsx             # Team member management
 │       │   ├── Changelog.tsx        # What's New page
-│       │   └── Unsubscribe.tsx      # Email unsubscribe confirmation page
+│       │   ├── Unsubscribe.tsx      # Email unsubscribe confirmation page
+│       │   ├── InvoiceGeneratorPage.tsx   # SEO landing — invoice generator (indigo/violet theme)
+│       │   ├── ReceiptGeneratorPage.tsx   # SEO landing — receipt generator (emerald theme)
+│       │   ├── QuoteGeneratorPage.tsx     # SEO landing — quote generator (violet theme)
+│       │   ├── WhatsappInvoicePage.tsx    # SEO landing — WhatsApp invoice (green/WhatsApp theme)
+│       │   ├── GhanaInvoicePage.tsx       # SEO landing — Ghana invoice / GHS + MTN MoMo (indigo/amber)
+│       │   └── FreelanceInvoicePage.tsx   # SEO landing — freelance invoice (violet/fuchsia theme)
 │       ├── hooks/
-│       │   └── useOrg.ts            # Organisation data hook
+│       │   ├── useOrg.ts            # Organisation data hook
+│       │   └── use3DTilt.ts         # Mouse-driven 3D perspective tilt for invoice card mockups
 │       └── utils/
 │           ├── api.ts               # Typed API client (incl. mobile PDF + community APIs)
 │           ├── cn.ts                # Tailwind class helper
@@ -426,6 +444,7 @@ Server-side verification uses the `TURNSTILE_SECRET` environment variable. If th
 - [x] Security hardening (org isolation, CORS exact-match, HTTP security headers)
 - [x] Multi-device access (sign in from any browser or device — data lives on the server)
 - [x] SEO pre-rendering (landing page, generator, changelog served as static HTML at build time)
+- [x] 6 SEO long-tail landing pages with dark hero, 3D tilt mockups, and scroll-triggered reveals
 - [ ] Stripe / PayPal payment link integration
 - [ ] Client portal (view & pay invoices online)
 - [ ] Feature request voting board
