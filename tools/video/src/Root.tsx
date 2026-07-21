@@ -5,8 +5,9 @@ import { VideoConfig } from '../configs/types';
 import invoiceSixty from '../configs/invoice-60s';
 import sendAllChannels from '../configs/send-all-channels';
 import sendModalCloseup from '../configs/send-modal-closeup';
+import fullDemo from '../configs/full-demo-75s';
 
-const allConfigs: VideoConfig[] = [invoiceSixty, sendAllChannels, sendModalCloseup];
+const allConfigs: VideoConfig[] = [invoiceSixty, sendAllChannels, sendModalCloseup, fullDemo];
 
 function totalFrames(cfg: VideoConfig) {
   return cfg.segments.reduce((sum, s) => sum + Math.round(s.durationSec * cfg.fps), 0);
