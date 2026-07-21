@@ -92,7 +92,7 @@ export default function Login() {
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                       <input
                         type="email" value={email} onChange={e => { setEmail(e.target.value); setError(''); }}
-                        placeholder="you@example.com" autoFocus required
+                        placeholder="you@example.com" autoFocus required autoComplete="email"
                         className="w-full pl-9 pr-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all"
                       />
                     </div>
@@ -104,7 +104,7 @@ export default function Login() {
                       <input
                         type={showPass ? 'text' : 'password'} value={password}
                         onChange={e => { setPassword(e.target.value); setError(''); }}
-                        placeholder="••••••••" required
+                        placeholder="••••••••" required autoComplete="current-password"
                         className="w-full pl-9 pr-10 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all"
                       />
                       <button type="button" onClick={() => setShowPass(v => !v)}
@@ -145,7 +145,7 @@ export default function Login() {
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                       <input type="email" value={email} onChange={e => { setEmail(e.target.value); setError(''); }}
-                        placeholder="you@example.com" autoFocus required
+                        placeholder="you@example.com" autoFocus required autoComplete="email"
                         className="w-full pl-9 pr-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all"
                       />
                     </div>
@@ -197,7 +197,7 @@ export default function Login() {
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                       <input type="email" value={email} onChange={e => { setEmail(e.target.value); setError(''); }}
-                        placeholder="you@example.com" required
+                        placeholder="you@example.com" required autoComplete="email"
                         className="w-full pl-9 pr-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all"
                       />
                     </div>
@@ -207,7 +207,7 @@ export default function Login() {
                     <input
                       type="text" inputMode="numeric" pattern="[0-9]{6}" maxLength={6}
                       value={resetCode} onChange={e => { setResetCode(e.target.value.replace(/\D/g, '')); setError(''); }}
-                      placeholder="123456" autoFocus required
+                      placeholder="123456" autoFocus required autoComplete="one-time-code"
                       className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm text-center font-mono font-bold tracking-widest focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all text-lg"
                     />
                   </div>
@@ -217,7 +217,7 @@ export default function Login() {
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                       <input type={showPass ? 'text' : 'password'} value={newPassword}
                         onChange={e => { setNewPassword(e.target.value); setError(''); }}
-                        placeholder="At least 8 characters" required
+                        placeholder="At least 8 characters" required autoComplete="new-password"
                         className="w-full pl-9 pr-10 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all"
                       />
                       <button type="button" onClick={() => setShowPass(v => !v)}
