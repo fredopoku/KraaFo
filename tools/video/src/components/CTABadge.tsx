@@ -1,5 +1,5 @@
 import React from 'react';
-import { useCurrentFrame, useVideoConfig, spring, interpolate } from 'remotion';
+import { Img, staticFile, useCurrentFrame, useVideoConfig, spring, interpolate } from 'remotion';
 
 export function CTABadge() {
   const frame = useCurrentFrame();
@@ -19,33 +19,33 @@ export function CTABadge() {
         opacity,
         display: 'flex',
         alignItems: 'center',
-        gap: 18,
-        background: 'rgba(12,12,18,0.70)',
+        gap: 20,
+        background: 'rgba(12,12,18,0.72)',
         border: '1px solid rgba(255,255,255,0.13)',
         borderRadius: 100,
-        padding: '18px 24px 18px 18px',
+        padding: '14px 28px 14px 14px',
         fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif',
         whiteSpace: 'nowrap',
       }}
     >
-      {/* Mini K logomark */}
+      {/* Logo in white rounded square — app-icon style */}
       <div
         style={{
-          width: 52,
-          height: 52,
-          borderRadius: 14,
-          background: '#4F46E5',
+          width: 64,
+          height: 64,
+          borderRadius: 16,
+          background: 'white',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           flexShrink: 0,
+          overflow: 'hidden',
         }}
       >
-        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-          <line x1="8" y1="3" x2="8" y2="25" stroke="white" strokeWidth="3.5" strokeLinecap="round" />
-          <line x1="8" y1="14" x2="21" y2="3" stroke="white" strokeWidth="3.5" strokeLinecap="round" />
-          <line x1="8" y1="14" x2="21" y2="25" stroke="white" strokeWidth="3.5" strokeLinecap="round" />
-        </svg>
+        <Img
+          src={staticFile('assets/krafo-logo.png')}
+          style={{ width: 56, height: 56, objectFit: 'contain' }}
+        />
       </div>
 
       {/* Text block */}

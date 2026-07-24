@@ -1,5 +1,5 @@
 import React from 'react';
-import { AbsoluteFill, useCurrentFrame, useVideoConfig, spring, interpolate } from 'remotion';
+import { AbsoluteFill, Img, staticFile, useCurrentFrame, useVideoConfig, spring, interpolate } from 'remotion';
 
 export function EndCard({ headline }: { headline: string }) {
   const frame = useCurrentFrame();
@@ -22,52 +22,23 @@ export function EndCard({ headline }: { headline: string }) {
         fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif',
       }}
     >
-      {/* Logo block: logomark + wordmark, spring animated together */}
+      {/* Logo card — white rounded rectangle, spring animated */}
       <div
         style={{
           transform: `scale(${logoScale})`,
+          background: 'white',
+          borderRadius: 48,
+          padding: '40px 56px',
+          boxShadow: '0 40px 100px rgba(0,0,0,0.35)',
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
-          gap: 28,
+          justifyContent: 'center',
         }}
       >
-        {/* Logomark — white rounded square with indigo K */}
-        <div
-          style={{
-            width: 168,
-            height: 168,
-            borderRadius: 40,
-            background: 'white',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 40px 100px rgba(0,0,0,0.35)',
-          }}
-        >
-          <svg width="92" height="92" viewBox="0 0 92 92" fill="none" xmlns="http://www.w3.org/2000/svg">
-            {/* Vertical stem */}
-            <line x1="26" y1="12" x2="26" y2="80" stroke="#4F46E5" strokeWidth="11" strokeLinecap="round" />
-            {/* Upper diagonal */}
-            <line x1="26" y1="46" x2="68" y2="12" stroke="#4F46E5" strokeWidth="11" strokeLinecap="round" />
-            {/* Lower diagonal */}
-            <line x1="26" y1="46" x2="68" y2="80" stroke="#4F46E5" strokeWidth="11" strokeLinecap="round" />
-          </svg>
-        </div>
-
-        {/* Wordmark */}
-        <p
-          style={{
-            color: 'white',
-            fontSize: 80,
-            fontWeight: 900,
-            letterSpacing: '-3px',
-            margin: 0,
-            lineHeight: 1,
-          }}
-        >
-          KraaFo
-        </p>
+        <Img
+          src={staticFile('assets/krafo-logo.png')}
+          style={{ width: 420, height: 'auto', objectFit: 'contain' }}
+        />
       </div>
 
       {/* Headline — fades + slides in */}
