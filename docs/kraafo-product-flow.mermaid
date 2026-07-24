@@ -1,0 +1,50 @@
+flowchart TD
+    subgraph ACQ[Acquisition]
+        A1[Google and Bing search - SEO pages] --> L
+        A2[Hosted invoice footer CTA] --> L
+        A3[WhatsApp groups, reels, partners] --> L
+        L[Landing page - tool above the fold]
+    end
+
+    subgraph CREATE[Create - no signup needed]
+        L --> B[Choose type: Invoice, Quote, Receipt]
+        B --> C[Fill details - profile autofill for members]
+        C --> D[Branding engine - logo upload and color extraction]
+        D --> E[Live preview]
+        E --> F[Download PDF - free, no account]
+    end
+
+    E --> G{Send it?}
+    G -- Guest --> H[Signup gate at send step - verify email]
+    H --> I
+    G -- Member --> I[Choose delivery: Bundle or Per-channel]
+
+    subgraph DELIVER[Delivery service]
+        I --> J1[Email - PDF plus summary card, Reply-To sender]
+        I --> J2[WhatsApp - 4 lines plus hosted link]
+        I --> J3[SMS - 1 segment plus hosted link]
+    end
+
+    J1 --> K[Hosted document page kraafo.com/i/token]
+    J2 --> K
+    J3 --> K
+
+    subgraph RECIPIENT[Recipient experience]
+        K --> M[Views document - mobile HTML]
+        M --> N[Download PDF or contact sender]
+        M --> P2[Pay Now - Phase 2: mobile money, bank, card]
+    end
+
+    M -- view event --> Q[Sender notified: Client viewed your invoice]
+    Q --> R{Paid by due date?}
+    R -- No --> S[One-tap or auto reminder resent with link]
+    S --> K
+    R -- Yes --> T[Mark paid or webhook auto-marks]
+    P2 --> T
+    T --> U[Auto-generate receipt - one tap send]
+    U --> I
+
+    Q --> V[Sender returns to dashboard - history, outstanding, overdue]
+    V --> B
+
+    K -- footer: Send invoices like this free --> A2

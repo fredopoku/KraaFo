@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Environment — NEVER commit real keys
+server/.env
+.env
+.env.local
+.env.*.local
+
+# Build output
+client/dist/
+server/dist/
+
+# Database & uploads (local data)
+data/
+server/data/
+server/uploads/
+server/*.db
+server/*.db-shm
+server/*.db-wal
+
+# Video render output (large files, not source)
+tools/video/out/
+tools/video/node_modules/
+tools/video/node_modules.bak/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo

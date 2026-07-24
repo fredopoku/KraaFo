@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/krafo-logo.png" />
+    <link rel="icon" type="image/png" sizes="96x96" href="/krafo-logo.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/krafo-logo.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="preload" as="image" href="/phase3/portrait-accra.jpg" />
+    <link rel="preload" as="image" href="/krafo-logo.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Primary SEO -->
+    <title>KraaFo — Free Invoicing & Receipt Software for Service Businesses</title>
+    <meta name="description" content="Create and download professional invoices, receipts and quotes free — no account needed. Branded PDFs delivered by WhatsApp, SMS & email — all at once or one at a time. Sign up to save and send." />
+    <meta name="keywords" content="invoice generator, receipt generator, free invoice maker, receipt maker, free invoicing software, small business invoice, freelance invoice, professional receipt, quote generator, online invoice creator, invoice template, receipt template" />
+    <meta name="author" content="KraaFo" />
+
+    <!-- Open Graph — Facebook, WhatsApp, LinkedIn -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://kraafo.com/" />
+    <meta property="og:title" content="KraaFo — Professional Invoices & Receipts in Under a Minute" />
+    <meta property="og:description" content="Professional invoices in under a minute — delivered by WhatsApp, SMS or email. Send all three at once, or just the one your client uses. Branded PDFs, Smart Fill, free to create." />
+    <meta property="og:image" content="https://kraafo.com/hero-preview.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content="KraaFo" />
+
+    <!-- Twitter / X -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="KraaFo — Free Invoice & Receipt Generator" />
+    <meta name="twitter:description" content="Professional invoices in under a minute. Branded PDFs delivered by WhatsApp, SMS or email — all at once or individually. Free to create — sign up to send." />
+    <meta name="twitter:image" content="https://kraafo.com/hero-preview.png" />
+
+    <link rel="canonical" href="https://kraafo.com/" />
+    <meta property="og:locale" content="en_US" />
+    <meta name="theme-color" content="#4F46E5" />
+
+    <!-- Structured data — helps Google show rich results for invoice/receipt searches -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "KraaFo",
+      "url": "https://kraafo.com",
+      "description": "Free invoice generator and receipt maker for freelancers and small businesses. Create professional invoices, receipts and quotes in under a minute. Smart Fill, branded PDFs, email and WhatsApp delivery.",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "featureList": [
+        "Invoice Generator",
+        "Receipt Maker",
+        "Quote Generator",
+        "PDF Download",
+        "Email Delivery",
+        "WhatsApp Delivery",
+        "Client Management",
+        "Payment Tracking",
+        "Recurring Invoices"
+      ]
+    }
+    </script>
+
+    <!-- Organization + WebSite schema — brand identity for Google -->
+    <script type="application/ld+json">
+    [
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "KraaFo",
+        "url": "https://kraafo.com",
+        "logo": "https://kraafo.com/krafo-logo.png",
+        "description": "Free invoice generator, receipt maker, and quote builder for freelancers and small businesses worldwide.",
+        "sameAs": []
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "KraaFo",
+        "url": "https://kraafo.com",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://kraafo.com/generator?q={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      }
+    ]
+    </script>
+
+    <!-- Cloudflare Turnstile (bot protection) -->
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
+
+    <!-- Google Analytics — defer to avoid blocking main thread -->
+    <script defer src="https://www.googletagmanager.com/gtag/js?id=G-2WSCXQNTKN"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-2WSCXQNTKN');
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
