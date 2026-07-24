@@ -1,94 +1,110 @@
 import React from 'react';
-import { useCurrentFrame, useVideoConfig, interpolate, spring } from 'remotion';
+import { AbsoluteFill, useCurrentFrame, useVideoConfig, spring, interpolate } from 'remotion';
 
-interface Props {
-  headline: string;
-}
-
-export function EndCard({ headline }: Props) {
+export function EndCard({ headline }: { headline: string }) {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  const logoScale = spring({ frame, fps, config: { damping: 14, stiffness: 120, mass: 0.8 } });
-  const textOpacity = interpolate(frame, [10, 22], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
-  const urlOpacity  = interpolate(frame, [20, 34], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+  const logoScale = spring({ frame, fps, config: { damping: 14, stiffness: 100 } });
+  const headlineOpacity = interpolate(frame, [20, 34], [0, 1], { extrapolateRight: 'clamp' });
+  const headlineY = interpolate(frame, [20, 34], [24, 0], { extrapolateRight: 'clamp' });
+  const urlOpacity = interpolate(frame, [30, 44], [0, 1], { extrapolateRight: 'clamp' });
 
   return (
-    <div
+    <AbsoluteFill
       style={{
-        position: 'absolute',
-        inset: 0,
-        background: 'linear-gradient(160deg, #4338ca 0%, #4F46E5 45%, #6d28d9 100%)',
+        background: 'linear-gradient(160deg, #3730A3 0%, #4F46E5 55%, #6366F1 100%)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 32,
-        padding: '0 80px',
+        gap: 52,
+        fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif',
       }}
     >
-      {/* Soft ambient circle */}
-      <div style={{
-        position: 'absolute',
-        width: 700,
-        height: 700,
-        borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(255,255,255,0.07) 0%, transparent 70%)',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        pointerEvents: 'none',
-      }} />
-
-      {/* Logo mark (K) */}
-      <div style={{ transform: `scale(${logoScale})` }}>
-        <div style={{
-          width: 120,
-          height: 120,
-          borderRadius: 32,
-          background: 'rgba(255,255,255,0.15)',
-          border: '2px solid rgba(255,255,255,0.3)',
+      {/* Logo block: logomark + wordmark, spring animated together */}
+      <div
+        style={{
+          transform: `scale(${logoScale})`,
           display: 'flex',
+          flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: 'center',
-        }}>
-          <span style={{
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-            fontSize: 64,
-            fontWeight: 900,
-            color: '#ffffff',
-            letterSpacing: -2,
-          }}>K</span>
+          gap: 28,
+        }}
+      >
+        {/* Logomark — white rounded square with indigo K */}
+        <div
+          style={{
+            width: 168,
+            height: 168,
+            borderRadius: 40,
+            background: 'white',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 40px 100px rgba(0,0,0,0.35)',
+          }}
+        >
+          <svg width="92" height="92" viewBox="0 0 92 92" fill="none" xmlns="http://www.w3.org/2000/svg">
+            {/* Vertical stem */}
+            <line x1="26" y1="12" x2="26" y2="80" stroke="#4F46E5" strokeWidth="11" strokeLinecap="round" />
+            {/* Upper diagonal */}
+            <line x1="26" y1="46" x2="68" y2="12" stroke="#4F46E5" strokeWidth="11" strokeLinecap="round" />
+            {/* Lower diagonal */}
+            <line x1="26" y1="46" x2="68" y2="80" stroke="#4F46E5" strokeWidth="11" strokeLinecap="round" />
+          </svg>
         </div>
+
+        {/* Wordmark */}
+        <p
+          style={{
+            color: 'white',
+            fontSize: 80,
+            fontWeight: 900,
+            letterSpacing: '-3px',
+            margin: 0,
+            lineHeight: 1,
+          }}
+        >
+          KraaFo
+        </p>
       </div>
 
-      {/* Headline */}
-      <p style={{
-        margin: 0,
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-        fontSize: 56,
-        fontWeight: 800,
-        color: '#ffffff',
-        textAlign: 'center',
-        lineHeight: 1.15,
-        opacity: textOpacity,
-        letterSpacing: '-0.5px',
-      }}>
-        {headline}
-      </p>
+      {/* Headline — fades + slides in */}
+      <div
+        style={{
+          opacity: headlineOpacity,
+          transform: `translateY(${headlineY}px)`,
+          textAlign: 'center',
+          padding: '0 88px',
+        }}
+      >
+        <p
+          style={{
+            color: 'rgba(255,255,255,0.90)',
+            fontSize: 50,
+            fontWeight: 700,
+            lineHeight: 1.35,
+            margin: 0,
+          }}
+        >
+          {headline}
+        </p>
+      </div>
 
       {/* URL */}
-      <p style={{
-        margin: 0,
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-        fontSize: 40,
-        fontWeight: 600,
-        color: 'rgba(255,255,255,0.75)',
-        opacity: urlOpacity,
-        letterSpacing: 0.5,
-      }}>
+      <p
+        style={{
+          opacity: urlOpacity,
+          color: 'rgba(255,255,255,0.60)',
+          fontSize: 36,
+          fontWeight: 500,
+          margin: 0,
+          letterSpacing: '1.5px',
+        }}
+      >
         kraafo.com
       </p>
-    </div>
+    </AbsoluteFill>
   );
 }
