@@ -386,4 +386,48 @@ db.exec(`
   );
 `);
 
+// Fix em dashes in existing rows (UPDATE runs every boot, safe to repeat)
+db.exec(`
+  UPDATE changelog SET
+    description = 'Invite your whole team to KraaFo. Choose between a Solo or Business Team account at setup, then add colleagues by email with role-based permissions: Owner, Admin, Staff, or Accountant. Pending invites get a branded email with a one-click join link.'
+  WHERE id = 'cl-team-accounts-2026';
+
+  UPDATE changelog SET
+    description = 'Invoices flip to Overdue automatically once the due date passes. Clients receive escalating reminder emails at 1, 7, and 14 days overdue (gentle first, firm second, urgent third), sent from your own email address so replies come straight to you.'
+  WHERE id = 'cl-overdue-reminders-2026';
+
+  UPDATE changelog SET
+    description = 'The invoice generator is now open to everyone. No account needed. Create, preview, and download documents in full demo mode. Sign up only when you want to save, send, or access documents across devices.'
+  WHERE id = 'cl-open-generator-2026';
+
+  UPDATE changelog SET
+    description = 'Set any invoice to repeat automatically: weekly, monthly, quarterly, or yearly. The system generates a fresh invoice on schedule, copies all line items, and marks the original as your billing template. Set an optional end date or let it run indefinitely.'
+  WHERE id = 'cl-recurring-invoices-2026';
+
+  UPDATE changelog SET
+    description = 'Download a full Statement of Account for any client in one click. The PDF shows every invoice, receipt, and quote in chronological order, showing amounts invoiced, collected, and the outstanding balance at a glance.'
+  WHERE id = 'cl-statement-of-account-2026';
+
+  UPDATE changelog SET
+    description = 'The admin analytics panel now works like a real analytics product: choose a date range (7d / 30d / 90d / all-time), see trend arrows comparing the current period to the previous one, a live-visitor badge, session quality metrics (avg pages per session, avg duration, bounce rate), a 24-hour traffic heatmap, entry and exit pages, and all existing breakdowns (countries, cities, devices, browsers, top pages, and referrers) filtered to the selected period.'
+  WHERE id = 'cl-analytics-dashboard-2025';
+
+  UPDATE changelog SET
+    title = 'Send on WhatsApp, SMS & Email: All at Once',
+    description = 'One tap now delivers your invoice or receipt across three channels simultaneously: WhatsApp opens a pre-composed message to your client, SMS fires a summary to their phone, and a branded PDF lands in their inbox, all in under 30 seconds. No other invoicing app does this.'
+  WHERE id = 'cl-triple-channel-delivery-2026';
+
+  UPDATE changelog SET
+    description = 'Every page in the app now has a visible back arrow in the header so you always know how to get back. The Dashboard, Generator, Clients, Quotes, and Team pages all follow the same consistent navigation pattern. No more hunting for how to return to where you were.'
+  WHERE id = 'cl-navigation-2026';
+
+  UPDATE changelog SET
+    description = 'Full security audit applied before this release. Every API endpoint now derives the organisation ID from the verified login token (not from request parameters), so one account cannot access another''s data. HTTP security headers (X-Frame-Options, Strict-Transport-Security, X-Content-Type-Options, Referrer-Policy) now ship on every response. CORS origin matching switched to exact-match only.'
+  WHERE id = 'cl-security-hardening-2026';
+
+  UPDATE changelog SET
+    description = 'The admin panel now tracks every visitor in real time: page views, sessions, city-level location with country flags, device type, browser, and traffic sources. Data updates live as visitors arrive.'
+  WHERE title = 'Website Analytics Dashboard';
+`);
+
 export default db;
