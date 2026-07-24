@@ -25,11 +25,10 @@ export function EndCard({ headline }: { headline: string }) {
       <Img
         src={staticFile('assets/krafo-logo.png')}
         style={{
-          width: 420,
+          width: 220,
           height: 'auto',
           objectFit: 'contain',
           transform: `scale(${logoScale})`,
-          filter: 'drop-shadow(0 0 60px rgba(255,255,255,0.35))',
         }}
       />
 
