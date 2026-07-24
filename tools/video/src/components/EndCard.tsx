@@ -22,24 +22,16 @@ export function EndCard({ headline }: { headline: string }) {
         fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif',
       }}
     >
-      {/* Logo card — white rounded rectangle, spring animated */}
-      <div
+      <Img
+        src={staticFile('assets/krafo-logo.png')}
         style={{
+          width: 420,
+          height: 'auto',
+          objectFit: 'contain',
           transform: `scale(${logoScale})`,
-          background: 'white',
-          borderRadius: 48,
-          padding: '40px 56px',
-          boxShadow: '0 40px 100px rgba(0,0,0,0.35)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+          filter: 'drop-shadow(0 0 60px rgba(255,255,255,0.35))',
         }}
-      >
-        <Img
-          src={staticFile('assets/krafo-logo.png')}
-          style={{ width: 420, height: 'auto', objectFit: 'contain' }}
-        />
-      </div>
+      />
 
       {/* Headline — fades + slides in */}
       <div

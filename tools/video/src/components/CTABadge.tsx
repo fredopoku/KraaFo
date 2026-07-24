@@ -28,25 +28,10 @@ export function CTABadge() {
         whiteSpace: 'nowrap',
       }}
     >
-      {/* Logo in white rounded square — app-icon style */}
-      <div
-        style={{
-          width: 64,
-          height: 64,
-          borderRadius: 16,
-          background: 'white',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-          overflow: 'hidden',
-        }}
-      >
-        <Img
-          src={staticFile('assets/krafo-logo.png')}
-          style={{ width: 56, height: 56, objectFit: 'contain' }}
-        />
-      </div>
+      <Img
+        src={staticFile('assets/krafo-logo.png')}
+        style={{ width: 72, height: 72, objectFit: 'contain', flexShrink: 0 }}
+      />
 
       {/* Text block */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
