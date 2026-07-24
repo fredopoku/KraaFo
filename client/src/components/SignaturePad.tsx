@@ -112,7 +112,7 @@ export default function SignaturePad({ onSave, onClose, existing }: SignaturePad
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
           <div>
             <h2 className="text-base font-black text-slate-800 tracking-tight">Add Signature</h2>
-            <p className="text-xs text-slate-400 mt-0.5">Draw or upload your signature — it appears on all documents</p>
+            <p className="text-xs text-slate-400 mt-0.5">Draw or upload your signature - it appears on all documents</p>
           </div>
           <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
             <X className="w-4 h-4" />
@@ -191,7 +191,7 @@ export default function SignaturePad({ onSave, onClose, existing }: SignaturePad
                   <div className="rounded-xl border-2 border-dashed border-slate-200 p-8 text-center hover:border-indigo-400 hover:bg-indigo-50/30 transition-all">
                     <Upload className="w-8 h-8 text-slate-300 mx-auto mb-2" />
                     <p className="text-sm font-semibold text-slate-500">Click to upload signature</p>
-                    <p className="text-xs text-slate-400 mt-1">PNG, JPG or SVG — transparent background recommended</p>
+                    <p className="text-xs text-slate-400 mt-1">PNG, JPG or SVG - transparent background recommended</p>
                   </div>
                 )}
               </label>
@@ -210,7 +210,7 @@ export default function SignaturePad({ onSave, onClose, existing }: SignaturePad
           {existing && !hasDrawn && !uploadPreview && (
             <div className="mt-4 p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-3">
               <img src={existing} alt="Current signature" className="max-h-10 max-w-[140px] object-contain" />
-              <p className="text-xs text-slate-400">Current saved signature — draw or upload to replace it</p>
+              <p className="text-xs text-slate-400">Current saved signature - draw or upload to replace it</p>
             </div>
           )}
         </div>

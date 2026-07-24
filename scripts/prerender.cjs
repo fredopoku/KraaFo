@@ -1,14 +1,14 @@
 'use strict';
 
-// Post-build pre-renderer — converts the React SPA shell into static HTML
+// Post-build pre-renderer - converts the React SPA shell into static HTML
 // for the public routes that matter most for SEO.
 //
-// Chrome resolution: uses @sparticuz/chromium (bundled binary — no system
+// Chrome resolution: uses @sparticuz/chromium (bundled binary - no system
 // Chrome required, same mechanism as pdfService.ts). Falls back to system
 // Chrome paths for local dev.
 //
 // Exits 1 (fails the build) if Chrome cannot be found or any route fails
-// to produce ≥300 words of body text — silent failure is not allowed.
+// to produce ≥300 words of body text - silent failure is not allowed.
 
 const puppeteer = require('../server/node_modules/puppeteer-core');
 const { createServer } = require('http');
@@ -53,7 +53,7 @@ const MIME = {
 // Resolve Chrome. Priority order:
 //   1. PUPPETEER_EXECUTABLE_PATH (explicit override)
 //   2. System Chrome paths (macOS dev, Render runtime which has Chrome installed)
-//   3. @sparticuz/chromium bundled binary (Linux-only — Render build workers where system Chrome is absent)
+//   3. @sparticuz/chromium bundled binary (Linux-only - Render build workers where system Chrome is absent)
 async function getChromePath() {
   const fs = require('fs');
 
@@ -64,7 +64,7 @@ async function getChromePath() {
       console.log(`[prerender] Chrome via PUPPETEER_EXECUTABLE_PATH: ${process.env.PUPPETEER_EXECUTABLE_PATH}`);
       return { path: process.env.PUPPETEER_EXECUTABLE_PATH, args: [] };
     } catch {
-      console.warn(`[prerender] PUPPETEER_EXECUTABLE_PATH not executable — falling through`);
+      console.warn(`[prerender] PUPPETEER_EXECUTABLE_PATH not executable - falling through`);
     }
   }
 
@@ -84,7 +84,7 @@ async function getChromePath() {
     } catch {}
   }
 
-  // 3. @sparticuz/chromium — Linux-only bundled binary.
+  // 3. @sparticuz/chromium - Linux-only bundled binary.
   // Used on Render build workers (no system Chrome, but the package is installed).
   // Dynamic import needed because the package is pure ESM.
   if (process.platform === 'linux') {
@@ -142,13 +142,13 @@ function fixCanonical(html, canonicalUrl) {
 
 async function main() {
   if (!existsSync(DIST)) {
-    console.error('[prerender] client/dist not found — run client build first');
+    console.error('[prerender] client/dist not found - run client build first');
     process.exit(1);
   }
 
   const chrome = await getChromePath();
   if (!chrome) {
-    console.error('[prerender] No Chrome/Chromium found — cannot pre-render.');
+    console.error('[prerender] No Chrome/Chromium found - cannot pre-render.');
     console.error('[prerender] Ensure @sparticuz/chromium is installed in server/node_modules, or set PUPPETEER_EXECUTABLE_PATH.');
     process.exit(1);
   }
@@ -189,12 +189,12 @@ async function main() {
 
       const words = countWords(html);
       if (words < minWords) {
-        throw new Error(`only ${words} words in output — React may not have rendered (min: ${minWords})`);
+        throw new Error(`only ${words} words in output - React may not have rendered (min: ${minWords})`);
       }
 
       mkdirSync(outPath.replace(/\/[^/]+$/, ''), { recursive: true });
       writeFileSync(outPath, html, 'utf-8');
-      console.log(`[prerender] ✓ ${out} — ${words} words, ${(html.length / 1024).toFixed(0)} KB`);
+      console.log(`[prerender] ✓ ${out} - ${words} words, ${(html.length / 1024).toFixed(0)} KB`);
       ok++;
     } catch (err) {
       if (required) {
@@ -212,11 +212,11 @@ async function main() {
   server.close();
 
   if (hardFailures.length > 0) {
-    console.error(`[prerender] BUILD FAILED — required route(s) did not produce valid output: ${hardFailures.join(', ')}`);
+    console.error(`[prerender] BUILD FAILED - required route(s) did not produce valid output: ${hardFailures.join(', ')}`);
     process.exit(1);
   }
 
-  console.log(`[prerender] Complete — ${ok}/${ROUTES.length} routes pre-rendered (required routes all passed).`);
+  console.log(`[prerender] Complete - ${ok}/${ROUTES.length} routes pre-rendered (required routes all passed).`);
 }
 
 main().catch(err => {

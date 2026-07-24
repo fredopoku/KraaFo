@@ -14,7 +14,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
-    // Token expired — clear it so the app redirects to login
+    // Token expired - clear it so the app redirects to login
     if (res.status === 401) localStorage.removeItem('krafo_token');
     throw new Error(err.error || 'Request failed');
   }

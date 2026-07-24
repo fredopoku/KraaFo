@@ -1,4 +1,4 @@
-# KraaFo — Quick Start
+# KraaFo - Quick Start
 
 ## 1. Add your API key
 Edit `server/.env` and replace the placeholder:

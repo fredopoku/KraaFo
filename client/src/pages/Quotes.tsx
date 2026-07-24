@@ -57,7 +57,7 @@ export default function Quotes() {
       setDeleteTarget(null);
       showToast(`Quote ${deleteTarget.number} moved to Trash`);
     } catch {
-      showToast('Delete failed — please try again');
+      showToast('Delete failed - please try again');
     } finally {
       setDeleting(false);
     }

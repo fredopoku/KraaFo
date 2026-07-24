@@ -6,7 +6,7 @@ import { sendTeamInvite } from '../services/emailService';
 
 const router = Router();
 
-// All team routes require auth — provided by global requireAuth middleware.
+// All team routes require auth - provided by global requireAuth middleware.
 // Additionally, most mutating routes require owner/admin role.
 
 router.get('/', (req: Request, res: Response) => {

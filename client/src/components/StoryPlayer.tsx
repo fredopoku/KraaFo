@@ -13,7 +13,7 @@ const CAPTIONS = [
 const FRAME_MS = 5000;
 const TICK_MS = 50;
 
-/* ── Frame 3: Send modal — rendered from real UI ─────────── */
+/* ── Frame 3: Send modal - rendered from real UI ─────────── */
 function SendModalFrame() {
   return (
     <div className="w-full h-full bg-slate-100 flex items-center justify-center p-5"
@@ -40,7 +40,7 @@ function SendModalFrame() {
               </div>
             ))}
           </div>
-          {/* Primary CTA — gradient matches real UI */}
+          {/* Primary CTA - gradient matches real UI */}
           <div className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-black text-white"
             style={{ background: 'linear-gradient(135deg,#7c3aed,#4f46e5)' }}>
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -73,7 +73,7 @@ function SendModalFrame() {
   );
 }
 
-/* ── Frame 4: WhatsApp chat — verbatim server message format ─ */
+/* ── Frame 4: WhatsApp chat - verbatim server message format ─ */
 function WhatsAppChatFrame() {
   return (
     <div className="w-full h-full flex flex-col" style={{ background: '#e5ddd5' }}>
@@ -92,7 +92,7 @@ function WhatsAppChatFrame() {
       </div>
       {/* Messages */}
       <div className="flex-1 overflow-hidden flex flex-col justify-end px-3 pb-2 space-y-2">
-        {/* Outgoing — matches server verbatim */}
+        {/* Outgoing - matches server verbatim */}
         <div className="flex justify-end">
           <div className="rounded-xl rounded-tr-sm px-3 py-2.5 max-w-[90%] shadow-sm" style={{ background: '#d9fdd3' }}>
             <div className="text-[10.5px] text-slate-800 leading-[1.6]">
@@ -109,7 +109,7 @@ function WhatsAppChatFrame() {
             </div>
             <div className="flex items-center justify-end gap-1 mt-1.5">
               <span className="text-[8.5px] text-slate-400">9:42</span>
-              {/* Double blue ticks — delivered */}
+              {/* Double blue ticks - delivered */}
               <span className="font-bold leading-none" style={{ color: '#53bdeb', fontSize: 13 }}>✓✓</span>
             </div>
           </div>
@@ -161,7 +161,7 @@ export default function StoryPlayer() {
     typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
   );
 
-  /* IntersectionObserver — start auto-advance when section is visible */
+  /* IntersectionObserver - start auto-advance when section is visible */
   useEffect(() => {
     const el = sectionRef.current;
     if (!el) return;
@@ -260,7 +260,7 @@ export default function StoryPlayer() {
             onMouseLeave={() => setPaused(false)}
             onClick={handleClick}
           >
-            {/* All frames stacked — DOM order = z order */}
+            {/* All frames stacked - DOM order = z order */}
             {FRAMES.map((frame, i) => (
               <div
                 key={i}
@@ -320,7 +320,7 @@ export default function StoryPlayer() {
               </div>
             )}
 
-            {/* End-state overlay — the conversion moment */}
+            {/* End-state overlay - the conversion moment */}
             {done && (
               <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/65 backdrop-blur-sm p-6 text-center">
                 <div className="w-12 h-12 rounded-full bg-emerald-500 flex items-center justify-center mb-5 mx-auto">

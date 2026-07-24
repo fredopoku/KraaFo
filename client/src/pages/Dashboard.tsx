@@ -95,7 +95,7 @@ export default function Dashboard() {
               <Quote className="w-3.5 h-3.5" /> Quotes
             </button>
 
-            {/* New Invoice — icon+text on sm+, icon only on mobile */}
+            {/* New Invoice - icon+text on sm+, icon only on mobile */}
             <button
               onClick={() => navigate('/generator')}
               className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-xl text-xs font-bold text-white transition-all btn-glow"
@@ -127,14 +127,14 @@ export default function Dashboard() {
 
       <main className="max-w-7xl mx-auto px-4 py-5 sm:py-8">
 
-        {/* Greeting — split so long org names don't overflow */}
+        {/* Greeting - split so long org names don't overflow */}
         <div className="mb-6 animate-fade-up">
           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Good {getGreeting()}</p>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-tight">{org.name} 👋</h1>
           <p className="text-sm text-slate-400 mt-1">Here's your business overview</p>
         </div>
 
-        {/* Stat cards — 2 col on mobile, 4 on desktop */}
+        {/* Stat cards - 2 col on mobile, 4 on desktop */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
           {statCards.map((card, i) => (
             <div
@@ -173,7 +173,7 @@ export default function Dashboard() {
                 })}
               </div>
             ) : (
-              <div className="h-32 flex items-center justify-center text-sm text-slate-300">No paid invoices yet — start billing!</div>
+              <div className="h-32 flex items-center justify-center text-sm text-slate-300">No paid invoices yet - start billing!</div>
             )}
           </div>
 
@@ -355,7 +355,7 @@ export default function Dashboard() {
 
             <div className="overflow-y-auto flex-1 px-5 py-4 space-y-5">
               {changelog.length === 0 ? (
-                <p className="text-sm text-slate-400 text-center py-8">No updates yet — check back soon.</p>
+                <p className="text-sm text-slate-400 text-center py-8">No updates yet - check back soon.</p>
               ) : (
                 changelog.slice(0, 10).map(e => {
                   const tagCls: Record<string, string> = {

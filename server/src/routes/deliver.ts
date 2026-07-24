@@ -7,7 +7,7 @@ import { formatMoney } from '../utils/formatMoney';
 
 const router = Router();
 
-// Per-account rate limiters for email delivery — protect shared Resend reputation.
+// Per-account rate limiters for email delivery - protect shared Resend reputation.
 // Keyed on org ID so limits are per sender, not per IP (shared offices / VPNs).
 const emailHourlyLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
@@ -15,7 +15,7 @@ const emailHourlyLimiter = rateLimit({
   keyGenerator: (req: Request) => (req.auth?.orgId ?? req.ip) as string,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: 'Send limit reached — you can send up to 20 emails per hour. Please wait before sending again.' },
+  message: { error: 'Send limit reached. You can send up to 20 emails per hour. Please wait before sending again.' },
   skipSuccessfulRequests: false,
 });
 
@@ -25,7 +25,7 @@ const emailDailyLimiter = rateLimit({
   keyGenerator: (req: Request) => `day:${req.auth?.orgId ?? req.ip}`,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: 'Daily send limit reached — you can send up to 100 emails per day.' },
+  message: { error: 'Daily send limit reached. You can send up to 100 emails per day.' },
   skipSuccessfulRequests: false,
 });
 
@@ -166,7 +166,7 @@ router.post('/test-email', async (req: Request, res: Response) => {
       from: `"${org.name}" <${org.smtp_from || org.smtp_user}>`,
       to,
       subject: `Test email from ${org.name} via KraaFo`,
-      text: `This is a test email confirming your email delivery is working correctly.\n\nSent from ${org.name} via KraaFo — Professional Invoicing.`,
+      text: `This is a test email confirming your email delivery is working correctly.\n\nSent from ${org.name} via KraaFo - Professional Invoicing.`,
       headers: { 'X-Mailer': 'KraaFo Professional Invoicing' },
     };
 

@@ -159,7 +159,7 @@ export function generateInvoiceHTML(data: InvoiceTemplateData): string {
 <body>
 <div style="max-width:800px;margin:0 auto;padding:0;position:relative;">
 
-  <!-- Top colour bar — thicker on receipts to make them visually distinct -->
+  <!-- Top colour bar - thicker on receipts to make them visually distinct -->
   <div style="background:${docColor};height:${isReceipt ? '10px' : '8px'};"></div>
   ${isReceipt ? `<div style="background:${docColorDark};height:3px;"></div>` : ''}
 

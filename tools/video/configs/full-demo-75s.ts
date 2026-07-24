@@ -1,5 +1,5 @@
 /**
- * Flagship social video — full product walkthrough.
+ * Flagship social video: full product walkthrough.
  * Landing → Setup → Invoice creation → Send → Dashboard.
  * ~58s content + 5s end card = 63s total, 1080×1920, 30fps.
  *
@@ -10,7 +10,7 @@ import { VideoConfig } from './types';
 
 const config: VideoConfig = {
   id: 'full-demo-75s',
-  title: 'KraaFo — Full Product Demo',
+  title: 'KraaFo: Full Product Demo',
   width: 1080,
   height: 1920,
   fps: 30,
@@ -39,7 +39,7 @@ const config: VideoConfig = {
       src: '06-full-demo.webm',
       startTrimSec: 17,
       durationSec: 17,
-      caption: 'Smart Fill writes your invoice — instantly',
+      caption: 'Smart Fill writes your invoice: instantly',
       phoneFrame: true,
     },
     {
@@ -48,7 +48,7 @@ const config: VideoConfig = {
       src: '06-full-demo.webm',
       startTrimSec: 34,
       durationSec: 12,
-      caption: 'Email · WhatsApp · SMS — one tap',
+      caption: 'Email · WhatsApp · SMS: one tap',
       phoneFrame: true,
     },
     {

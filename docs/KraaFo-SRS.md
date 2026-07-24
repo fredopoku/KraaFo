@@ -1,5 +1,5 @@
 # Software Requirements Specification (SRS)
-## KraaFo — Get-Paid Platform for African Small Businesses
+## KraaFo - Get-Paid Platform for African Small Businesses
 
 **Version:** 1.0 · **Date:** July 2026 · **Status:** Draft for review
 
@@ -40,12 +40,12 @@ Founders, developers, designers, and future contributors/investors. This SRS is 
 ## 2. Overall Description
 
 ### 2.1 Product vision
-**"The fastest way for an African small business to look professional and get paid — on the channels their clients actually use."**
+**"The fastest way for an African small business to look professional and get paid - on the channels their clients actually use."**
 
 ### 2.2 Target users (personas)
-1. **The Freelancer (primary)** — designer, developer, consultant, tutor. Bills 2–10 clients/month. Phone-first. Currently invoices via Word docs or WhatsApp text messages. Pain: looking unprofessional, forgetting to follow up.
-2. **The Service SME (primary)** — salon, mechanic, events company, NGO/foundation, agency. Bills 10–50 clients/month. Pain: no paper trail, clients "forget" to pay, receipts requested for records/tax.
-3. **The Accountant/Bookkeeper (multiplier)** — manages billing for many small clients. Not the v1 build target, but the #1 partnership channel. Requirements must not block a future multi-business mode.
+1. **The Freelancer (primary)** - designer, developer, consultant, tutor. Bills 2–10 clients/month. Phone-first. Currently invoices via Word docs or WhatsApp text messages. Pain: looking unprofessional, forgetting to follow up.
+2. **The Service SME (primary)** - salon, mechanic, events company, NGO/foundation, agency. Bills 10–50 clients/month. Pain: no paper trail, clients "forget" to pay, receipts requested for records/tax.
+3. **The Accountant/Bookkeeper (multiplier)** - manages billing for many small clients. Not the v1 build target, but the #1 partnership channel. Requirements must not block a future multi-business mode.
 
 ### 2.3 Jobs-to-be-done
 | # | Job | Current KraaFo | Gap |
@@ -74,7 +74,7 @@ Requirements use MoSCoW priority: **[M]** Must (v1), **[S]** Should (v1 if possi
 - **FR-AUTH-1 [M]** Visitors can create, preview, and download any document **without an account**.
 - **FR-AUTH-2 [M]** Sending a document via any channel requires a **verified email account** (verification link or OTP).
 - **FR-AUTH-3 [M]** Signup captures: email, password (or magic link), business name. Nothing more at signup; profile completed progressively.
-- **FR-AUTH-4 [M]** The signup prompt appears **at the send step**, framed as benefit: "Create a free account to send — your details and history are saved."
+- **FR-AUTH-4 [M]** The signup prompt appears **at the send step**, framed as benefit: "Create a free account to send - your details and history are saved."
 - **FR-AUTH-5 [S]** Google sign-in.
 - **FR-AUTH-6 [C]** Phone-number OTP login (matches phone-first users).
 
@@ -97,13 +97,13 @@ Requirements use MoSCoW priority: **[M]** Must (v1), **[S]** Should (v1 if possi
 - **FR-DOC-10 [C]** Multi-currency per document; multi-language templates (EN/FR/SW).
 
 ### 3.4 Module: Branding Engine (BRAND)
-- **FR-BRAND-1 [M]** Logo upload (PNG/JPG); automatic dominant-color extraction applied to PDF accents, email header card, and hosted page. *(Existing strength — keep.)*
+- **FR-BRAND-1 [M]** Logo upload (PNG/JPG); automatic dominant-color extraction applied to PDF accents, email header card, and hosted page. *(Existing strength - keep.)*
 - **FR-BRAND-2 [M]** Manual color override.
 - **FR-BRAND-3 [S]** 3–5 PDF layout templates.
 - **FR-BRAND-4 [M]** Free tier keeps a small, tasteful "Created with KraaFo" footer **that is a hyperlink** on PDF, email, and hosted page. Removing it is a future paid feature.
 
 ### 3.5 Module: Delivery (DEL)
-- **FR-DEL-1 [M]** Two send modes: **Bundle** (email + WhatsApp + SMS in one action; default) and **Per-channel** (pick channels individually). *(Existing — keep.)*
+- **FR-DEL-1 [M]** Two send modes: **Bundle** (email + WhatsApp + SMS in one action; default) and **Per-channel** (pick channels individually). *(Existing - keep.)*
 - **FR-DEL-2 [M]** Email: branded summary card + attached PDF + hosted-page button. Sent from KraaFo domain with sender's business name as display name; **Reply-To = sender's email**.
 - **FR-DEL-3 [M]** WhatsApp/SMS messages are **short (≤4 lines)**: business name, doc number, amount, due date, and the **hosted-page link**. No "check your email" dead ends.
 - **FR-DEL-4 [M]** All footers/taglines ("via KraaFo") link to kraafo.com with UTM tags.
@@ -111,11 +111,11 @@ Requirements use MoSCoW priority: **[M]** Must (v1), **[S]** Should (v1 if possi
 - **FR-DEL-6 [M]** Delivery status per channel per send: queued → sent → delivered → failed, visible to the sender.
 - **FR-DEL-7 [S]** Resend / send-to-additional-channel from document history.
 
-### 3.6 Module: Hosted Document Pages (HOST) — *the product's centerpiece*
+### 3.6 Module: Hosted Document Pages (HOST) - *the product's centerpiece*
 - **FR-HOST-1 [M]** Every sent document gets a unique, unguessable URL: `kraafo.com/i/{token}` (invoice), `/q/`, `/r/`.
 - **FR-HOST-2 [M]** Page shows the full document (mobile-optimized HTML, not just embedded PDF), Download PDF button, sender contact actions (email, call, WhatsApp reply).
 - **FR-HOST-3 [M]** First view fires a **view event** (see TRACK). Page requires no login for the recipient.
-- **FR-HOST-4 [M]** Footer CTA: "Send professional invoices like this — free" → kraafo.com. *(This is the growth loop.)*
+- **FR-HOST-4 [M]** Footer CTA: "Send professional invoices like this - free" → kraafo.com. *(This is the growth loop.)*
 - **FR-HOST-5 [M]** Open Graph tags so the link previews beautifully in WhatsApp (business name, amount, KraaFo brand).
 - **FR-HOST-6 [P2]** **Pay Now** button on the hosted page (mobile money / bank / card). This page is where monetization lives.
 - **FR-HOST-7 [S]** Sender can void/expire a link.

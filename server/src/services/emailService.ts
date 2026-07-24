@@ -8,7 +8,7 @@ import { formatMoney } from '../utils/formatMoney';
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
 const FROM_ADDRESS = process.env.RESEND_FROM || 'invoices@kraafo.com';
-// Marketing identity (welcome, newsletter, lifecycle) — separate Resend domain so inbox placement
+// Marketing identity (welcome, newsletter, lifecycle) - separate Resend domain so inbox placement
 // for transactional invoice mail is not contaminated by marketing reputation.
 const MARKETING_FROM = process.env.RESEND_MARKETING_FROM || FROM_ADDRESS;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://kraafo.com';
@@ -19,7 +19,7 @@ export async function sendInvoiceEmail(
   customMessage?: string
 ): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) throw new Error('Email not configured — RESEND_API_KEY missing');
+  if (!apiKey) throw new Error('Email not configured - RESEND_API_KEY missing');
 
   let invoice = db.prepare('SELECT * FROM invoices WHERE id = ?').get(invoiceId) as any;
   let isQuote = false;
@@ -138,7 +138,7 @@ export async function sendInvoiceEmail(
     ...(org.phone ? [org.phone] : []),
     ``,
     `--`,
-    `This ${docType.toLowerCase()} was generated via KraaFo — Professional Invoicing`,
+    `This ${docType.toLowerCase()} was generated via KraaFo - Professional Invoicing`,
   ].join('\n');
 
   const resend = new Resend(apiKey);
@@ -174,7 +174,7 @@ export async function sendSubscriberWelcome(email: string, name?: string, token?
 
 export async function sendBroadcast(subject: string, body: string): Promise<{ sent: number; failed: number }> {
   const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) throw new Error('Email not configured — RESEND_API_KEY missing');
+  if (!apiKey) throw new Error('Email not configured - RESEND_API_KEY missing');
   const subscribers = db.prepare("SELECT * FROM subscribers WHERE unsubscribed_at IS NULL").all() as any[];
   if (!subscribers.length) throw new Error('No active subscribers');
   const resend = new Resend(apiKey);
@@ -241,20 +241,20 @@ function buildWelcomeHtml(email: string, name?: string, token?: string): string 
   const body = `
     <p style="margin:0 0 6px;font-size:22px">👋</p>
     <h2 style="margin:0 0 12px;color:#111827;font-size:19px;font-weight:800">Welcome, ${display}!</h2>
-    <p style="margin:0 0 20px;color:#6b7280;font-size:15px;line-height:1.7">You're now on the KraaFo list. Here's what we do — and what you can start doing right now.</p>
+    <p style="margin:0 0 20px;color:#6b7280;font-size:15px;line-height:1.7">You're now on the KraaFo list. Here's what we do - and what you can start doing right now.</p>
     <p style="margin:0 0 8px;color:#374151;font-size:15px;font-weight:700">KraaFo lets you:</p>
     <ul style="margin:0 0 24px;padding-left:20px;color:#6b7280;font-size:14px;line-height:2">
       <li>Create professional invoices, receipts &amp; quotes in under 2 minutes</li>
-      <li>Send them by <strong style="color:#374151">WhatsApp, email or SMS</strong> — directly from the app</li>
+      <li>Send them by <strong style="color:#374151">WhatsApp, email or SMS</strong> - directly from the app</li>
       <li>Support mobile money: M-Pesa, MTN, Airtel, Telecel</li>
       <li>Work in any currency, in any country</li>
     </ul>
     <p style="margin:0 0 4px;color:#374151;font-size:14px;font-weight:700">Ready to try it?</p>
-    <p style="margin:0 0 20px;color:#6b7280;font-size:14px">Takes 2 minutes to set up. Free to use — no card, no catch.</p>
+    <p style="margin:0 0 20px;color:#6b7280;font-size:14px">Takes 2 minutes to set up. Free to use - no card, no catch.</p>
     ${cta(`${FRONTEND_URL}/setup`, 'Create my first invoice →')}
-    <p style="margin:20px 0 0;color:#9ca3af;font-size:13px;text-align:center">Or <a href="${FRONTEND_URL}/generator?demo=true" style="color:#6b7280">try the live demo first</a> — no account needed.</p>
+    <p style="margin:20px 0 0;color:#9ca3af;font-size:13px;text-align:center">Or <a href="${FRONTEND_URL}/generator?demo=true" style="color:#6b7280">try the live demo first</a> - no account needed.</p>
   `;
-  return emailShell('#4f46e5', 'You\'re in — let\'s get you paid. 🎉', 'KraaFo · Professional Invoicing', body,
+  return emailShell('#4f46e5', 'You\'re in - let\'s get you paid. 🎉', 'KraaFo · Professional Invoicing', body,
     `You subscribed with ${email}. &nbsp;·&nbsp; <a href="${unsubUrl}" style="color:#6b7280">Unsubscribe</a>`);
 }
 
@@ -269,16 +269,16 @@ export async function sendOrgWelcome(org: any): Promise<void> {
     <p style="margin:0 0 6px;font-size:22px">🚀</p>
     <h2 style="margin:0 0 12px;color:#111827;font-size:19px;font-weight:800">Your KraaFo account is live, ${name}!</h2>
     <p style="margin:0 0 24px;color:#6b7280;font-size:15px;line-height:1.7">You're set up and ready to go. Here's how to send your first invoice in the next 2 minutes:</p>
-    ${step('1', 'Open the Generator', 'Click the button below — you\'re already logged in.')}
+    ${step('1', 'Open the Generator', 'Click the button below - you\'re already logged in.')}
     ${step('2', 'Build your invoice your way', 'Type in your own services and prices, or hit Smart Fill to auto-fill line items for your industry. Either way works.')}
-    ${step('3', 'Send it', 'Download the PDF, or send directly by WhatsApp or email — right from the app.')}
+    ${step('3', 'Send it', 'Download the PDF, or send directly by WhatsApp or email - right from the app.')}
     ${cta(`${FRONTEND_URL}/generator`, 'Create my first invoice →')}
     <p style="margin:20px 0 0;color:#9ca3af;font-size:13px;text-align:center">Free to use. No card required.</p>
   `;
   await resend.emails.send({
     from: `KraaFo <${FROM_ADDRESS}>`,
     to: [org.email],
-    subject: `Welcome to KraaFo, ${name} — your first invoice awaits`,
+    subject: `Welcome to KraaFo, ${name} - your first invoice awaits`,
     html: emailShell('#4f46e5', `You\'re all set, ${name} 🎉`, 'KraaFo · Professional Invoicing', body,
       `This email was sent to ${org.email} because you created a KraaFo account. &nbsp;·&nbsp; <a href="${FRONTEND_URL}" style="color:#6b7280">kraafo.com</a>`),
   });
@@ -292,9 +292,9 @@ export async function sendDay2Email(org: any): Promise<void> {
   const name = org.name || 'there';
   const body = `
     <p style="margin:0 0 12px;color:#6b7280;font-size:15px;line-height:1.7">Hey ${name},</p>
-    <p style="margin:0 0 20px;color:#374151;font-size:15px;line-height:1.7">You signed up for KraaFo but haven't sent your first invoice yet — no worries, it happens. Here's the fastest way to get started:</p>
+    <p style="margin:0 0 20px;color:#374151;font-size:15px;line-height:1.7">You signed up for KraaFo but haven't sent your first invoice yet - no worries, it happens. Here's the fastest way to get started:</p>
     ${step('1', 'Go to the Generator', 'One click and you\'re on the invoice screen.')}
-    ${step('2', 'Click Smart Fill', 'Pick your industry — cleaning, plumbing, consulting, whatever you do — and your invoice fills itself.')}
+    ${step('2', 'Click Smart Fill', 'Pick your industry - cleaning, plumbing, consulting, whatever you do - and your invoice fills itself.')}
     ${step('3', 'Send by WhatsApp', 'Tap Send, choose WhatsApp. Your client gets a professional PDF in their chat. Done.')}
     <p style="margin:24px 0 8px;color:#374151;font-size:15px;font-weight:700">That's it. No complicated setup.</p>
     ${cta(`${FRONTEND_URL}/generator`, 'Send my first invoice now →')}
@@ -317,7 +317,7 @@ export async function sendDay4Email(org: any): Promise<void> {
   const name = org.name || 'there';
   const body = `
     <p style="margin:0 0 12px;color:#6b7280;font-size:15px;line-height:1.7">Hey ${name},</p>
-    <p style="margin:0 0 8px;color:#374151;font-size:17px;font-weight:800;line-height:1.4">We know what you might be thinking — what's the catch with KraaFo being free?</p>
+    <p style="margin:0 0 8px;color:#374151;font-size:17px;font-weight:800;line-height:1.4">We know what you might be thinking - what's the catch with KraaFo being free?</p>
     <p style="margin:0 0 24px;color:#6b7280;font-size:15px;line-height:1.7">There isn't one.</p>
     <p style="margin:0 0 12px;color:#374151;font-size:14px;font-weight:700">Here's what's free to use:</p>
     <ul style="margin:0 0 24px;padding-left:20px;color:#6b7280;font-size:14px;line-height:2.2">
@@ -329,14 +329,14 @@ export async function sendDay4Email(org: any): Promise<void> {
       <li>Client management</li>
       <li>Document history</li>
     </ul>
-    <p style="margin:0 0 20px;color:#6b7280;font-size:14px;line-height:1.7">We're building our user base first. When premium features arrive later, you'll get early access and early pricing — because you were here first.</p>
-    ${cta(`${FRONTEND_URL}/generator`, 'Start invoicing — it\'s free →')}
+    <p style="margin:0 0 20px;color:#6b7280;font-size:14px;line-height:1.7">We're building our user base first. When premium features arrive later, you'll get early access and early pricing - because you were here first.</p>
+    ${cta(`${FRONTEND_URL}/generator`, 'Start invoicing - it\'s free →')}
   `;
   await resend.emails.send({
     from: `KraaFo <${MARKETING_FROM}>`,
     to: [org.email],
     subject: "The catch? There isn't one.",
-    html: emailShell('#059669', 'No catch — here\'s what you get 💚', 'KraaFo · Free to use', body,
+    html: emailShell('#059669', 'No catch - here\'s what you get 💚', 'KraaFo · Free to use', body,
       `Sent to ${org.email} · <a href="${FRONTEND_URL}" style="color:#6b7280">kraafo.com</a>`),
   });
   db.prepare('UPDATE organizations SET day4_email_sent = 1 WHERE id = ?').run(org.id);
@@ -349,15 +349,15 @@ export async function sendDay7Email(org: any): Promise<void> {
   const name = org.name || 'there';
   const body = `
     <p style="margin:0 0 12px;color:#6b7280;font-size:15px;line-height:1.7">Hey ${name},</p>
-    <p style="margin:0 0 20px;color:#374151;font-size:15px;line-height:1.7">It's been a week since you joined KraaFo. Life gets busy — we get it. That's exactly why KraaFo exists.</p>
+    <p style="margin:0 0 20px;color:#374151;font-size:15px;line-height:1.7">It's been a week since you joined KraaFo. Life gets busy - we get it. That's exactly why KraaFo exists.</p>
     <p style="margin:0 0 12px;color:#374151;font-size:14px;font-weight:700">Businesses using KraaFo are:</p>
     <ul style="margin:0 0 24px;padding-left:20px;color:#6b7280;font-size:14px;line-height:2.2">
       <li>Sending invoices by <strong style="color:#374151">WhatsApp in under 60 seconds</strong></li>
-      <li>Getting paid faster — clients open WhatsApp, they don't open email</li>
+      <li>Getting paid faster - clients open WhatsApp, they don't open email</li>
       <li>Looking completely professional without expensive software</li>
       <li>Tracking every invoice, receipt and quote in one place</li>
     </ul>
-    <p style="margin:0 0 20px;color:#6b7280;font-size:14px;line-height:1.7">Give it one try. If it doesn't work for you, no hard feelings — but it takes 2 minutes to find out.</p>
+    <p style="margin:0 0 20px;color:#6b7280;font-size:14px;line-height:1.7">Give it one try. If it doesn't work for you, no hard feelings - but it takes 2 minutes to find out.</p>
     ${cta(`${FRONTEND_URL}/generator`, 'Give it one try →')}
     <p style="margin:20px 0 0;color:#9ca3af;font-size:13px;text-align:center">Free to use. Nothing to lose.</p>
   `;
@@ -383,8 +383,8 @@ export async function sendPaymentReminder(invoice: any, org: any, daysOverdue: n
   const urgency = daysOverdue <= 1
     ? { subject: `Friendly reminder: Invoice ${invoice.number} is due`, tone: 'gentle' }
     : daysOverdue <= 7
-    ? { subject: `Invoice ${invoice.number} is overdue — ${outstanding} outstanding`, tone: 'firm' }
-    : { subject: `Final reminder: Invoice ${invoice.number} — ${outstanding} unpaid`, tone: 'urgent' };
+    ? { subject: `Invoice ${invoice.number} is overdue - ${outstanding} outstanding`, tone: 'firm' }
+    : { subject: `Final reminder: Invoice ${invoice.number} - ${outstanding} unpaid`, tone: 'urgent' };
 
   const body = daysOverdue <= 1 ? `
     <p style="margin:0 0 16px;color:#374151;font-size:15px">Hi ${invoice.client_name || 'there'},</p>
@@ -447,7 +447,7 @@ function buildBroadcastHtml(body: string, unsubToken: string): string {
           <p style="margin:0 0 16px;color:#374151;font-size:15px;line-height:1.8">${formatted}</p>
         </td></tr>
         <tr><td style="padding:20px 40px;background:#f9fafb;border-top:1px solid #f3f4f6;text-align:center">
-          <p style="margin:0;color:#9ca3af;font-size:12px">KraaFo — Professional Invoicing Platform &nbsp;·&nbsp; <a href="${unsubUrl}" style="color:#6b7280">Unsubscribe</a></p>
+          <p style="margin:0;color:#9ca3af;font-size:12px">KraaFo - Professional Invoicing Platform &nbsp;·&nbsp; <a href="${unsubUrl}" style="color:#6b7280">Unsubscribe</a></p>
         </td></tr>
       </table>
     </td></tr>
@@ -587,7 +587,7 @@ export async function sendPasswordReset(org: any, code: string): Promise<void> {
   const body = `
     <p style="margin:0 0 16px;color:#374151;font-size:15px">Hi ${org.name || 'there'},</p>
     <p style="margin:0 0 20px;color:#374151;font-size:15px;line-height:1.7">
-      We received a request to reset your KraaFo password. Use the code below — it expires in <strong>1 hour</strong>.
+      We received a request to reset your KraaFo password. Use the code below - it expires in <strong>1 hour</strong>.
     </p>
     <div style="text-align:center;margin:28px 0">
       <div style="display:inline-block;background:#f3f4f6;border:2px dashed #d1d5db;border-radius:12px;padding:20px 36px">

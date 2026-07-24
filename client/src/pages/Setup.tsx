@@ -192,7 +192,7 @@ export default function Setup() {
     }
   };
 
-  /* ── Verification gate — only for brand-new users ──────────── */
+  /* ── Verification gate - only for brand-new users ──────────── */
   if (!org && !humanVerified && TURNSTILE_ENABLED) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
@@ -225,7 +225,7 @@ export default function Setup() {
     );
   }
 
-  /* ── Account type selector — new accounts only ─────────────── */
+  /* ── Account type selector - new accounts only ─────────────── */
   if (!org && !accountTypeChosen) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
@@ -252,7 +252,7 @@ export default function Setup() {
                   </div>
                   <div>
                     <p className="font-black text-slate-900 text-sm">Solo</p>
-                    <p className="text-slate-500 text-xs mt-0.5 leading-relaxed">Just me — I handle invoicing for my business on my own. Streamlined and fast.</p>
+                    <p className="text-slate-500 text-xs mt-0.5 leading-relaxed">Just me - I handle invoicing for my business on my own. Streamlined and fast.</p>
                   </div>
                   {accountType === 'solo' && <Check className="w-5 h-5 text-indigo-500 shrink-0 ml-auto mt-0.5" />}
                 </div>
@@ -271,7 +271,7 @@ export default function Setup() {
                   </div>
                   <div>
                     <p className="font-black text-slate-900 text-sm">Business Team</p>
-                    <p className="text-slate-500 text-xs mt-0.5 leading-relaxed">Multiple people need access — staff, accountants, managers. Invite your team after setup.</p>
+                    <p className="text-slate-500 text-xs mt-0.5 leading-relaxed">Multiple people need access - staff, accountants, managers. Invite your team after setup.</p>
                   </div>
                   {accountType === 'team' && <Check className="w-5 h-5 text-indigo-500 shrink-0 ml-auto mt-0.5" />}
                 </div>
@@ -295,7 +295,7 @@ export default function Setup() {
     );
   }
 
-  /* ── Team invite step — shown after org creation for team accounts ── */
+  /* ── Team invite step - shown after org creation for team accounts ── */
   if (inviteStep) {
     const handleAddInvite = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -373,14 +373,14 @@ export default function Setup() {
 
               {pendingInvites.length === 0 && (
                 <div className="text-center py-4 text-slate-400 text-sm mb-2">
-                  Add team members above — they'll receive an invite email.
+                  Add team members above - they'll receive an invite email.
                 </div>
               )}
 
               <button onClick={handleFinish}
                 className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm transition-all">
                 <Check className="w-4 h-4" />
-                {pendingInvites.length > 0 ? `Done — launch KraaFo` : 'Skip for now — launch KraaFo'}
+                {pendingInvites.length > 0 ? `Done - launch KraaFo` : 'Skip for now - launch KraaFo'}
               </button>
               {pendingInvites.length === 0 && (
                 <p className="text-center text-xs text-slate-400 mt-2">You can invite your team later from the Team page</p>
@@ -447,7 +447,7 @@ export default function Setup() {
               </div>
               {!org && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Password * <span className="font-normal text-gray-400">(min. 8 characters — you'll use this to sign in)</span></label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Password * <span className="font-normal text-gray-400">(min. 8 characters - you'll use this to sign in)</span></label>
                   <div className="relative">
                     <input
                       type={showPassword ? 'text' : 'password'}
@@ -583,7 +583,7 @@ export default function Setup() {
                   set('currency', e.target.value);
                   if (c) set('currency_symbol', c.symbol);
                 }} className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  {CURRENCIES.map(c => <option key={c.code} value={c.code}>{c.code} — {c.name} ({c.symbol})</option>)}
+                  {CURRENCIES.map(c => <option key={c.code} value={c.code}>{c.code} - {c.name} ({c.symbol})</option>)}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-4">

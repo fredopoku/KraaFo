@@ -3,7 +3,7 @@ import db from '../db/schema';
 
 const router = Router();
 
-// GET /api/trash — all deleted items for the org
+// GET /api/trash - all deleted items for the org
 router.get('/', (req: Request, res: Response) => {
   const orgId = req.auth!.orgId;
   const invoices = db.prepare(
@@ -18,7 +18,7 @@ router.get('/', (req: Request, res: Response) => {
   res.json({ invoices, quotes, clients });
 });
 
-// GET /api/trash/count — badge count
+// GET /api/trash/count - badge count
 router.get('/count', (req: Request, res: Response) => {
   const orgId = req.auth!.orgId;
   const inv = (db.prepare('SELECT COUNT(*) as c FROM invoices WHERE org_id = ? AND deleted_at IS NOT NULL').get(orgId) as any).c;
@@ -54,7 +54,7 @@ router.post('/clients/:id/restore', (req: Request, res: Response) => {
   res.json({ success: true });
 });
 
-// DELETE /api/trash/invoices/:id — permanent delete
+// DELETE /api/trash/invoices/:id - permanent delete
 router.delete('/invoices/:id', (req: Request, res: Response) => {
   const existing = db.prepare(
     'SELECT id FROM invoices WHERE id = ? AND org_id = ? AND deleted_at IS NOT NULL'
@@ -65,7 +65,7 @@ router.delete('/invoices/:id', (req: Request, res: Response) => {
   res.json({ success: true });
 });
 
-// DELETE /api/trash/quotes/:id — permanent delete
+// DELETE /api/trash/quotes/:id - permanent delete
 router.delete('/quotes/:id', (req: Request, res: Response) => {
   const existing = db.prepare(
     'SELECT id FROM quotes WHERE id = ? AND org_id = ? AND deleted_at IS NOT NULL'
@@ -76,7 +76,7 @@ router.delete('/quotes/:id', (req: Request, res: Response) => {
   res.json({ success: true });
 });
 
-// DELETE /api/trash/clients/:id — permanent delete
+// DELETE /api/trash/clients/:id - permanent delete
 router.delete('/clients/:id', (req: Request, res: Response) => {
   const existing = db.prepare(
     'SELECT id FROM clients WHERE id = ? AND org_id = ? AND deleted_at IS NOT NULL'

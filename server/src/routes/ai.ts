@@ -49,7 +49,7 @@ router.post('/parse-receipt', upload.single('image'), async (req: Request, res: 
 
     const parsed = await parseReceiptFromImage(base64, mimetype);
 
-    // Brand colors only extracted for image imports — the vision model reads the actual
+    // Brand colors only extracted for image imports - the vision model reads the actual
     // document colours. PDFs go through a text model so there's no visual to read from,
     // and screenshotting the PDF viewer captures browser chrome (grey) not document colours.
     let brand_colors: { primary: string; secondary: string; accent: string } | null = null;

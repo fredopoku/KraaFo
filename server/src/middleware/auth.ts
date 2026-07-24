@@ -50,11 +50,11 @@ const PUBLIC_PREFIXES = [
 
 function isPublic(req: Request): boolean {
   const p = req.path;
-  if (!p.startsWith('/api/')) return true; // frontend routes — always pass through
+  if (!p.startsWith('/api/')) return true; // frontend routes - always pass through
   if (PUBLIC_PREFIXES.some(prefix => p.startsWith(prefix))) return true;
   if (req.method === 'GET' && /^\/api\/invoices\/[^/]+\/public$/.test(p)) return true;
   if (req.method === 'POST' && p === '/api/feedback') return true;
-  if (req.method === 'POST' && p === '/api/organizations') return true; // initial signup — no token yet
+  if (req.method === 'POST' && p === '/api/organizations') return true; // initial signup - no token yet
   if (req.method === 'POST' && p === '/api/upload/logo') return true; // logo uploaded before auth exists
   if (p.startsWith('/api/admin') || p.startsWith('/api/broadcasts')) return true;
   return false;
@@ -81,6 +81,6 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
     db.prepare("UPDATE organizations SET last_active_at = datetime('now') WHERE id = ?").run(payload.orgId);
     next();
   } catch {
-    res.status(401).json({ error: 'Session expired — please sign in again' });
+    res.status(401).json({ error: 'Session expired. Please sign in again.' });
   }
 }

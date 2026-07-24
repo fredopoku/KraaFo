@@ -35,7 +35,7 @@ const isProd = process.env.NODE_ENV === 'production';
 
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
-// CORS — allow configured frontend URL + localhost for dev only
+// CORS - allow configured frontend URL + localhost for dev only
 const allowedOrigins = [
   'https://kraafo.com',
   'https://www.kraafo.com',
@@ -59,7 +59,7 @@ app.use(helmet({
   contentSecurityPolicy: false,     // handled by Cloudflare; inline styles in React would break with strict CSP
 }));
 
-// Rate limiting — protect auth endpoints from brute force
+// Rate limiting - protect auth endpoints from brute force
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,   // 15 minutes
   max: 10,                      // 10 attempts per window per IP
@@ -81,7 +81,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/uploads', express.static(path.resolve(UPLOAD_DIR)));
 
-// Global auth — public routes are whitelisted inside requireAuth
+// Global auth - public routes are whitelisted inside requireAuth
 app.use(requireAuth);
 
 // API routes
@@ -151,7 +151,7 @@ if (isProd && fs.existsSync(clientDist)) {
     h = patchMeta(h, 'twitter:description', cfg.twitterDescription);
     h = h.replace(/(<link\s+rel="canonical"\s+href=")[^"]*"/, `$1${cfg.canonical}"`);
     if (cfg.injectH1 && !h.includes('<h1')) {
-      // Only inject when no h1 exists — guards against double-h1 when Puppeteer prerender ran
+      // Only inject when no h1 exists - guards against double-h1 when Puppeteer prerender ran
       const hiddenStyle = 'position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border-width:0';
       h = h.replace('<body>', `<body><h1 style="${hiddenStyle}">${cfg.injectH1}</h1>`);
     }
@@ -161,101 +161,101 @@ if (isProd && fs.existsSync(clientDist)) {
   const routeConfigs: Record<string, RouteConfig> = {
     '/': {
       srcFile: 'index.html',
-      title: 'KraaFo — Free Invoicing & Receipt Software for Service Businesses',
-      description: 'Create and download professional invoices, receipts and quotes free — no account needed. Branded PDFs delivered by WhatsApp, SMS & email — all at once or one at a time. Sign up to save and send.',
+      title: 'KraaFo - Free Invoicing & Receipt Software for Service Businesses',
+      description: 'Create and download professional invoices, receipts and quotes free - no account needed. Branded PDFs delivered by WhatsApp, SMS & email - all at once or one at a time. Sign up to save and send.',
       canonical: 'https://kraafo.com/',
-      ogTitle: 'KraaFo — Professional Invoices & Receipts in Under a Minute',
-      ogDescription: 'Professional invoices in under a minute — delivered by WhatsApp, SMS or email. Send all three at once, or just the one your client uses. Branded PDFs, Smart Fill, free to create.',
-      twitterTitle: 'KraaFo — Free Invoice & Receipt Generator',
-      twitterDescription: 'Professional invoices in under a minute. Branded PDFs delivered by WhatsApp, SMS or email — all at once or individually. Free to create — sign up to send.',
+      ogTitle: 'KraaFo - Professional Invoices & Receipts in Under a Minute',
+      ogDescription: 'Professional invoices in under a minute - delivered by WhatsApp, SMS or email. Send all three at once, or just the one your client uses. Branded PDFs, Smart Fill, free to create.',
+      twitterTitle: 'KraaFo - Free Invoice & Receipt Generator',
+      twitterDescription: 'Professional invoices in under a minute. Branded PDFs delivered by WhatsApp, SMS or email - all at once or individually. Free to create - sign up to send.',
     },
     '/generator': {
       srcFile: 'generator/index.html',
-      title: 'Free Invoice Generator — Create & Download in 60 Seconds | KraaFo',
-      description: 'Create a professional invoice in under 60 seconds. Download free as PDF — no account needed. Add your logo, set your rates, and send by WhatsApp, SMS, or email.',
+      title: 'Free Invoice Generator - Create & Download in 60 Seconds | KraaFo',
+      description: 'Create a professional invoice in under 60 seconds. Download free as PDF - no account needed. Add your logo, set your rates, and send by WhatsApp, SMS, or email.',
       canonical: 'https://kraafo.com/generator',
-      ogTitle: 'Free Invoice Generator — Create & Download in 60 Seconds | KraaFo',
-      ogDescription: 'Create a professional invoice in under 60 seconds. Download free as PDF — no account needed. Add your logo and send by WhatsApp, SMS, or email.',
+      ogTitle: 'Free Invoice Generator - Create & Download in 60 Seconds | KraaFo',
+      ogDescription: 'Create a professional invoice in under 60 seconds. Download free as PDF - no account needed. Add your logo and send by WhatsApp, SMS, or email.',
       twitterTitle: 'Free Invoice Generator | KraaFo',
-      twitterDescription: 'Create a professional invoice in under 60 seconds. Download free — no sign-up needed.',
-      injectH1: 'Free Invoice Generator — Create &amp; Download in 60 Seconds',
+      twitterDescription: 'Create a professional invoice in under 60 seconds. Download free - no sign-up needed.',
+      injectH1: 'Free Invoice Generator - Create &amp; Download in 60 Seconds',
     },
     '/changelog': {
       srcFile: 'changelog/index.html',
-      title: "What's New in KraaFo — Latest Updates & Features",
-      description: "See the latest updates, new features, and improvements to KraaFo. Invoicing, receipts, WhatsApp delivery and more — always improving.",
+      title: "What's New in KraaFo - Latest Updates & Features",
+      description: "See the latest updates, new features, and improvements to KraaFo. Invoicing, receipts, WhatsApp delivery and more - always improving.",
       canonical: 'https://kraafo.com/changelog',
-      ogTitle: "What's New in KraaFo — Changelog",
-      ogDescription: "The latest updates and new features in KraaFo — your free invoice and receipt generator.",
+      ogTitle: "What's New in KraaFo - Changelog",
+      ogDescription: "The latest updates and new features in KraaFo - your free invoice and receipt generator.",
       twitterTitle: "What's New in KraaFo",
-      twitterDescription: "Latest updates and new features in KraaFo — free invoice and receipt generator.",
+      twitterDescription: "Latest updates and new features in KraaFo - free invoice and receipt generator.",
       injectH1: "What&#39;s New in KraaFo",
     },
     '/invoice-generator': {
       srcFile: 'invoice-generator/index.html',
-      title: 'Free Invoice Generator — Branded PDF Invoices in 60 Seconds | KraaFo',
-      description: 'Create professional invoice PDFs in under 60 seconds — free, no account needed. Add your logo, set your rates, and deliver by WhatsApp, SMS or email.',
+      title: 'Free Invoice Generator - Branded PDF Invoices in 60 Seconds | KraaFo',
+      description: 'Create professional invoice PDFs in under 60 seconds - free, no account needed. Add your logo, set your rates, and deliver by WhatsApp, SMS or email.',
       canonical: 'https://kraafo.com/invoice-generator',
-      ogTitle: 'Free Invoice Generator — Branded PDF Invoices in 60 Seconds | KraaFo',
+      ogTitle: 'Free Invoice Generator - Branded PDF Invoices in 60 Seconds | KraaFo',
       ogDescription: 'Create and send professional invoice PDFs free. Smart Fill, logo branding, WhatsApp, SMS & email delivery. No account needed to download.',
       twitterTitle: 'Free Invoice Generator | KraaFo',
-      twitterDescription: 'Professional invoice PDFs in 60 seconds — free to create and download. Send by WhatsApp, SMS or email.',
-      injectH1: 'Free Invoice Generator — Branded PDF Invoices in 60 Seconds',
+      twitterDescription: 'Professional invoice PDFs in 60 seconds - free to create and download. Send by WhatsApp, SMS or email.',
+      injectH1: 'Free Invoice Generator - Branded PDF Invoices in 60 Seconds',
     },
     '/receipt-generator': {
       srcFile: 'receipt-generator/index.html',
-      title: 'Free Receipt Maker — Instant Payment Receipts | KraaFo',
-      description: 'Generate a professional "PAYMENT RECEIVED" receipt in seconds — free, no account needed. Branded PDF receipts delivered by WhatsApp, SMS or email.',
+      title: 'Free Receipt Maker - Instant Payment Receipts | KraaFo',
+      description: 'Generate a professional "PAYMENT RECEIVED" receipt in seconds - free, no account needed. Branded PDF receipts delivered by WhatsApp, SMS or email.',
       canonical: 'https://kraafo.com/receipt-generator',
-      ogTitle: 'Free Receipt Maker — Instant Payment Receipts | KraaFo',
+      ogTitle: 'Free Receipt Maker - Instant Payment Receipts | KraaFo',
       ogDescription: 'Create and send professional payment receipts free. Branded PDF, instant delivery by WhatsApp, SMS or email. No templates, no fiddling.',
       twitterTitle: 'Free Receipt Maker | KraaFo',
-      twitterDescription: 'Professional payment receipts in seconds — free to create and download. Send by WhatsApp, SMS or email.',
-      injectH1: 'Free Receipt Maker — Instant Payment Receipts',
+      twitterDescription: 'Professional payment receipts in seconds - free to create and download. Send by WhatsApp, SMS or email.',
+      injectH1: 'Free Receipt Maker - Instant Payment Receipts',
     },
     '/quote-generator': {
       srcFile: 'quote-generator/index.html',
-      title: 'Free Quote Generator — Professional Quotes That Win Jobs | KraaFo',
-      description: 'Create professional quotes free — no account needed. When accepted, convert to an invoice in one tap. Branded PDFs delivered by WhatsApp, SMS or email.',
+      title: 'Free Quote Generator - Professional Quotes That Win Jobs | KraaFo',
+      description: 'Create professional quotes free - no account needed. When accepted, convert to an invoice in one tap. Branded PDFs delivered by WhatsApp, SMS or email.',
       canonical: 'https://kraafo.com/quote-generator',
-      ogTitle: 'Free Quote Generator — Professional Quotes That Win Jobs | KraaFo',
-      ogDescription: 'Professional quotes free — convert to invoice in one tap when accepted. Send by WhatsApp, SMS or email. No account needed to download.',
+      ogTitle: 'Free Quote Generator - Professional Quotes That Win Jobs | KraaFo',
+      ogDescription: 'Professional quotes free - convert to invoice in one tap when accepted. Send by WhatsApp, SMS or email. No account needed to download.',
       twitterTitle: 'Free Quote Generator | KraaFo',
-      twitterDescription: 'Professional quotes free — convert to invoice in one tap when accepted. Send by WhatsApp, SMS or email.',
-      injectH1: 'Free Quote Generator — Professional Quotes That Win Jobs',
+      twitterDescription: 'Professional quotes free - convert to invoice in one tap when accepted. Send by WhatsApp, SMS or email.',
+      injectH1: 'Free Quote Generator - Professional Quotes That Win Jobs',
     },
     '/whatsapp-invoice-generator': {
       srcFile: 'whatsapp-invoice-generator/index.html',
-      title: 'WhatsApp Invoice Generator — Send Invoices on WhatsApp | KraaFo',
+      title: 'WhatsApp Invoice Generator - Send Invoices on WhatsApp | KraaFo',
       description: 'Create a professional invoice and send it directly on WhatsApp in under 60 seconds. Free to create and download. SMS and email delivery included.',
       canonical: 'https://kraafo.com/whatsapp-invoice-generator',
-      ogTitle: 'WhatsApp Invoice Generator — Send Invoices on WhatsApp | KraaFo',
+      ogTitle: 'WhatsApp Invoice Generator - Send Invoices on WhatsApp | KraaFo',
       ogDescription: 'Create a professional invoice and send it on WhatsApp in under 60 seconds. Client receives a message with a link to view and download the PDF.',
       twitterTitle: 'WhatsApp Invoice Generator | KraaFo',
-      twitterDescription: 'Create a professional invoice and send it on WhatsApp in 60 seconds. Free to create — sign up free to send.',
-      injectH1: 'WhatsApp Invoice Generator — Send Invoices Directly on WhatsApp',
+      twitterDescription: 'Create a professional invoice and send it on WhatsApp in 60 seconds. Free to create - sign up free to send.',
+      injectH1: 'WhatsApp Invoice Generator - Send Invoices Directly on WhatsApp',
     },
     '/invoice-generator-ghana': {
       srcFile: 'invoice-generator-ghana/index.html',
-      title: 'Free Invoice Generator for Ghana — GHS, MTN MoMo & WhatsApp | KraaFo',
+      title: 'Free Invoice Generator for Ghana - GHS, MTN MoMo & WhatsApp | KraaFo',
       description: 'Create professional invoices in Ghana Cedis (GHS). Add MTN MoMo, Telecel, or bank details. Send by WhatsApp, SMS or email. Free to create and download.',
       canonical: 'https://kraafo.com/invoice-generator-ghana',
-      ogTitle: 'Free Invoice Generator for Ghana — GHS & MTN MoMo | KraaFo',
+      ogTitle: 'Free Invoice Generator for Ghana - GHS & MTN MoMo | KraaFo',
       ogDescription: 'Create professional invoices in GHS with MTN MoMo payment details. Send by WhatsApp in seconds. Free for all Ghanaian businesses.',
       twitterTitle: 'Invoice Generator for Ghana | KraaFo',
       twitterDescription: 'Create professional invoices in GHS with MTN MoMo details. Send by WhatsApp. Free forever.',
-      injectH1: 'Free Invoice Generator for Ghana — GHS, MTN MoMo &amp; WhatsApp',
+      injectH1: 'Free Invoice Generator for Ghana - GHS, MTN MoMo &amp; WhatsApp',
     },
     '/invoice-generator-for-freelancers': {
       srcFile: 'invoice-generator-for-freelancers/index.html',
-      title: 'Free Invoice Generator for Freelancers — Get Paid Faster | KraaFo',
-      description: 'Create professional freelance invoices in under 60 seconds. Branded PDF, multi-currency, WhatsApp & email delivery. Free to create — no account needed to download.',
+      title: 'Free Invoice Generator for Freelancers - Get Paid Faster | KraaFo',
+      description: 'Create professional freelance invoices in under 60 seconds. Branded PDF, multi-currency, WhatsApp & email delivery. Free to create - no account needed to download.',
       canonical: 'https://kraafo.com/invoice-generator-for-freelancers',
       ogTitle: 'Free Invoice Generator for Freelancers | KraaFo',
       ogDescription: 'Professional freelance invoices in 60 seconds. Branded PDF, multi-currency, WhatsApp and email delivery. Free to create and download.',
       twitterTitle: 'Free Freelance Invoice Generator | KraaFo',
       twitterDescription: 'Professional freelance invoices in 60 seconds. Branded PDF, multi-currency. Free to create.',
-      injectH1: 'Free Invoice Generator for Freelancers — Get Paid Faster',
+      injectH1: 'Free Invoice Generator for Freelancers - Get Paid Faster',
     },
   };
 
@@ -287,7 +287,7 @@ if (isProd && fs.existsSync(clientDist)) {
   }
 
   app.use(express.static(clientDist));
-  // SPA fallback — serve plain index.html for all other client-side routes
+  // SPA fallback - serve plain index.html for all other client-side routes
   app.get('*', (req, res) => {
     const safePath = path.normalize(req.path);
     const routeHtml = path.join(clientDist, safePath, 'index.html');

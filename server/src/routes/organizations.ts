@@ -53,7 +53,7 @@ router.post('/', (req: Request, res: Response) => {
 
   const org = db.prepare('SELECT * FROM organizations WHERE id = ?').get(id) as any;
   res.status(201).json(stripSensitive(org));
-  // Send welcome email in background — non-blocking
+  // Send welcome email in background - non-blocking
   sendOrgWelcome(org).catch(console.error);
 });
 

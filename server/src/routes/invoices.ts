@@ -21,7 +21,7 @@ router.get('/', (req: Request, res: Response) => {
   res.json(invoices);
 });
 
-// Public — no auth, safe org fields only
+// Public - no auth, safe org fields only
 router.get('/:id/public', (req: Request, res: Response) => {
   let doc = db.prepare('SELECT * FROM invoices WHERE id = ? AND deleted_at IS NULL').get(req.params.id) as any;
   let isQuote = false;
@@ -212,7 +212,7 @@ router.delete('/:id', (req: Request, res: Response) => {
   res.json({ success: true });
 });
 
-// Create a receipt from a fully-paid invoice — copies all client/item data
+// Create a receipt from a fully-paid invoice - copies all client/item data
 router.post('/:id/receipt', (req: Request, res: Response) => {
   const invoice = db.prepare('SELECT * FROM invoices WHERE id = ? AND org_id = ?').get(req.params.id, req.auth!.orgId) as any;
   if (!invoice) return res.status(404).json({ error: 'Invoice not found' });

@@ -32,7 +32,7 @@ export function EndCard({ headline }: { headline: string }) {
         }}
       />
 
-      {/* Headline — fades + slides in */}
+      {/* Headline - fades + slides in */}
       <div
         style={{
           opacity: headlineOpacity,

@@ -2,7 +2,7 @@ import { VideoConfig } from './types';
 
 const config: VideoConfig = {
   id: 'ad-20s',
-  title: 'KraaFo — 20s Social Ad',
+  title: 'KraaFo: 20s Social Ad',
   width: 1080,
   height: 1920,
   fps: 30,
@@ -20,7 +20,7 @@ const config: VideoConfig = {
       src: '06-full-demo.webm',
       startTrimSec: 22,
       durationSec: 9,
-      caption: 'Smart Fill — invoice in seconds',
+      caption: 'Smart Fill: invoice in seconds',
       phoneFrame: true,
     },
     {
@@ -28,7 +28,7 @@ const config: VideoConfig = {
       src: '06-full-demo.webm',
       startTrimSec: 37,
       durationSec: 5,
-      caption: 'Email · WhatsApp · SMS — one tap',
+      caption: 'Email · WhatsApp · SMS: one tap',
       phoneFrame: true,
     },
     {

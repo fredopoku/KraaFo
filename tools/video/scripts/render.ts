@@ -23,7 +23,7 @@ async function main() {
 
   console.log(`🎬 Rendering ${configId} → out/${configId}.mp4`);
 
-  // Dynamic imports — Remotion ESM packages
+  // Dynamic imports - Remotion ESM packages
   const { bundle } = await import('@remotion/bundler');
   const { renderMedia, selectComposition } = await import('@remotion/renderer');
 

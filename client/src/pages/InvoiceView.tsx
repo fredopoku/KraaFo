@@ -66,7 +66,7 @@ export default function InvoiceView() {
 
   return (
     <div className="min-h-screen bg-slate-100 print:bg-white">
-      {/* Action bar — hidden when printing */}
+      {/* Action bar - hidden when printing */}
       <div className="print:hidden bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-2">
           <button onClick={() => navigate('/')} className="text-xs text-slate-400 hover:text-slate-600 font-medium">kraafo.com</button>
@@ -100,7 +100,7 @@ export default function InvoiceView() {
 
         <div className="p-8 print:p-10">
 
-          {/* Top row — branding + doc title */}
+          {/* Top row - branding + doc title */}
           <div className="flex items-start justify-between gap-6 mb-8">
             <div className="flex items-center gap-3 min-w-0">
               {org?.logo_url && (
@@ -300,7 +300,7 @@ export default function InvoiceView() {
             Powered by <span className="font-black text-indigo-500">KraaFo</span>
           </a>
         </div>
-        {/* Quiet recipient CTA — highest-intent surface; no popup, just a whisper */}
+        {/* Quiet recipient CTA - highest-intent surface; no popup, just a whisper */}
         <div className="px-8 py-3 text-center border-t border-slate-50 print:hidden">
           <p className="text-xs text-slate-400">
             Like this invoice?{' '}

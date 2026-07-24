@@ -131,7 +131,7 @@ export default function Trash() {
       await api.trash.restore(type, item.id);
       await load();
     } catch {
-      // silently fail — item still in list on reload
+      // silently fail - item still in list on reload
     } finally {
       setRestoring(null);
     }

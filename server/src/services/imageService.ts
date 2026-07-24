@@ -132,7 +132,7 @@ export function getLogoBase64(logoPath: string): string | null {
   try {
     if (!logoPath || !fs.existsSync(logoPath)) return null;
     const data = fs.readFileSync(logoPath);
-    // Detect actual format from magic bytes — thumbnails are always PNG regardless of extension
+    // Detect actual format from magic bytes - thumbnails are always PNG regardless of extension
     let mime: string;
     if (data[0] === 0x89 && data[1] === 0x50) {
       mime = 'image/png';

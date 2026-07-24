@@ -41,7 +41,7 @@ router.post('/login', async (req: Request, res: Response) => {
   res.json({ org: safeOrg, token, role: member.role, memberName: member.name });
 });
 
-// First-time password set (during setup — org has no password yet)
+// First-time password set (during setup - org has no password yet)
 router.post('/set-password', async (req: Request, res: Response) => {
   const { orgId, password } = req.body;
   if (!orgId || !password) return res.status(400).json({ error: 'orgId and password required' });
@@ -65,7 +65,7 @@ router.post('/forgot', async (req: Request, res: Response) => {
   if (!email) return res.status(400).json({ error: 'Email required' });
 
   const org = db.prepare('SELECT * FROM organizations WHERE LOWER(email) = LOWER(?) LIMIT 1').get(email.trim()) as any;
-  // Always return success — don't reveal whether account exists
+  // Always return success - don't reveal whether account exists
   if (!org) return res.json({ sent: true });
 
   const code = String(Math.floor(100000 + Math.random() * 900000));
@@ -104,14 +104,14 @@ router.post('/reset', async (req: Request, res: Response) => {
   res.json({ org: safeOrg, token, role: 'owner' });
 });
 
-// Validate an invite token — returns org name and invitee email (public)
+// Validate an invite token - returns org name and invitee email (public)
 router.get('/join/:token', (req: Request, res: Response) => {
   const member = db.prepare('SELECT tm.*, o.name as org_name FROM team_members tm JOIN organizations o ON o.id = tm.org_id WHERE tm.invite_token = ? AND tm.invite_accepted = 0').get(req.params.token) as any;
   if (!member) return res.status(404).json({ error: 'Invite link is invalid or has already been used.' });
   res.json({ email: member.email, orgName: member.org_name, role: member.role });
 });
 
-// Accept an invite — set name + password, return token (public)
+// Accept an invite - set name + password, return token (public)
 router.post('/join/:token', async (req: Request, res: Response) => {
   const { name, password } = req.body;
   if (!name || !password) return res.status(400).json({ error: 'Name and password required' });

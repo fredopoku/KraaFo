@@ -275,7 +275,7 @@ const ALL_TEMPLATES: Record<string, IndustryTemplates> = {
         { description: 'Conversation Practice Session', quantity: 2, unit: 'session', unit_price: 45, amount: 90 },
         { description: 'Learning Materials & Flashcard Pack', quantity: 1, unit: 'unit', unit_price: 20, amount: 20 },
       ],
-      notes: 'Language learning is a journey — you are making great strides!',
+      notes: 'Language learning is a journey - you are making great strides!',
       terms: 'Payment due monthly in advance.',
     },
   },
@@ -520,7 +520,7 @@ Suggest 4-5 line items for a ${clientType} invoice.
 Existing items to avoid duplicating: ${existingItems.join(', ') || 'none'}.
 Additional context: ${notes || 'standard service'}.
 
-Return ONLY valid JSON — no markdown, no explanation:
+Return ONLY valid JSON - no markdown, no explanation:
 {"items":[{"description":"...","quantity":1,"unit":"session","unit_price":0,"amount":0}],"notes":"...","terms":"..."}`;
 
     const msg = await anthropic.messages.create({
@@ -666,7 +666,7 @@ function parseInvoiceText(raw: string): Record<string, unknown> {
       continue;
     }
 
-    // Pattern: description  amount  (2 columns — common in simple receipts)
+    // Pattern: description  amount  (2 columns - common in simple receipts)
     const m2 = line.match(/^(.{4,60}?)\s{2,}[\$£€]?([\d,]+\.\d{2})$/);
     if (m2 && !skipLine.test(m2[1])) {
       const amt = parseAmount(m2[2]);
@@ -697,7 +697,7 @@ function parseInvoiceText(raw: string): Record<string, unknown> {
 
 const PARSE_PROMPT = `You are an expert at reading invoices and receipts. Extract every piece of information visible.
 
-Return ONLY valid JSON — no markdown fences, no explanation:
+Return ONLY valid JSON - no markdown fences, no explanation:
 {
   "type": "invoice" or "receipt",
   "number": "document number or empty string",
@@ -727,7 +727,7 @@ Return ONLY valid JSON — no markdown fences, no explanation:
 Rules: extract ALL line items; dates as YYYY-MM-DD; if document says paid/receipt set type to receipt; empty string for anything unreadable; brand colors must be valid 6-digit hex (#rrggbb) or empty string.`;
 
 const COLOR_PROMPT = `Look at this document image. Identify the brand colors used in headings, borders, table headers, or decorative elements.
-Return ONLY valid JSON — no markdown, no explanation:
+Return ONLY valid JSON - no markdown, no explanation:
 {"primary":"#hexcolor","secondary":"#hexcolor","accent":"#hexcolor"}
 - primary: the dominant brand/accent color (headers, lines, borders)
 - secondary: a slightly darker or complementary shade

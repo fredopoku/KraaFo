@@ -84,7 +84,7 @@ export default function Clients() {
       showToast('Client moved to Trash');
       load();
     } catch (err) {
-      showToast((err as Error).message || 'Delete failed — please try again');
+      showToast((err as Error).message || 'Delete failed - please try again');
     } finally {
       setDeleting(false);
     }

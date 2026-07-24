@@ -9,13 +9,13 @@ import path from 'path';
 import QRCode from 'qrcode';
 
 // Rate limit for the unauthenticated guest PDF endpoint.
-// Puppeteer rendering is expensive — cap per IP to prevent DoS.
+// Puppeteer rendering is expensive - cap per IP to prevent DoS.
 const guestPdfLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: 'Too many PDF requests — please wait before trying again.' },
+  message: { error: 'Too many PDF requests - please wait before trying again.' },
 });
 
 const router = Router();
@@ -356,7 +356,7 @@ router.get('/statement/:clientId', async (req: Request, res: Response) => {
   }
 });
 
-// Guest PDF download — no account required.
+// Guest PDF download - no account required.
 // Protected by Turnstile (when configured) + IP rate limit.
 router.post('/guest', guestPdfLimiter, async (req: Request, res: Response) => {
   const { cf_turnstile_response, type, number, issue_date, due_date, paid_date, status,
@@ -372,7 +372,7 @@ router.post('/guest', guestPdfLimiter, async (req: Request, res: Response) => {
   // Verify Turnstile when configured; skip in dev (no secret set)
   const ip = (req.headers['x-forwarded-for'] as string) || req.ip;
   const human = await verifyTurnstile(cf_turnstile_response, ip);
-  if (!human) return res.status(403).json({ error: 'Bot check failed — please try again.' });
+  if (!human) return res.status(403).json({ error: 'Bot check failed - please try again.' });
 
   try {
     const safeItems = Array.isArray(itemsData)
@@ -441,7 +441,7 @@ router.post('/guest', guestPdfLimiter, async (req: Request, res: Response) => {
     res.send(pdfBuffer);
   } catch (err) {
     console.error('Guest PDF error:', err);
-    res.status(500).json({ error: 'Failed to generate PDF — please try again.' });
+    res.status(500).json({ error: 'Failed to generate PDF - please try again.' });
   }
 });
 

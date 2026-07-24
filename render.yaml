@@ -16,19 +16,19 @@ services:
       - key: UPLOAD_DIR
         value: /data/uploads
 
-      # Frontend URL — used in email links (invites, unsubscribe, onboarding)
+      # Frontend URL - used in email links (invites, unsubscribe, onboarding)
       - key: FRONTEND_URL
         value: https://kraafo.com
 
-      # JWT signing secret — set a strong random value in the Render dashboard
+      # JWT signing secret - set a strong random value in the Render dashboard
       - key: JWT_SECRET
         sync: false
 
-      # Admin panel password — set a strong secret in the Render dashboard
+      # Admin panel password - set a strong secret in the Render dashboard
       - key: ADMIN_TOKEN
         sync: false
 
-      # AI — Smart Fill & document import (set in Render dashboard)
+      # AI - Smart Fill & document import (set in Render dashboard)
       - key: ANTHROPIC_API_KEY
         sync: false
       - key: GROQ_API_KEY
@@ -36,13 +36,13 @@ services:
       - key: GEMINI_API_KEY
         sync: false
 
-      # Cloudflare Turnstile — bot protection on signup, feedback, subscribe forms
+      # Cloudflare Turnstile - bot protection on signup, feedback, subscribe forms
       - key: TURNSTILE_SECRET
         sync: false
       - key: VITE_TURNSTILE_SITEKEY
         sync: false
 
-      # Email via Resend (recommended — invoice delivery, welcome & broadcast emails)
+      # Email via Resend (recommended - invoice delivery, welcome & broadcast emails)
       - key: RESEND_API_KEY
         sync: false
       - key: RESEND_FROM

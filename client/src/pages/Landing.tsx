@@ -165,7 +165,7 @@ function GeneratorMockup() {
   );
 }
 
-/* ─── How It Works — Interactive Stepper ──────────────────── */
+/* ─── How It Works - Interactive Stepper ──────────────────── */
 
 function SendVisual() {
   return (
@@ -305,7 +305,7 @@ function HowItWorksStepper() {
         ))}
       </div>
 
-      {/* Step content — all panels in DOM, toggled via class so crawlers index all steps */}
+      {/* Step content - all panels in DOM, toggled via class so crawlers index all steps */}
       <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
         <div className="order-2 lg:order-1">
           {stepData.map((step, i) => (
@@ -408,7 +408,7 @@ function HeroCrossfade() {
   );
 }
 
-/* ─── Footer newsletter — quiet single line ─────────────────── */
+/* ─── Footer newsletter - quiet single line ─────────────────── */
 
 function FooterUpdatesLine() {
   const [email, setEmail] = useState('');
@@ -495,7 +495,7 @@ export default function Landing() {
 
       {/* ── Hero ─────────────────────────────────────────────── */}
       <section className="relative overflow-hidden pt-12 pb-0 px-6" style={{ background: '#020617' }}>
-        {/* Soft ambient glow — behind the text column only */}
+        {/* Soft ambient glow - behind the text column only */}
         <div className="absolute top-0 left-0 w-[700px] h-[700px] pointer-events-none"
           style={{ background: 'radial-gradient(ellipse at 20% 40%,rgba(99,102,241,0.18) 0%,transparent 65%)' }} />
         <div className="absolute bottom-0 left-1/4 w-[400px] h-[400px] pointer-events-none"
