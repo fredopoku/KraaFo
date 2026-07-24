@@ -303,7 +303,7 @@ db.exec(`
   (
     'cl-team-accounts-2026',
     'Team Accounts & Multi-User Access',
-    'Invite your whole team to KraaFo. Choose between a Solo or Business Team account at setup, then add colleagues by email with role-based permissions - Owner, Admin, Staff, or Accountant. Pending invites get a branded email with a one-click join link.',
+    'Invite your whole team to KraaFo. Choose between a Solo or Business Team account at setup, then add colleagues by email with role-based permissions: Owner, Admin, Staff, or Accountant. Pending invites get a branded email with a one-click join link.',
     'New',
     '2026-03-01 00:00:00'
   ),
@@ -317,14 +317,14 @@ db.exec(`
   (
     'cl-overdue-reminders-2026',
     'Automatic Overdue Detection & Payment Reminders',
-    'Invoices flip to Overdue automatically once the due date passes. Clients receive escalating reminder emails at 1, 7, and 14 days overdue - gentle first, firm second, urgent third - sent from your own email address so replies come straight to you.',
+    'Invoices flip to Overdue automatically once the due date passes. Clients receive escalating reminder emails at 1, 7, and 14 days overdue (gentle first, firm second, urgent third), sent from your own email address so replies come straight to you.',
     'New',
     '2026-04-15 00:00:00'
   ),
   (
     'cl-open-generator-2026',
     'Try Before You Sign Up',
-    'The invoice generator is now open to everyone - no account needed. Create, preview, and download documents in full demo mode. Sign up only when you want to save, send, or access documents across devices.',
+    'The invoice generator is now open to everyone. No account needed. Create, preview, and download documents in full demo mode. Sign up only when you want to save, send, or access documents across devices.',
     'Improved',
     '2026-05-01 00:00:00'
   ),
@@ -338,14 +338,14 @@ db.exec(`
   (
     'cl-recurring-invoices-2026',
     'Recurring Invoices',
-    'Set any invoice to repeat automatically - weekly, monthly, quarterly, or yearly. The system generates a fresh invoice on schedule, copies all line items, and marks the original as your billing template. Set an optional end date or let it run indefinitely.',
+    'Set any invoice to repeat automatically: weekly, monthly, quarterly, or yearly. The system generates a fresh invoice on schedule, copies all line items, and marks the original as your billing template. Set an optional end date or let it run indefinitely.',
     'New',
     '2026-06-01 00:00:00'
   ),
   (
     'cl-statement-of-account-2026',
     'Client Statement of Account',
-    'Download a full Statement of Account for any client in one click. The PDF shows every invoice, receipt, and quote in chronological order - with amounts invoiced, collected, and the outstanding balance at a glance.',
+    'Download a full Statement of Account for any client in one click. The PDF shows every invoice, receipt, and quote in chronological order, showing amounts invoiced, collected, and the outstanding balance at a glance.',
     'New',
     '2026-06-15 00:00:00'
   ),
@@ -359,28 +359,28 @@ db.exec(`
   (
     'cl-analytics-dashboard-2025',
     'Upgraded Website Analytics Dashboard',
-    'The admin analytics panel now works like a real analytics product: choose a date range (7d / 30d / 90d / all-time), see trend arrows comparing the current period to the previous one, a live-visitor badge, session quality metrics (avg pages per session, avg duration, bounce rate), a 24-hour traffic heatmap, entry and exit pages, and all existing breakdowns - countries, cities, devices, browsers, top pages, and referrers - filtered to the selected period.',
+    'The admin analytics panel now works like a real analytics product: choose a date range (7d / 30d / 90d / all-time), see trend arrows comparing the current period to the previous one, a live-visitor badge, session quality metrics (avg pages per session, avg duration, bounce rate), a 24-hour traffic heatmap, entry and exit pages, and all existing breakdowns (countries, cities, devices, browsers, top pages, and referrers) filtered to the selected period.',
     'Improved',
     '2025-12-01 00:00:00'
   ),
   (
     'cl-triple-channel-delivery-2026',
-    'Send on WhatsApp, SMS & Email - All at Once',
-    'One tap now delivers your invoice or receipt across three channels simultaneously: WhatsApp opens a pre-composed message to your client, SMS fires a summary to their phone, and a branded PDF lands in their inbox - all in under 30 seconds. No other invoicing app does this.',
+    'Send on WhatsApp, SMS & Email: All at Once',
+    'One tap now delivers your invoice or receipt across three channels simultaneously: WhatsApp opens a pre-composed message to your client, SMS fires a summary to their phone, and a branded PDF lands in their inbox, all in under 30 seconds. No other invoicing app does this.',
     'New',
     '2026-06-20 00:00:00'
   ),
   (
     'cl-navigation-2026',
     'Clearer Navigation Across Every Page',
-    'Every page in the app now has a visible back arrow in the header so you always know how to get back. The Dashboard, Generator, Clients, Quotes, and Team pages all follow the same consistent navigation pattern - no more hunting for how to return to where you were.',
+    'Every page in the app now has a visible back arrow in the header so you always know how to get back. The Dashboard, Generator, Clients, Quotes, and Team pages all follow the same consistent navigation pattern. No more hunting for how to return to where you were.',
     'Improved',
     '2026-06-27 00:00:00'
   ),
   (
     'cl-security-hardening-2026',
     'Security Hardening',
-    'Full security audit applied before this release. Every API endpoint now derives the organisation ID from the verified login token - not from request parameters - so one account cannot access another''s data. HTTP security headers (X-Frame-Options, Strict-Transport-Security, X-Content-Type-Options, Referrer-Policy) now ship on every response. CORS origin matching switched to exact-match only.',
+    'Full security audit applied before this release. Every API endpoint now derives the organisation ID from the verified login token (not from request parameters), so one account cannot access another''s data. HTTP security headers (X-Frame-Options, Strict-Transport-Security, X-Content-Type-Options, Referrer-Policy) now ship on every response. CORS origin matching switched to exact-match only.',
     'Improved',
     '2026-06-27 00:00:00'
   );

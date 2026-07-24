@@ -56,7 +56,7 @@ export default function Changelog() {
             <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest">Product Updates</span>
           </div>
           <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-2">What's New in KraaFo</h1>
-          <p className="text-slate-500">Every update, improvement, and fix - newest first.</p>
+          <p className="text-slate-500">Every update, improvement, and fix, newest first.</p>
         </div>
 
         {loading ? (
@@ -73,7 +73,7 @@ export default function Changelog() {
         ) : entries.length === 0 ? (
           <div className="text-center py-24">
             <Zap className="w-10 h-10 text-slate-200 mx-auto mb-4" />
-            <p className="text-slate-400 font-medium">Updates coming soon - we're actively building.</p>
+            <p className="text-slate-400 font-medium">Updates coming soon. We're actively building.</p>
           </div>
         ) : (
           <div className="space-y-10">
