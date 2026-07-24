@@ -60,5 +60,6 @@ async function main() {
 
 main().catch((err) => {
   console.error('Render failed:', err.message);
+  console.error(err.stack);
   process.exit(1);
 });

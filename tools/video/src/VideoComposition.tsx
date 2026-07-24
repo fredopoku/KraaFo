@@ -8,6 +8,7 @@ import {
 } from 'remotion';
 import { VideoConfig, Segment } from '../configs/types';
 import { CaptionBar } from './components/CaptionBar';
+import { CTABadge } from './components/CTABadge';
 import { EndCard } from './components/EndCard';
 import { KenBurns } from './components/KenBurns';
 import { PhoneFrame } from './components/PhoneFrame';
@@ -60,18 +61,30 @@ export function VideoComposition({ config }: { config: VideoConfig }) {
   const { fps } = useVideoConfig();
 
   let frameOffset = 0;
+  const sequenceData = config.segments.map((seg) => {
+    const durationInFrames = Math.round(seg.durationSec * fps);
+    const from = frameOffset;
+    frameOffset += durationInFrames;
+    return { seg, from, durationInFrames };
+  });
+
+  // CTABadge spans all non-end-card segments as a single continuous sequence
+  const footageDuration = sequenceData
+    .filter(({ seg }) => seg.type !== 'end-card')
+    .reduce((sum, { durationInFrames }) => sum + durationInFrames, 0);
+
   return (
     <AbsoluteFill>
-      {config.segments.map((seg, i) => {
-        const durationInFrames = Math.round(seg.durationSec * fps);
-        const from = frameOffset;
-        frameOffset += durationInFrames;
-        return (
-          <Sequence key={i} from={from} durationInFrames={durationInFrames}>
-            <SegmentView seg={seg} width={config.width} height={config.height} />
-          </Sequence>
-        );
-      })}
+      {sequenceData.map(({ seg, from, durationInFrames }, i) => (
+        <Sequence key={i} from={from} durationInFrames={durationInFrames}>
+          <SegmentView seg={seg} width={config.width} height={config.height} />
+        </Sequence>
+      ))}
+      {config.ctaBadge && (
+        <Sequence from={0} durationInFrames={footageDuration}>
+          <CTABadge />
+        </Sequence>
+      )}
     </AbsoluteFill>
   );
 }

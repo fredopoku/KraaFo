@@ -35,4 +35,6 @@ export type VideoConfig = {
   height: number;
   fps: number;
   segments: Segment[];
+  /** Render a persistent clickable-ad CTA badge over footage segments */
+  ctaBadge?: boolean;
 };
