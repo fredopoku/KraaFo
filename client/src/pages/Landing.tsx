@@ -546,17 +546,9 @@ export default function Landing() {
 
       </section>
 
-      {/* ── Wave: dark → white ── */}
-      <div style={{ background: '#020617', marginBottom: '-2px' }}>
-        <svg viewBox="0 0 1440 70" xmlns="http://www.w3.org/2000/svg" className="w-full block" preserveAspectRatio="none" style={{ height: 70 }}>
-          <path d="M0,0 C360,70 1080,0 1440,50 L1440,70 L0,70 Z" fill="white" />
-        </svg>
-      </div>
-
       {/* ── Pain section ─────────────────────────────────────── */}
-      <section className="py-16 px-6 bg-white">
+      <section className="py-16 px-6 bg-white border-t border-slate-100">
         <div className="max-w-3xl mx-auto text-center">
-          <p className="text-xs font-bold text-red-500 uppercase tracking-widest mb-6">Sound familiar?</p>
           <div className="space-y-5">
             {[
               'The Word-doc invoice that looks nothing like your work.',
@@ -746,7 +738,6 @@ export default function Landing() {
       <section className="py-16 px-6 bg-slate-50">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-10">
-            <p className="text-xs font-bold text-indigo-500 uppercase tracking-widest mb-3">How it works</p>
             <h2 className="text-4xl font-black text-slate-900 tracking-tight mb-2">From zero to paid in minutes</h2>
             <p className="text-slate-500">No learning curve. No complicated setup. Just results.</p>
           </div>
@@ -846,7 +837,6 @@ export default function Landing() {
         }) }} />
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-10">
-            <p className="text-xs font-bold text-indigo-500 uppercase tracking-widest mb-3">FAQ</p>
             <h2 className="text-3xl font-black text-slate-900 tracking-tight">Common questions</h2>
           </div>
           <div className="space-y-3">
@@ -871,14 +861,8 @@ export default function Landing() {
       </section>
 
       {/* ── CTA ─────────────────────────────────────────────── */}
-      <section className="py-24 px-6 text-center relative overflow-hidden" style={{ background: '#020617' }}>
-        <div className="absolute top-0 left-0 right-0 pointer-events-none">
-          <svg viewBox="0 0 1440 70" xmlns="http://www.w3.org/2000/svg" className="w-full block" preserveAspectRatio="none" style={{ height: 70, transform: 'rotate(180deg)' }}>
-            <path d="M0,0 C360,70 1080,0 1440,50 L1440,70 L0,70 Z" fill="#f8fafc" />
-          </svg>
-        </div>
-        <div className="relative z-10 max-w-lg mx-auto pt-8">
-          <LogoMark size={72} className="mx-auto mb-6 opacity-90" dark />
+      <section className="py-24 px-6 text-center" style={{ background: '#020617' }}>
+        <div className="max-w-lg mx-auto">
           <h2 className="text-3xl font-black tracking-tight mb-3 text-white">
             Ready to send your first document?
           </h2>
