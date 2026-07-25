@@ -1467,7 +1467,7 @@ export default function Admin() {
                   {analyticsData.entryPages?.length > 0 && (
                     <div>
                       <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3">
-                        Entry pages <span className="normal-case font-normal">— where sessions start</span>
+                        Entry pages <span className="normal-case font-normal">(where sessions start)</span>
                       </p>
                       <div className="space-y-1.5">
                         {(() => {
@@ -1492,7 +1492,7 @@ export default function Admin() {
                   {analyticsData.exitPages?.length > 0 && (
                     <div>
                       <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3">
-                        Exit pages <span className="normal-case font-normal">— where sessions end</span>
+                        Exit pages <span className="normal-case font-normal">(where sessions end)</span>
                       </p>
                       <div className="space-y-1.5">
                         {(() => {

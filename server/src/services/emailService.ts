@@ -213,7 +213,7 @@ function emailShell(headerBg: string, headerText: string, headerSub: string, bod
         </td></tr>
         <tr><td style="padding:36px 40px">${body}</td></tr>
         <tr><td style="padding:24px 40px;background:#f9fafb;border-top:1px solid #f3f4f6">
-          <p style="margin:0 0 12px;color:#6b7280;font-size:13px;line-height:1.6">— The KraaFo Team<br>
+          <p style="margin:0 0 12px;color:#6b7280;font-size:13px;line-height:1.6">The KraaFo Team<br>
             <a href="${FRONTEND_URL}" style="color:#4f46e5;text-decoration:none;font-weight:600">kraafo.com</a>
           </p>
           <p style="margin:0;color:#9ca3af;font-size:11px">${footer}</p>

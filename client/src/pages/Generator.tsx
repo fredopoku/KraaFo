@@ -1665,7 +1665,7 @@ export default function Generator() {
               </div>
             </div>
             <div>
-              <label className={LABEL}>Footer Text <span className="normal-case text-slate-300 font-normal tracking-normal">— appears at the very bottom of the PDF</span></label>
+              <label className={LABEL}>Footer Text <span className="normal-case text-slate-300 font-normal tracking-normal">(appears at the bottom of the PDF)</span></label>
               <input
                 value={form.footer_text}
                 onChange={e => setField('footer_text', e.target.value)}
@@ -2121,8 +2121,7 @@ export default function Generator() {
               <button
                 onClick={handleSendAll}
                 disabled={sending || (!sendEmail && !sendPhone)}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-black text-white disabled:opacity-40 transition-all btn-glow"
-                style={{ background: 'linear-gradient(135deg,#7c3aed,#4f46e5)' }}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-black text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 transition-colors"
               >
                 {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 {sending ? 'Sending…' : 'Send via All Channels'}

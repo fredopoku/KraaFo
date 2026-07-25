@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, Palette, Download, CheckCircle, ArrowRight, FileText, Receipt, Send, Globe, Star, TrendingUp, Mail, MessageSquare, Zap } from 'lucide-react';
+import { Sparkles, Palette, Download, CheckCircle, ArrowRight, FileText, Receipt, Send, Globe, Star, TrendingUp, Mail, MessageSquare } from 'lucide-react';
 import { Logo, LogoMark } from '../components/Logo';
 import { api } from '../utils/api';
 import StoryPlayer from '../components/StoryPlayer';

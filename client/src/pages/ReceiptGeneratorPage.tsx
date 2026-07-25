@@ -93,9 +93,7 @@ export default function ReceiptGeneratorPage() {
             {/* Right: 3D receipt card */}
             <div className="hidden lg:flex items-center justify-center pt-6 animate-hero" style={{ animationDelay: '200ms' }}>
               <div className="relative">
-                <div className="absolute -inset-16 rounded-full pointer-events-none"
-                  style={{ background: 'radial-gradient(ellipse at center,rgba(16,185,129,0.3) 0%,transparent 65%)' }} />
-                <div ref={tilt.ref} style={tilt.style} className="relative z-10 cursor-default">
+<div ref={tilt.ref} style={tilt.style} className="relative z-10 cursor-default">
                   <div className="bg-white rounded-2xl overflow-hidden w-80"
                     style={{ boxShadow: '0 40px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.05)' }}>
                     <div className="h-1.5" style={{ background: 'linear-gradient(90deg,#10b981,#0d9488)' }} />
@@ -154,13 +152,7 @@ export default function ReceiptGeneratorPage() {
       </section>
 
       {/* ── Wave ── */}
-      <div style={{ background: '#020617', marginBottom: '-2px' }}>
-        <svg viewBox="0 0 1440 70" xmlns="http://www.w3.org/2000/svg" className="w-full block" preserveAspectRatio="none" style={{ height: 70 }}>
-          <path d="M0,0 C360,70 1080,0 1440,50 L1440,70 L0,70 Z" fill="white" />
-        </svg>
-      </div>
-
-      {/* ── Social proof ── */}
+{/* ── Social proof ── */}
       <section className="py-7 px-6 bg-white border-b border-slate-100">
         <div className="max-w-5xl mx-auto">
           <p className="text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.14em] mb-5">
@@ -292,15 +284,10 @@ export default function ReceiptGeneratorPage() {
       </section>
 
       {/* ── CTA ── */}
-      <section className="py-24 px-6 text-center relative overflow-hidden" style={{ background: '#020617' }}>
+      <section className="py-24 px-6 text-center" style={{ background: '#020617' }}>
         <div className="absolute inset-0 pointer-events-none"
           style={{ background: 'radial-gradient(ellipse 65% 55% at 50% 50%,rgba(16,185,129,0.22) 0%,transparent 70%)' }} />
-        <div className="absolute top-0 left-0 right-0 pointer-events-none">
-          <svg viewBox="0 0 1440 70" xmlns="http://www.w3.org/2000/svg" className="w-full block" preserveAspectRatio="none" style={{ height: 70, transform: 'rotate(180deg)' }}>
-            <path d="M0,0 C360,70 1080,0 1440,50 L1440,70 L0,70 Z" fill="white" />
-          </svg>
-        </div>
-        <div className="relative z-10 max-w-lg mx-auto pt-8">
+<div className="max-w-lg mx-auto">
           <h2 className="text-3xl font-black tracking-tight mb-3 bg-clip-text text-transparent"
             style={{ backgroundImage: 'linear-gradient(135deg,white 0%,#6ee7b7 100%)' }}>
             Ready to send your first receipt?
