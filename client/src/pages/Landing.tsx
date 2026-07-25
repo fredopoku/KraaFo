@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Sparkles, Palette, Download, CheckCircle, ArrowRight, FileText, Receipt, Send, Globe, Star, TrendingUp, Mail, MessageSquare, Zap } from 'lucide-react';
 import { Logo, LogoMark } from '../components/Logo';
@@ -485,8 +485,7 @@ export default function Landing() {
           <div className="flex items-center gap-3">
             <Link to="/generator?demo=true" className="text-sm font-semibold text-slate-400 hover:text-white transition-colors hidden sm:block">Demo</Link>
             <Link to="/login" className="text-sm font-bold text-slate-400 hover:text-white transition-colors hidden sm:block">Sign in</Link>
-            <Link to="/setup" className="flex items-center gap-2 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all hover:scale-[1.02]"
-              style={{ background: 'linear-gradient(135deg,#6366f1 0%,#7c3aed 100%)', boxShadow: '0 4px 20px rgba(99,102,241,0.4)' }}>
+            <Link to="/setup" className="flex items-center gap-2 text-white bg-indigo-600 hover:bg-indigo-700 px-5 py-2.5 rounded-xl text-sm font-bold transition-colors">
               Get Started <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
@@ -495,9 +494,6 @@ export default function Landing() {
 
       {/* ── Hero ─────────────────────────────────────────────── */}
       <section className="relative overflow-hidden pt-12 pb-0 px-6" style={{ background: '#020617' }}>
-        {/* Dot grid */}
-        <div className="absolute inset-0 pointer-events-none"
-          style={{ backgroundImage: 'radial-gradient(circle,rgba(255,255,255,0.06) 1px,transparent 1px)', backgroundSize: '36px 36px' }} />
 
         <div className="relative max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center lg:min-h-[88vh] pb-16 lg:pb-20">
@@ -507,7 +503,7 @@ export default function Landing() {
 
               <h1 className="text-[2.5rem] sm:text-5xl md:text-[58px] lg:text-[62px] font-black tracking-tight leading-[1.06] mb-6 animate-hero" style={{ animationDelay: '80ms' }}>
                 <span className="text-white">Free invoice generator &amp; receipt maker. </span>
-                <span className="animate-grad-text" style={{ backgroundImage: 'linear-gradient(135deg,#a5b4fc 0%,#c4b5fd 50%,#93c5fd 100%)' }}>
+                <span style={{ color: '#a5b4fc' }}>
                   Get paid without chasing.
                 </span>
               </h1>
@@ -520,8 +516,7 @@ export default function Landing() {
 
               <div className="flex flex-col sm:flex-row gap-3 mb-8 animate-hero" style={{ animationDelay: '240ms' }}>
                 <Link to="/setup"
-                  className="flex items-center justify-center gap-2 text-white px-8 py-3.5 rounded-xl font-bold text-base transition-all hover:scale-[1.02] active:scale-[0.98]"
-                  style={{ background: 'linear-gradient(135deg,#6366f1 0%,#7c3aed 100%)', boxShadow: '0 8px 32px rgba(99,102,241,0.45)' }}>
+                  className="flex items-center justify-center gap-2 text-white bg-indigo-600 hover:bg-indigo-700 px-8 py-3.5 rounded-xl font-bold text-base transition-colors">
                   Create your first invoice, free <ArrowRight className="w-4 h-4" />
                 </Link>
                 <Link to="/generator?demo=true"
@@ -592,9 +587,6 @@ export default function Landing() {
 
           {/* Header */}
           <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold px-4 py-1.5 rounded-full mb-6">
-              <Zap className="w-3.5 h-3.5" /> Only on KraaFo
-            </div>
             <h2 className="text-4xl md:text-5xl font-black text-white tracking-tight leading-[1.05] mb-5">
               Your client can't say<br />they didn't get it.
             </h2>
@@ -886,15 +878,13 @@ export default function Landing() {
           </svg>
         </div>
         <div className="relative z-10 max-w-lg mx-auto pt-8">
-          <LogoMark size={72} className="mx-auto mb-6 animate-float opacity-90" dark />
-          <h2 className="text-3xl font-black tracking-tight mb-3 bg-clip-text text-transparent"
-            style={{ backgroundImage: 'linear-gradient(135deg,white 0%,#c4b5fd 100%)' }}>
+          <LogoMark size={72} className="mx-auto mb-6 opacity-90" dark />
+          <h2 className="text-3xl font-black tracking-tight mb-3 text-white">
             Ready to send your first document?
           </h2>
           <p className="text-slate-500 mb-8 leading-relaxed">Takes under 2 minutes to set up. Free, no credit card needed.</p>
           <Link to="/setup"
-            className="inline-flex items-center gap-2.5 text-white px-10 py-4 rounded-xl font-bold text-base transition-all hover:scale-[1.03] active:scale-[0.97]"
-            style={{ background: 'linear-gradient(135deg,#6366f1 0%,#7c3aed 100%)', boxShadow: '0 8px 40px rgba(99,102,241,0.5)' }}>
+            className="inline-flex items-center gap-2.5 text-white bg-indigo-600 hover:bg-indigo-700 px-10 py-4 rounded-xl font-bold text-base transition-colors">
             Create your first invoice, free <ArrowRight className="w-4 h-4" />
           </Link>
           <p className="text-slate-600 text-xs mt-4 font-semibold">Free to use · No credit card · 2-minute setup</p>
