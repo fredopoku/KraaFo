@@ -314,7 +314,7 @@ function HowItWorksStepper() {
               <h3 className="text-2xl lg:text-3xl font-black text-slate-900 tracking-tight mb-4">{step.title}</h3>
               <p className="text-slate-500 leading-relaxed mb-8">{step.desc}</p>
               {i === 2 && (
-                <Link to="/setup" className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-7 py-3.5 rounded-xl font-bold text-base transition-all shadow-lg shadow-indigo-200 btn-glow">
+                <Link to="/setup" className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-7 py-3.5 rounded-xl font-bold text-base transition-all btn-glow">
                   Create your first invoice, free <ArrowRight className="w-4 h-4" />
                 </Link>
               )}
@@ -495,11 +495,6 @@ export default function Landing() {
 
       {/* ── Hero ─────────────────────────────────────────────── */}
       <section className="relative overflow-hidden pt-12 pb-0 px-6" style={{ background: '#020617' }}>
-        {/* Soft ambient glow - behind the text column only */}
-        <div className="absolute top-0 left-0 w-[700px] h-[700px] pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse at 20% 40%,rgba(99,102,241,0.18) 0%,transparent 65%)' }} />
-        <div className="absolute bottom-0 left-1/4 w-[400px] h-[400px] pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse at center,rgba(139,92,246,0.1) 0%,transparent 70%)' }} />
         {/* Dot grid */}
         <div className="absolute inset-0 pointer-events-none"
           style={{ backgroundImage: 'radial-gradient(circle,rgba(255,255,255,0.06) 1px,transparent 1px)', backgroundSize: '36px 36px' }} />
@@ -746,7 +741,7 @@ export default function Landing() {
 
           {/* CTA */}
           <div className="text-center">
-            <Link to="/setup" className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3.5 rounded-xl font-bold text-base transition-all shadow-lg shadow-indigo-900/50 btn-glow">
+            <Link to="/setup" className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3.5 rounded-xl font-bold text-base transition-all btn-glow">
               Create your first invoice, free <ArrowRight className="w-4 h-4" />
             </Link>
             <p className="text-slate-600 text-xs mt-3 font-semibold">Free to use · No credit card · 2-minute setup</p>
@@ -771,7 +766,7 @@ export default function Landing() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {features.map(({ icon: Icon, title, desc }, i) => (
-              <div key={title} className="p-5 rounded-2xl bg-white hover:bg-white border border-slate-100 hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-50 transition-all group cursor-default hover-lift animate-fade-up" style={{ animationDelay: `${i * 50}ms` }}>
+              <div key={title} className="p-5 rounded-2xl bg-white hover:bg-white border border-slate-100 hover:border-indigo-200 hover:shadow-lg transition-all group cursor-default hover-lift animate-fade-up" style={{ animationDelay: `${i * 50}ms` }}>
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3 shadow-sm transition-all group-hover:shadow-md bg-slate-50 group-hover:bg-indigo-600 border border-slate-100 group-hover:border-indigo-600">
                   <Icon className="w-4 h-4 text-slate-500 group-hover:text-white transition-colors" />
                 </div>
@@ -885,8 +880,6 @@ export default function Landing() {
 
       {/* ── CTA ─────────────────────────────────────────────── */}
       <section className="py-24 px-6 text-center relative overflow-hidden" style={{ background: '#020617' }}>
-        <div className="absolute inset-0 pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse 60% 55% at 50% 50%,rgba(99,102,241,0.2) 0%,transparent 70%)' }} />
         <div className="absolute top-0 left-0 right-0 pointer-events-none">
           <svg viewBox="0 0 1440 70" xmlns="http://www.w3.org/2000/svg" className="w-full block" preserveAspectRatio="none" style={{ height: 70, transform: 'rotate(180deg)' }}>
             <path d="M0,0 C360,70 1080,0 1440,50 L1440,70 L0,70 Z" fill="#f8fafc" />

@@ -40,23 +40,15 @@
     box-shadow: 0 8px 28px rgba(0, 0, 0, 0.09);
   }
 
-  /* Glow on primary button */
   .btn-glow {
-    transition: box-shadow 0.2s ease, transform 0.1s ease;
-  }
-  .btn-glow:hover {
-    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2), 0 4px 14px rgba(99, 102, 241, 0.35);
+    transition: transform 0.1s ease;
   }
   .btn-glow:active {
     transform: scale(0.97);
   }
 
-  /* Emerald glow for download */
   .btn-glow-green {
-    transition: box-shadow 0.2s ease, transform 0.1s ease;
-  }
-  .btn-glow-green:hover {
-    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2), 0 4px 14px rgba(16, 185, 129, 0.3);
+    transition: transform 0.1s ease;
   }
   .btn-glow-green:active {
     transform: scale(0.97);
