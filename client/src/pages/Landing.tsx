@@ -510,16 +510,6 @@ export default function Landing() {
             {/* ── Left: Text ───────────────────────────────── */}
             <div className="relative z-10 pt-6 lg:pt-0">
 
-              {/* Live badge */}
-              <div className="inline-flex items-center gap-2.5 text-xs font-black uppercase tracking-widest px-4 py-2 rounded-full mb-7 animate-hero"
-                style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.25)', color: '#a5b4fc' }}>
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: '#818cf8' }} />
-                  <span className="relative inline-flex h-2 w-2 rounded-full" style={{ background: '#818cf8' }} />
-                </span>
-                Free · WhatsApp · SMS · Email
-              </div>
-
               <h1 className="text-[2.5rem] sm:text-5xl md:text-[58px] lg:text-[62px] font-black tracking-tight leading-[1.06] mb-6 animate-hero" style={{ animationDelay: '80ms' }}>
                 <span className="text-white">Free invoice generator &amp; receipt maker. </span>
                 <span className="animate-grad-text" style={{ backgroundImage: 'linear-gradient(135deg,#a5b4fc 0%,#c4b5fd 50%,#93c5fd 100%)' }}>
