@@ -39,7 +39,7 @@ const config: VideoConfig = {
       src: '06-full-demo.webm',
       startTrimSec: 17,
       durationSec: 17,
-      caption: 'Smart Fill writes your invoice: instantly',
+      caption: 'Smart Fill writes your invoice in seconds.',
       phoneFrame: true,
     },
     {
