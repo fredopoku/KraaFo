@@ -173,7 +173,7 @@ if (isProd && fs.existsSync(clientDist)) {
       srcFile: 'generator/index.html',
       title: 'Free Invoice Generator - Create & Download in 60 Seconds | KraaFo',
       description: 'Create a professional invoice in under 60 seconds. Download free as PDF - no account needed. Add your logo, set your rates, and send by WhatsApp, SMS, or email.',
-      canonical: 'https://kraafo.com/generator',
+      canonical: 'https://kraafo.com/invoice-generator',
       ogTitle: 'Free Invoice Generator - Create & Download in 60 Seconds | KraaFo',
       ogDescription: 'Create a professional invoice in under 60 seconds. Download free as PDF - no account needed. Add your logo and send by WhatsApp, SMS, or email.',
       twitterTitle: 'Free Invoice Generator | KraaFo',
