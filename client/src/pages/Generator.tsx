@@ -162,14 +162,6 @@ export default function Generator() {
   };
 
   useEffect(() => {
-    const link = document.createElement('link');
-    link.rel = 'canonical';
-    link.href = 'https://kraafo.com/invoice-generator';
-    document.head.appendChild(link);
-    return () => { document.head.removeChild(link); };
-  }, []);
-
-  useEffect(() => {
     if (!showList) return;
     const close = (e: MouseEvent) => {
       const t = e.target as HTMLElement;
