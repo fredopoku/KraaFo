@@ -4,12 +4,6 @@ import { ArrowRight, CheckCircle, MessageSquare, Zap, Globe } from 'lucide-react
 import { Logo } from '../components/Logo';
 import { use3DTilt } from '../hooks/use3DTilt';
 
-const PORTRAITS = [
-  { src: '/phase3/portrait-accra.jpg',      name: 'Abena K.',  city: 'Accra, Ghana',     role: 'Cleaning services' },
-  { src: '/phase3/portrait-lagos.jpg',      name: 'Chidi O.',  city: 'Lagos, Nigeria',    role: 'Tailoring' },
-  { src: '/phase3/portrait-manchester.jpg', name: 'Tom H.',    city: 'Manchester, UK',    role: 'Plumbing' },
-  { src: '/phase3/portrait-saopaulo.jpg',   name: 'Ana M.',    city: 'São Paulo, Brazil', role: 'Food & catering' },
-];
 
 function useReveal(threshold = 0.12) {
   const ref = useRef<HTMLDivElement>(null);
@@ -80,7 +74,7 @@ export default function WhatsappInvoicePage() {
               </div>
 
               <div className="flex flex-wrap gap-x-5 gap-y-2 animate-hero" style={{ animationDelay: '320ms' }}>
-                {['Works on any phone','No credit card needed','30+ countries supported'].map(t => (
+                {['Works on any phone','No credit card needed','Works worldwide'].map(t => (
                   <div key={t} className="flex items-center gap-1.5 text-slate-500 text-sm">
                     <CheckCircle className="w-3.5 h-3.5 shrink-0" style={{ color: '#4ade80' }} />
                     {t}
@@ -170,29 +164,6 @@ export default function WhatsappInvoicePage() {
         </div>
       </section>
 
-      {/* ── Wave ── */}
-{/* ── Social proof ── */}
-      <section className="py-7 px-6 bg-white border-b border-slate-100">
-        <div className="max-w-5xl mx-auto">
-          <p className="text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.14em] mb-5">
-            Used by small businesses in 30+ countries
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-7">
-            {PORTRAITS.map(({ src, name, city, role }) => (
-              <div key={name} className="flex items-center gap-3">
-                <img src={src} alt={`${name}, ${role}, uses KraaFo`}
-                  className="w-11 h-11 rounded-full object-cover shadow-md"
-                  style={{ border: '2.5px solid #bbf7d0' }} loading="lazy" />
-                <div>
-                  <div className="text-xs font-bold text-slate-700">{name}</div>
-                  <div className="text-[10px] text-slate-400">{city}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ── Features ── */}
       <section className="py-20 px-6 bg-white">
         <div ref={feat.ref} className="max-w-5xl mx-auto">
@@ -204,7 +175,7 @@ export default function WhatsappInvoicePage() {
           <div className="grid md:grid-cols-3 gap-5">
             {[
               { Icon: MessageSquare, bg: '#f0fdf4', ic: '#22c55e', title: 'Message pre-filled for you', desc: 'KraaFo writes the WhatsApp message and attaches the PDF. You confirm and tap Send. No composing, no copying.' },
-              { Icon: Globe,         bg: '#ecfdf5', ic: '#16a34a', title: 'Works in 30+ countries',     desc: 'Multi-currency support for GHS, NGN, KES, GBP, USD, BRL and more. Send invoices in the currency your client expects.' },
+              { Icon: Globe,         bg: '#ecfdf5', ic: '#16a34a', title: 'Works worldwide',             desc: 'Multi-currency support for GHS, NGN, KES, GBP, USD, BRL and more. Send invoices in the currency your client expects.' },
               { Icon: Zap,           bg: '#eef2ff', ic: '#6366f1', title: 'SMS and email too',           desc: 'Use "Send via all channels" and KraaFo fires WhatsApp, SMS, and email simultaneously. Maximum reach, one tap.' },
             ].map(({ Icon, bg, ic, title, desc }, i) => (
               <div key={title}

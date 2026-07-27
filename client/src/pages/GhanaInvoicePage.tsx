@@ -4,12 +4,6 @@ import { ArrowRight, CheckCircle, Zap, Globe, MessageSquare } from 'lucide-react
 import { Logo } from '../components/Logo';
 import { use3DTilt } from '../hooks/use3DTilt';
 
-const PORTRAITS = [
-  { src: '/phase3/portrait-accra.jpg',      name: 'Abena K.',  city: 'Accra, Ghana',     role: 'Cleaning services' },
-  { src: '/phase3/portrait-lagos.jpg',      name: 'Chidi O.',  city: 'Lagos, Nigeria',    role: 'Tailoring' },
-  { src: '/phase3/portrait-manchester.jpg', name: 'Tom H.',    city: 'Manchester, UK',    role: 'Plumbing' },
-  { src: '/phase3/portrait-saopaulo.jpg',   name: 'Ana M.',    city: 'São Paulo, Brazil', role: 'Food & catering' },
-];
 
 function useReveal(threshold = 0.12) {
   const ref = useRef<HTMLDivElement>(null);
@@ -145,29 +139,6 @@ export default function GhanaInvoicePage() {
               </div>
             </div>
 
-          </div>
-        </div>
-      </section>
-
-      {/* ── Wave ── */}
-{/* ── Social proof ── */}
-      <section className="py-7 px-6 bg-white border-b border-slate-100">
-        <div className="max-w-5xl mx-auto">
-          <p className="text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.14em] mb-5">
-            Trusted by Ghanaian small businesses across every sector
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-7">
-            {PORTRAITS.map(({ src, name, city, role }) => (
-              <div key={name} className="flex items-center gap-3">
-                <img src={src} alt={`${name}, ${role}, uses KraaFo`}
-                  className="w-11 h-11 rounded-full object-cover shadow-md"
-                  style={{ border: '2.5px solid #c7d2fe' }} loading="lazy" />
-                <div>
-                  <div className="text-xs font-bold text-slate-700">{name}</div>
-                  <div className="text-[10px] text-slate-400">{city}</div>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       </section>
