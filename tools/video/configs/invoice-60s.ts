@@ -1,56 +1,61 @@
+/**
+ * Ported to 06-full-demo.webm — original footage (01-create-invoice.webm,
+ * 02-send-modal.webm) no longer exists. Trim values match full-demo-75s
+ * calibration. Setup section omitted to keep this under 50s.
+ */
 import { VideoConfig } from './types';
 
 const config: VideoConfig = {
   id: 'invoice-60s',
-  title: '60-Second Invoice: Full Creation Flow',
+  title: 'KraaFo: Invoice Creation Walkthrough',
   width: 1080,
   height: 1920,
   fps: 30,
   segments: [
     {
       type: 'footage',
-      src: '01-create-invoice.webm',
-      durationSec: 6,
-      caption: 'Open KraaFo. Tap Invoice.',
-    },
-    {
-      type: 'footage',
-      src: '01-create-invoice.webm',
-      startTrimSec: 6,
+      src: '06-full-demo.webm',
+      startTrimSec: 0,
       durationSec: 8,
-      caption: 'Type your client\'s name. KraaFo finds the rest.',
+      caption: 'Professional invoicing for your business',
+      phoneFrame: true,
     },
     {
       type: 'footage',
-      src: '01-create-invoice.webm',
-      startTrimSec: 14,
+      src: '06-full-demo.webm',
+      startTrimSec: 16,
       durationSec: 10,
-      caption: 'Tap Smart Fill: AI suggests your services in seconds.',
+      caption: 'Load your invoice. Smart Fill is one tap away.',
+      phoneFrame: true,
     },
     {
       type: 'footage',
-      src: '01-create-invoice.webm',
-      startTrimSec: 24,
+      src: '06-full-demo.webm',
+      startTrimSec: 26,
+      durationSec: 7,
+      caption: 'Smart Fill rewrites every line item in seconds.',
+      phoneFrame: true,
+    },
+    {
+      type: 'footage',
+      src: '06-full-demo.webm',
+      startTrimSec: 33,
+      durationSec: 11,
+      caption: 'Email · WhatsApp · SMS: one tap.',
+      phoneFrame: true,
+    },
+    {
+      type: 'footage',
+      src: '06-full-demo.webm',
+      startTrimSec: 44,
       durationSec: 8,
-      caption: 'Live preview updates as you type.',
-    },
-    {
-      type: 'footage',
-      src: '01-create-invoice.webm',
-      startTrimSec: 32,
-      durationSec: 10,
-      caption: 'Hit Save. Your invoice is ready.',
-    },
-    {
-      type: 'footage',
-      src: '02-send-modal.webm',
-      durationSec: 14,
-      caption: 'Send via WhatsApp, SMS, and Email: one tap.',
+      caption: 'Track every payment in real time.',
+      phoneFrame: true,
     },
     {
       type: 'end-card',
-      headline: 'Professional invoices in under a minute.',
-      durationSec: 4,
+      headline: 'Free to create your invoices, receipts, and quotes for any business.',
+      durationSec: 5,
     },
   ],
 };
