@@ -1,9 +1,15 @@
 /**
  * Flagship social video: full product walkthrough.
  * Landing → Setup → Invoice creation → Send → Dashboard.
- * ~58s content + 5s end card = 63s total, 1080×1920, 30fps.
  *
- * startTrimSec values calibrated to 06-full-demo.webm capture (~54s recording).
+ * Trim values calibrated to 06-full-demo.webm (~55s, captured with waitUntil:'load').
+ * Section boundaries:
+ *   0–8.6s   Landing hero + How it works scroll
+ *   8.6–15.6s Setup page: company info + branding steps
+ *  15.6–32.9s Invoice generator: load invoice, Smart Fill, scroll items
+ *  32.9–44.7s Send modal: email + phone + Send via All Channels
+ *  44.7–52.7s Dashboard: revenue summary + invoice list
+ *
  * Re-run the capture and re-render if content pacing changes.
  */
 import { VideoConfig } from './types';
@@ -25,29 +31,38 @@ const config: VideoConfig = {
       phoneFrame: true,
     },
     {
-      // Setup page: company info + branding steps (pre-filled, looks polished)
+      // Setup page: company info + branding (pre-filled, looks polished)
       type: 'footage',
       src: '06-full-demo.webm',
       startTrimSec: 9,
-      durationSec: 8,
+      durationSec: 7,
       caption: 'Set up in under 2 minutes',
       phoneFrame: true,
     },
     {
-      // Generator: load invoice → Smart Fill AI writes items → scroll preview
+      // Generator: load saved invoice via menu → line items appear → Smart Fill tap
       type: 'footage',
       src: '06-full-demo.webm',
-      startTrimSec: 17,
-      durationSec: 17,
-      caption: 'Smart Fill writes your invoice in seconds.',
+      startTrimSec: 16,
+      durationSec: 10,
+      caption: 'Load your invoice. Smart Fill is one tap away.',
       phoneFrame: true,
     },
     {
-      // Send modal: fill email + phone → all three pills go green → Send
+      // Smart Fill: AI rewrites all line items + scroll to see result
       type: 'footage',
       src: '06-full-demo.webm',
-      startTrimSec: 34,
-      durationSec: 12,
+      startTrimSec: 26,
+      durationSec: 7,
+      caption: 'Smart Fill rewrites every line item in seconds.',
+      phoneFrame: true,
+    },
+    {
+      // Send modal: fill email + phone → all three pills go green → Send All
+      type: 'footage',
+      src: '06-full-demo.webm',
+      startTrimSec: 33,
+      durationSec: 11,
       caption: 'Email · WhatsApp · SMS: one tap',
       phoneFrame: true,
     },
@@ -55,8 +70,8 @@ const config: VideoConfig = {
       // Dashboard: revenue summary cards + invoice list
       type: 'footage',
       src: '06-full-demo.webm',
-      startTrimSec: 46,
-      durationSec: 7,
+      startTrimSec: 44,
+      durationSec: 9,
       caption: 'Track every payment in real time',
       phoneFrame: true,
     },
