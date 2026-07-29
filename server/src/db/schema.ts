@@ -388,6 +388,28 @@ db.exec(`
   );
 `);
 
+// Remove admin-only entries that should never be in the user changelog
+db.exec(`DELETE FROM changelog WHERE id = 'cl-analytics-dashboard-2025';`);
+
+// New user-facing entries (INSERT OR IGNORE — safe to run on every boot)
+db.exec(`
+  INSERT OR IGNORE INTO changelog (id, title, description, tag, published_at) VALUES
+  (
+    'cl-revenue-granularity-2026',
+    'Revenue Chart: Daily, Monthly & Yearly — All Time',
+    'Your revenue chart now shows your full business history, not just the last 6 months. Switch between Daily (last 90 days), Monthly (all time), and Yearly (all time) views with one tap. The chart scrolls automatically when there are many periods, so nothing gets squeezed.',
+    'Improved',
+    '2026-07-29 00:00:00'
+  ),
+  (
+    'cl-onboarding-checklist-2026',
+    'Getting Started Checklist',
+    'New accounts now see a three-step checklist on the dashboard: add your logo and brand colours, create your first document, and save your first client. Each step links directly to where you need to go. The checklist disappears once all three are done — no clutter after you are set up.',
+    'New',
+    '2026-07-29 00:00:00'
+  )
+`);
+
 // Fix em dashes in existing rows (UPDATE runs every boot, safe to repeat)
 db.exec(`
   UPDATE changelog SET
