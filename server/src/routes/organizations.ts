@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import db from '../db/schema';
-import { sendOrgWelcome } from '../services/emailService';
+import { sendOrgWelcome, sendAdminSignupAlert } from '../services/emailService';
 
 const router = Router();
 
@@ -53,8 +53,8 @@ router.post('/', (req: Request, res: Response) => {
 
   const org = db.prepare('SELECT * FROM organizations WHERE id = ?').get(id) as any;
   res.status(201).json(stripSensitive(org));
-  // Send welcome email in background - non-blocking
   sendOrgWelcome(org).catch(console.error);
+  sendAdminSignupAlert(org).catch(console.error);
 });
 
 router.put('/:id', (req: Request, res: Response) => {

@@ -643,3 +643,32 @@ export async function sendTeamInvite(member: any, org: any, inviteToken: string)
     html,
   });
 }
+
+// ── Admin signup alert ───────────────────────────────────────────
+const ADMIN_EMAIL = process.env.ADMIN_ALERT_EMAIL || 'opokufred32@gmail.com';
+
+export async function sendAdminSignupAlert(org: any): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return;
+  const resend = new Resend(apiKey);
+  const now = new Date().toLocaleString('en-GB', { timeZone: 'UTC', dateStyle: 'medium', timeStyle: 'short' });
+  await resend.emails.send({
+    from: `KraaFo Alerts <${FROM_ADDRESS}>`,
+    to: [ADMIN_EMAIL],
+    subject: `New signup: ${org.name || org.email}`,
+    html: `
+      <div style="font-family:system-ui,sans-serif;max-width:480px;margin:0 auto;padding:24px;background:#f9fafb;border-radius:12px">
+        <p style="margin:0 0 4px;font-size:13px;color:#6b7280;text-transform:uppercase;letter-spacing:.06em">KraaFo · New Signup</p>
+        <h2 style="margin:0 0 20px;font-size:22px;color:#111827">${org.name || '(no name)'}</h2>
+        <table style="width:100%;border-collapse:collapse;font-size:14px;color:#374151">
+          <tr><td style="padding:6px 0;color:#6b7280;width:90px">Email</td><td style="padding:6px 0">${org.email || '—'}</td></tr>
+          <tr><td style="padding:6px 0;color:#6b7280">Phone</td><td style="padding:6px 0">${org.phone || '—'}</td></tr>
+          <tr><td style="padding:6px 0;color:#6b7280">Country</td><td style="padding:6px 0">${org.country || '—'}</td></tr>
+          <tr><td style="padding:6px 0;color:#6b7280">Currency</td><td style="padding:6px 0">${org.currency || '—'}</td></tr>
+          <tr><td style="padding:6px 0;color:#6b7280">Time</td><td style="padding:6px 0">${now} UTC</td></tr>
+        </table>
+        <a href="${FRONTEND_URL}/admin" style="display:inline-block;margin-top:20px;padding:10px 20px;background:#4f46e5;color:#fff;border-radius:6px;font-size:14px;font-weight:600;text-decoration:none">View in Admin →</a>
+      </div>
+    `,
+  });
+}
