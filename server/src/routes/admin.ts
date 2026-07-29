@@ -8,6 +8,7 @@ router.get('/users', adminAuth, (_req: Request, res: Response) => {
   const orgs = db.prepare(`
     SELECT
       o.id, o.name, o.email, o.country, o.account_type, o.created_at, COALESCE(o.last_active_at, o.created_at) as last_active_at,
+      o.last_seen, o.current_page, COALESCE(o.total_logins, 0) as total_logins,
       -- Document counts (active only)
       (SELECT COUNT(*) FROM invoices WHERE org_id = o.id AND type = 'invoice' AND deleted_at IS NULL) as invoice_count,
       (SELECT COUNT(*) FROM invoices WHERE org_id = o.id AND type = 'receipt' AND deleted_at IS NULL) as receipt_count,
@@ -100,6 +101,27 @@ router.get('/users', adminAuth, (_req: Request, res: Response) => {
   `).all() as any[];
 
   res.json({ orgs, summary: { ...summary, active_orgs, new_this_week: newThisWeek }, recentPayments, platformRevenue, platformRevenueYearly });
+});
+
+// Live user presence — who is online right now
+router.get('/presence', adminAuth, (_req: Request, res: Response) => {
+  const rows = db.prepare(`
+    SELECT
+      o.id, o.name, o.email, o.country, o.current_page, o.last_seen,
+      COALESCE(o.total_logins, 0) as total_logins,
+      (SELECT COUNT(*) FROM invoices WHERE org_id = o.id AND deleted_at IS NULL) +
+      (SELECT COUNT(*) FROM quotes WHERE org_id = o.id AND deleted_at IS NULL) as total_docs,
+      CAST((julianday('now') - julianday(o.last_seen)) * 86400 AS INTEGER) as seconds_ago
+    FROM organizations o
+    WHERE o.last_seen IS NOT NULL
+      AND o.last_seen >= datetime('now', '-30 minutes')
+    ORDER BY o.last_seen DESC
+  `).all() as any[];
+
+  const online = rows.filter((r: any) => r.seconds_ago <= 180);
+  const recently = rows.filter((r: any) => r.seconds_ago > 180);
+
+  res.json({ online, recently, online_count: online.length });
 });
 
 router.get('/orgs/:id', adminAuth, (req: Request, res: Response) => {

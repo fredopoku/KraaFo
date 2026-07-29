@@ -26,6 +26,7 @@ import statsRouter from './routes/stats';
 import authRouter from './routes/auth';
 import teamRouter from './routes/team';
 import trashRouter from './routes/trash';
+import presenceRouter from './routes/presence';
 import { requireAuth } from './middleware/auth';
 import { startScheduler } from './services/scheduler';
 
@@ -116,6 +117,7 @@ app.use('/api/auth/reset', authLimiter);
 app.use('/api/auth', authRouter);
 app.use('/api/team', teamRouter);
 app.use('/api/trash', trashRouter);
+app.use('/api/presence', presenceRouter);
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', version: '1.0.0', timestamp: new Date().toISOString() });

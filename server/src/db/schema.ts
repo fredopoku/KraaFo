@@ -266,6 +266,9 @@ addCol('organizations', 'reset_token_expires', 'TEXT');
 addCol('organizations', 'next_invoice_number', 'INTEGER DEFAULT 1');
 addCol('organizations', 'activation_email_sent', 'INTEGER DEFAULT 0');
 addCol('organizations', 'day14_email_sent', 'INTEGER DEFAULT 0');
+addCol('organizations', 'last_seen', 'TEXT');
+addCol('organizations', 'current_page', 'TEXT');
+addCol('organizations', 'total_logins', 'INTEGER DEFAULT 0');
 
 // Team members table
 db.exec(`

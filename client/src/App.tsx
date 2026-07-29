@@ -53,6 +53,25 @@ function RouterTracker() {
   return null;
 }
 
+function PresenceTracker() {
+  const location = useLocation();
+  useEffect(() => {
+    const token = localStorage.getItem('krafo_token');
+    if (!token) return;
+    const beat = () => {
+      fetch('/api/presence/heartbeat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ page: location.pathname }),
+      }).catch(() => {});
+    };
+    beat();
+    const id = setInterval(beat, 30000);
+    return () => clearInterval(id);
+  }, [location.pathname]);
+  return null;
+}
+
 function PageLoader() {
   return <div style={{ minHeight: '100vh', background: '#fff' }} />;
 }
@@ -62,6 +81,7 @@ export default function App() {
     <ErrorBoundary>
     <BrowserRouter>
       <RouterTracker />
+      <PresenceTracker />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<Landing />} />

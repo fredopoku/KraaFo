@@ -16,6 +16,18 @@ function timeAgo(ts: string): string {
   return `${Math.floor(h / 24)}d ago`;
 }
 
+const PAGE_LABELS: Record<string, string> = {
+  '/dashboard': 'Dashboard', '/generator': 'Invoice Generator', '/clients': 'Clients',
+  '/quotes': 'Quotes', '/team': 'Team', '/trash': 'Trash', '/changelog': "What's New",
+  '/settings': 'Settings', '/admin': 'Admin',
+};
+function pageName(p: string) { return PAGE_LABELS[p] || (p ? p.replace(/^\//, '') || 'App' : 'App'); }
+function secsAgo(s: number) {
+  if (s < 60) return 'just now';
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+  return `${Math.floor(s / 3600)}h ago`;
+}
+
 function getOrgStatus(org: any) {
   if (org.total_collected > 0) return { label: 'Power', cls: 'bg-emerald-50 text-emerald-700 border-emerald-100' };
   const total = (org.invoice_count || 0) + (org.receipt_count || 0) + (org.quote_count || 0);
@@ -83,6 +95,7 @@ export default function Admin() {
   const [broadcastForm, setBroadcastForm] = useState({ subject: '', body: '' });
   const [sending, setSending] = useState(false);
   const [usersData, setUsersData] = useState<{ orgs: any[]; summary: any; recentPayments?: any[]; platformRevenue?: any[]; platformRevenueYearly?: any[] } | null>(null);
+  const [presence, setPresence] = useState<{ online: any[]; recently: any[]; online_count: number } | null>(null);
   const [showAllOrgs, setShowAllOrgs] = useState(false);
   const [changelogEntries, setChangelogEntries] = useState<any[]>([]);
   const [clForm, setClForm] = useState({ title: '', description: '', tag: 'New' });
@@ -112,6 +125,11 @@ export default function Admin() {
   const [orgDetailLoading, setOrgDetailLoading] = useState(false);
   const [orgDetailTab, setOrgDetailTab] = useState<'overview' | 'documents' | 'clients' | 'team'>('overview');
 
+  const loadPresence = useCallback(async (t: string) => {
+    const data = await adminFetch<any>('/admin/presence', t).catch(() => null);
+    if (data) setPresence(data);
+  }, []);
+
   const loadData = useCallback(async (t: string, d = 30) => {
     const [fb, subs, bcs, users, cl, analytics, activity] = await Promise.all([
       adminFetch<any>('/feedback', t).catch(() => null),
@@ -130,7 +148,8 @@ export default function Admin() {
     setChangelogEntries(cl?.entries || []);
     if (analytics) setAnalyticsData(analytics);
     setActivityData(activity?.events || []);
-  }, []);
+    await loadPresence(t);
+  }, [loadPresence]);
 
   const refreshAnalytics = async (d: number) => {
     if (!token) return;
@@ -164,6 +183,13 @@ export default function Admin() {
       .then(() => { setAuthed(true); loadData(token); })
       .catch(() => { sessionStorage.removeItem(STORAGE_KEY); setToken(''); });
   }, []);
+
+  // Refresh presence every 30s when on users tab
+  useEffect(() => {
+    if (!token || !authed) return;
+    const id = setInterval(() => loadPresence(token), 30000);
+    return () => clearInterval(id);
+  }, [token, authed, loadPresence]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -638,6 +664,102 @@ export default function Admin() {
 
         {/* ══ USERS TAB ════════════════════════════════════════ */}
         {activeTab === 'users' && (<>
+
+        {/* ── Live Users ──────────────────────────────────────── */}
+        <div className="bg-white rounded-2xl ring-1 ring-slate-100 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-50 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className={cn('animate-ping absolute inline-flex h-full w-full rounded-full opacity-75', presence && presence.online_count > 0 ? 'bg-emerald-400' : 'bg-slate-300')} />
+                <span className={cn('relative inline-flex rounded-full h-2.5 w-2.5', presence && presence.online_count > 0 ? 'bg-emerald-500' : 'bg-slate-300')} />
+              </span>
+              <h2 className="text-sm font-black text-slate-700">Live Users</h2>
+              <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full', presence && presence.online_count > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-400')}>
+                {presence ? `${presence.online_count} online now` : 'Loading…'}
+              </span>
+            </div>
+            <span className="text-[10px] text-slate-300">Updates every 30s</span>
+          </div>
+
+          {(!presence || presence.online.length === 0) ? (
+            <div className="py-10 text-center">
+              <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-2">
+                <Users className="w-4 h-4 text-slate-300" />
+              </div>
+              <p className="text-xs text-slate-300">No users online right now</p>
+              {presence && presence.recently.length > 0 && (
+                <p className="text-[10px] text-slate-300 mt-1">{presence.recently.length} active in last 30 min</p>
+              )}
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-slate-50 bg-slate-50/50">
+                    <th className="px-5 py-2.5 text-left font-bold text-slate-400 uppercase tracking-wider text-[10px]">Business</th>
+                    <th className="px-3 py-2.5 text-left font-bold text-slate-400 uppercase tracking-wider text-[10px]">Currently On</th>
+                    <th className="px-3 py-2.5 text-center font-bold text-slate-400 uppercase tracking-wider text-[10px]">Last Seen</th>
+                    <th className="px-3 py-2.5 text-right font-bold text-slate-400 uppercase tracking-wider text-[10px] hidden sm:table-cell">Sessions</th>
+                    <th className="px-3 py-2.5 text-right font-bold text-slate-400 uppercase tracking-wider text-[10px] hidden sm:table-cell">Docs</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {presence.online.map((u: any) => (
+                    <tr key={u.id} className="hover:bg-emerald-50/30 transition-colors">
+                      <td className="px-5 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className="relative flex h-2 w-2 shrink-0">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                          </span>
+                          <div>
+                            <div className="font-bold text-slate-800">{u.name || '—'}</div>
+                            <div className="text-[10px] text-slate-400">{u.email || ''}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-3 py-3">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full">
+                          {pageName(u.current_page)}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3 text-center">
+                        <span className="text-[10px] font-bold text-emerald-600">{secsAgo(u.seconds_ago)}</span>
+                      </td>
+                      <td className="px-3 py-3 text-right hidden sm:table-cell">
+                        <span className="font-bold text-slate-700">{u.total_logins || 1}</span>
+                        <div className="text-[10px] text-slate-300">logins</div>
+                      </td>
+                      <td className="px-3 py-3 text-right hidden sm:table-cell">
+                        <span className="font-bold text-slate-700">{u.total_docs}</span>
+                        <div className="text-[10px] text-slate-300">docs</div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {/* Recently active (3–30 min ago) */}
+              {presence.recently.length > 0 && (
+                <div className="px-5 py-3 border-t border-slate-50 bg-slate-50/40">
+                  <p className="text-[10px] font-bold text-slate-400 mb-2">RECENTLY ACTIVE (last 30 min)</p>
+                  <div className="flex flex-wrap gap-2">
+                    {presence.recently.map((u: any) => (
+                      <div key={u.id} className="flex items-center gap-1.5 text-[10px] bg-white ring-1 ring-slate-100 rounded-lg px-2.5 py-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-slate-300 shrink-0" />
+                        <span className="font-bold text-slate-600">{u.name}</span>
+                        <span className="text-slate-300">·</span>
+                        <span className="text-slate-400">{pageName(u.current_page)}</span>
+                        <span className="text-slate-300">·</span>
+                        <span className="text-slate-400">{secsAgo(u.seconds_ago)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* ── Platform Usage ──────────────────────────────────── */}
         <div className="bg-white rounded-2xl ring-1 ring-slate-100 shadow-sm overflow-hidden">

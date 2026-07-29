@@ -20,6 +20,7 @@ router.post('/login', async (req: Request, res: Response) => {
     const valid = await bcrypt.compare(password, org.password_hash);
     if (!valid) return res.status(401).json({ error: 'Incorrect password' });
 
+    db.prepare(`UPDATE organizations SET total_logins = COALESCE(total_logins, 0) + 1 WHERE id = ?`).run(org.id);
     const token = signToken({ orgId: org.id, userId: org.id, role: 'owner', email: org.email });
     const { password_hash: _, ...safeOrg } = org;
     return res.json({ org: safeOrg, token, role: 'owner' });
