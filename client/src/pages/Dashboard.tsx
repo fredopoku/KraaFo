@@ -263,14 +263,15 @@ export default function Dashboard() {
               <div className="overflow-x-auto">
                 <div className="flex items-end gap-1 sm:gap-2 h-32" style={{ minWidth: chartData.length > 20 ? `${chartData.length * 28}px` : undefined }}>
                   {chartData.map((m: any) => {
+                    const period = m.period || m.month || '';
                     const height = Math.max(8, (m.revenue / maxRevenue) * 100);
                     return (
-                      <div key={m.period} className="flex-1 flex flex-col items-center gap-1 min-w-[24px]">
+                      <div key={period} className="flex-1 flex flex-col items-center gap-1 min-w-[24px]">
                         <div className="text-[9px] font-bold text-slate-500 truncate w-full text-center">
                           {formatCurrency(m.revenue, sym, true)}
                         </div>
                         <div className="w-full rounded-t-lg transition-all" style={{ height: `${height}%`, background: primary, opacity: 0.85 }} />
-                        <div className="text-[9px] text-slate-400 truncate w-full text-center">{formatChartLabel(m.period)}</div>
+                        <div className="text-[9px] text-slate-400 truncate w-full text-center">{formatChartLabel(period)}</div>
                       </div>
                     );
                   })}
