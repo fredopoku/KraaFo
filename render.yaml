@@ -33,8 +33,6 @@ services:
         sync: false
       - key: GROQ_API_KEY
         sync: false
-      - key: GEMINI_API_KEY
-        sync: false
 
       # Cloudflare Turnstile - bot protection on signup, feedback, subscribe forms
       - key: TURNSTILE_SECRET
@@ -42,7 +40,7 @@ services:
       - key: VITE_TURNSTILE_SITEKEY
         sync: false
 
-      # Email via Resend (recommended - invoice delivery, welcome & broadcast emails)
+      # Email via Resend (invoice delivery, welcome & broadcast emails)
       - key: RESEND_API_KEY
         sync: false
       - key: RESEND_FROM
@@ -50,16 +48,14 @@ services:
       - key: RESEND_MARKETING_FROM
         value: hello@kraafo.com
 
-      # Email via custom SMTP (alternative to Resend, set in Render dashboard)
-      - key: SMTP_HOST
-        value: smtp.gmail.com
-      - key: SMTP_PORT
-        value: 587
-      - key: SMTP_USER
+      # Admin event alerts (new signups, revenue milestones)
+      - key: ADMIN_ALERT_EMAIL
         sync: false
-      - key: SMTP_PASS
+
+      # Sentry error monitoring
+      - key: SENTRY_DSN
         sync: false
-      - key: SMTP_FROM
+      - key: VITE_SENTRY_DSN
         sync: false
 
     disk:

@@ -5,7 +5,7 @@ const router = Router();
 
 // POST /api/presence/heartbeat — authenticated users call this every 30s
 router.post('/heartbeat', (req: Request, res: Response) => {
-  const orgId = (req as any).orgId;
+  const orgId = req.auth?.orgId;
   if (!orgId) return res.status(401).json({ error: 'Unauthorized' });
 
   const page = typeof req.body.page === 'string' ? req.body.page.slice(0, 100) : '/dashboard';

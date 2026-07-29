@@ -932,10 +932,10 @@ export default function Admin() {
         )}
 
         {/* ── Platform revenue chart ───────────────────────────── */}
-        {usersData?.platformRevenue?.length > 0 && (() => {
+        {(usersData?.platformRevenue?.length ?? 0) > 0 && (() => {
           const revData: any[] = adminRevenueGranularity === 'yearly'
-            ? (usersData.platformRevenueYearly ?? [])
-            : (usersData.platformRevenue ?? []);
+            ? (usersData?.platformRevenueYearly ?? [])
+            : (usersData?.platformRevenue ?? []);
           const maxRev = Math.max(...revData.map((m: any) => m.revenue || 0), 1);
           const fmtLabel = (p: string) => {
             if (adminRevenueGranularity === 'yearly') return p;
