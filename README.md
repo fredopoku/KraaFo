@@ -18,6 +18,7 @@
   <img src="https://img.shields.io/badge/AI-Claude%20%2B%20Groq-FF6B35?style=flat-square" />
   <img src="https://img.shields.io/badge/Email-Resend-000000?style=flat-square" />
   <img src="https://img.shields.io/badge/Bot%20Protection-Cloudflare%20Turnstile-F38020?style=flat-square&logo=cloudflare" />
+  <img src="https://img.shields.io/badge/Monitoring-Sentry-362D59?style=flat-square&logo=sentry" />
   <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" />
 </p>
 
@@ -71,12 +72,15 @@
 - **Payment Details** - add bank account, PayPal, M-Pesa, MTN Mobile Money, Airtel Money, Telecel Cash
 - **QR Code** - auto-generated payment QR on invoices linking to PayPal or mobile money
 
-### Security
+### Security & Monitoring
 - **HTTP Security Headers** - `helmet` sets `X-Frame-Options`, `Strict-Transport-Security`, `X-Content-Type-Options`, `X-DNS-Prefetch-Control`, and `Referrer-Policy` on every response; protects against clickjacking, MIME sniffing, and protocol downgrade attacks
 - **Org Isolation** - every API endpoint that creates or reads documents derives the organisation ID from the verified JWT, not from request body or query parameters; User A cannot read or write User B's data
 - **CORS Allowlist** - origin matching uses exact comparison only; wildcard and prefix patterns are not used
 - **Cloudflare Turnstile** - invisible/managed bot protection on the Setup page (new users), feedback form, and newsletter signup - no CAPTCHA friction for real users
 - **Graceful degradation** - if Turnstile keys are not configured the forms work normally; the verification gate is skipped in development
+- **Error monitoring** - Sentry captures and alerts on unhandled exceptions in both the Node server (`@sentry/node`) and the React frontend (`@sentry/react`); guarded by environment variables so it is a no-op in development unless configured
+- **Frontend error boundary** - `Sentry.ErrorBoundary` wraps the entire React app; if the UI crashes the user sees a friendly "Something went wrong" fallback with a one-click reload instead of a blank screen
+- **Uptime monitoring** - external uptime checks via UptimeRobot ping `/api/health` every 5 minutes; alerts sent to admin if the server goes down
 
 ### Website Analytics
 - **Privacy-first page tracking** - every page view is recorded server-side via `navigator.sendBeacon`; no cookies, no third-party scripts, no personal data stored
@@ -86,12 +90,21 @@
 
 ### Admin Dashboard (`/admin`)
 - **User overview** - all registered organisations with invoice/receipt/quote counts and last-active date
+- **Revenue analytics** - all-time platform revenue chart with Monthly and Yearly granularity tabs; shows cumulative growth across the entire life of the platform
 - **Website analytics** - total views, unique sessions, daily bar chart (30 days), top pages, countries with flag emojis, cities, devices, browsers, referrers
 - **Page drill-down** - click any page row to see every individual visit with timestamp, location, device, and browser
 - **Feedback management** - all submitted ratings and comments with average score
 - **Subscribers** - full subscriber list and broadcast history
 - **Changelog editor** - publish and remove What's New entries visible to all users
+- **Admin event alerts** - instant email notification when a new organisation signs up or creates their first invoice, including org details and a direct link to the admin panel
 - **Protected by `ADMIN_TOKEN`** - all admin endpoints require `x-admin-token` header; the frontend stores the token in `sessionStorage`
+
+### Lifecycle Emails & Engagement
+- **Onboarding drip sequence** - automated email sequence (Day 2, Day 4, Day 7) guides new users through key features: branding, clients, delivery, and multi-channel sending; sent from a background scheduler that runs every hour
+- **Activation milestone email** - sent automatically when a user creates their first invoice; celebrates the milestone and encourages exploring more features
+- **14-day re-engagement email** - if a user signed up but has created no documents after 14 days, they receive a helpful nudge; only sent once and only to users who have not unsubscribed
+- **In-app onboarding checklist** - visible on the Dashboard for new accounts; shows three completion steps (Upload logo, Create first document, Add first client); auto-hides once all steps are done; dismissable at any time
+- **One-click unsubscribe** - every lifecycle email contains a unique token-based unsubscribe link; opted-out users are never sent lifecycle emails again
 
 ### Ratings & Feedback
 - **Star Rating Widget** - visitors rate KraaFo (1–5 stars) and leave a comment directly on the landing page
@@ -136,6 +149,8 @@
 | Security Headers | Helmet (X-Frame-Options, HSTS, X-Content-Type-Options, Referrer-Policy) |
 | Bot Protection | Cloudflare Turnstile (Managed mode - server-side verification) |
 | Analytics | Custom - `navigator.sendBeacon` + ip-api.com geo + SQLite |
+| Error Monitoring | Sentry (`@sentry/node` on server, `@sentry/react` on frontend) |
+| Lifecycle Emails | Resend API + hourly scheduler (day2/4/7 onboarding, day14 re-engagement, activation milestone) |
 | SEO | Post-build pre-renderer (`scripts/prerender.cjs`) - landing page, generator, and changelog rendered to static HTML at build time so search crawlers see full content |
 
 ---
@@ -186,10 +201,7 @@ ANTHROPIC_API_KEY=your_anthropic_key_here
 # Get a free key at console.groq.com
 GROQ_API_KEY=your_groq_key_here
 
-# AI - Document Import vision fallback (optional)
-GEMINI_API_KEY=your_gemini_key_here
-
-# Email - Resend (recommended - used for invoice delivery, welcome emails, broadcasts)
+# Email - Resend (recommended - used for invoice delivery, welcome emails, broadcasts, and lifecycle emails)
 # Get a free key at resend.com
 RESEND_API_KEY=your_resend_key_here
 RESEND_FROM=invoices@kraafo.com
@@ -204,6 +216,14 @@ SMTP_FROM=your@gmail.com
 # Bot Protection - Cloudflare Turnstile (optional - forms work without it)
 # Get free keys at dash.cloudflare.com → Turnstile
 TURNSTILE_SECRET=your_turnstile_secret_key_here
+
+# Error monitoring - Sentry (optional)
+# Get a DSN at sentry.io → your project → Settings → Client Keys
+SENTRY_DSN=https://your_key@sentry.io/your_project_id
+
+# Admin alert email (optional - defaults to opokufred32@gmail.com)
+# Receives signup notifications and key event alerts
+ADMIN_ALERT_EMAIL=your@email.com
 ```
 
 For the frontend, create `client/.env`:
@@ -211,6 +231,9 @@ For the frontend, create `client/.env`:
 ```env
 # Cloudflare Turnstile site key (optional - widget is hidden if not set)
 VITE_TURNSTILE_SITEKEY=your_turnstile_site_key_here
+
+# Sentry DSN for frontend error monitoring (optional - same DSN as server)
+VITE_SENTRY_DSN=https://your_key@sentry.io/your_project_id
 ```
 
 > The app runs fully without any API keys - Smart Fill uses built-in templates, document import falls back to local OCR, email features require at minimum a Resend key, and Turnstile bot protection is skipped if keys are not configured.
@@ -255,7 +278,7 @@ KraaFo/
 │       │   ├── Setup.tsx            # Organisation setup wizard (Turnstile gate for new users)
 │       │   ├── Login.tsx            # Sign-in page
 │       │   ├── Join.tsx             # Team invite / join page
-│       │   ├── Dashboard.tsx        # Business overview + feedback panel + broadcast composer
+│       │   ├── Dashboard.tsx        # Business overview + revenue chart (daily/monthly/yearly) + onboarding checklist + feedback panel
 │       │   ├── Generator.tsx        # Invoice / receipt / quote builder
 │       │   ├── InvoiceView.tsx      # Hosted invoice preview (shareable via WhatsApp / SMS link)
 │       │   ├── Admin.tsx            # Admin dashboard - users, analytics, feedback, subscribers
@@ -296,7 +319,7 @@ KraaFo/
 │   │   │   ├── deliver.ts           # Invoice/quote email, WhatsApp delivery, payment links
 │   │   │   ├── ai.ts                # Smart Fill + document import
 │   │   │   ├── pdf.ts               # PDF generation + serving
-│   │   │   ├── analytics.ts         # Dashboard KPI metrics (per-org)
+│   │   │   ├── analytics.ts         # Dashboard KPI metrics (per-org); revenue chart with daily/monthly/yearly granularity, all-time data
 │   │   │   ├── track.ts             # Privacy-first website page view tracking
 │   │   │   ├── admin.ts             # Admin endpoints - users, site analytics, views drill-down
 │   │   │   ├── upload.ts            # Logo upload + colour extraction
@@ -305,8 +328,9 @@ KraaFo/
 │   │   │   ├── broadcasts.ts        # Send update emails to all subscribers
 │   │   │   └── changelog.ts         # What's New entries (admin create/delete, public read)
 │   │   ├── services/
-│   │   │   ├── emailService.ts      # Invoice emails + welcome + broadcast via Resend
-│   │   │   ├── aiService.ts         # Claude / Groq / Gemini / OCR logic
+│   │   │   ├── emailService.ts      # Invoice delivery + welcome + broadcasts + lifecycle emails (activation, day14, admin alerts) via Resend
+│   │   │   ├── scheduler.ts         # Hourly cron - fires day2/4/7 onboarding sequence, day14 re-engagement for inactive users
+│   │   │   ├── aiService.ts         # Claude / Groq / OCR logic
 │   │   │   ├── pdfService.ts        # Puppeteer PDF rendering
 │   │   │   └── imageService.ts      # Logo processing + colour extraction
 │   │   ├── utils/
@@ -368,7 +392,7 @@ KraaFo/
 | POST | `/api/ai/enhance` | Improve a line item description |
 | POST | `/api/ai/parse-receipt` | Import document via AI / OCR |
 | POST | `/api/upload/logo` | Upload company logo + extract brand colours |
-| GET | `/api/analytics` | Dashboard KPI metrics (per-org) |
+| GET | `/api/analytics` | Dashboard KPI metrics (per-org); accepts `?granularity=daily\|monthly\|yearly` for revenue chart (daily = last 90 days, monthly/yearly = all time) |
 
 ### Tracking & Analytics
 
@@ -445,6 +469,12 @@ Server-side verification uses the `TURNSTILE_SECRET` environment variable. If th
 - [x] Multi-device access (sign in from any browser or device - data lives on the server)
 - [x] SEO pre-rendering (landing page, generator, changelog served as static HTML at build time)
 - [x] 6 SEO long-tail landing pages with dark hero, 3D tilt mockups, and scroll-triggered reveals
+- [x] Lifecycle email sequences (Day 2/4/7 onboarding, Day 14 re-engagement, activation milestone)
+- [x] In-app onboarding checklist for new users
+- [x] All-time revenue analytics with Daily / Monthly / Yearly granularity
+- [x] Error monitoring (Sentry - server + React frontend)
+- [x] Uptime monitoring (UptimeRobot)
+- [x] Admin real-time alerts (signup, first invoice)
 - [ ] Stripe / PayPal payment link integration
 - [ ] Client portal (view & pay invoices online)
 - [ ] Feature request voting board
