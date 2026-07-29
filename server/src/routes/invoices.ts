@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import db from '../db/schema';
+import { sendActivationEmail, sendAdminEventAlert } from '../services/emailService';
 
 const router = Router();
 
@@ -132,6 +133,16 @@ router.post('/', (req: Request, res: Response) => {
   const invoice = db.prepare('SELECT * FROM invoices WHERE id = ?').get(id);
   const savedItems = db.prepare('SELECT * FROM invoice_items WHERE invoice_id = ? ORDER BY sort_order').all(id);
   res.status(201).json({ ...(invoice as object), items: savedItems });
+
+  // Fire activation emails on first-ever invoice for this org (non-blocking)
+  const invoiceCount = (db.prepare('SELECT COUNT(*) as c FROM invoices WHERE org_id = ?').get(org_id) as any).c;
+  if (invoiceCount === 1) {
+    const fullOrg = db.prepare('SELECT * FROM organizations WHERE id = ?').get(org_id) as any;
+    if (fullOrg && !fullOrg.activation_email_sent) {
+      sendActivationEmail(fullOrg).catch(console.error);
+      sendAdminEventAlert(fullOrg, 'First invoice').catch(console.error);
+    }
+  }
 });
 
 router.put('/:id', (req: Request, res: Response) => {

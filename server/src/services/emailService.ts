@@ -644,8 +644,88 @@ export async function sendTeamInvite(member: any, org: any, inviteToken: string)
   });
 }
 
+// ── Activation milestone (first invoice created) ─────────────────
+
+export async function sendActivationEmail(org: any): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey || !org.email || org.email_unsubscribed) return;
+  const resend = new Resend(apiKey);
+  const name = org.name || 'there';
+  const body = `
+    <p style="margin:0 0 6px;font-size:22px">🎉</p>
+    <h2 style="margin:0 0 12px;color:#111827;font-size:19px;font-weight:800">You just created your first invoice, ${name}!</h2>
+    <p style="margin:0 0 20px;color:#6b7280;font-size:15px;line-height:1.7">That's the hardest part done. Here's how to make the most of it:</p>
+    ${step('1', 'Send it now', 'Hit the WhatsApp or email button - your client gets a professional PDF in seconds.')}
+    ${step('2', 'Save your client', 'Tap "Save client" so next time their details fill in automatically.')}
+    ${step('3', 'Set up your brand', 'Add your logo and brand colours in Settings - takes 2 minutes and makes every document look pro.')}
+    ${cta(`${FRONTEND_URL}/dashboard`, 'Go to my dashboard →')}
+    <p style="margin:20px 0 0;color:#9ca3af;font-size:13px;text-align:center">You're on a roll. Keep going.</p>
+  `;
+  await resend.emails.send({
+    from: `KraaFo <${FROM_ADDRESS}>`,
+    to: [org.email],
+    subject: `First invoice done, ${name} 🎉 - here's what's next`,
+    html: emailShell('#059669', `First invoice, done! 🎉`, 'KraaFo · You\'re on a roll', body,
+      `Sent to ${org.email} · <a href="${FRONTEND_URL}" style="color:#6b7280">kraafo.com</a>`),
+  });
+  db.prepare('UPDATE organizations SET activation_email_sent = 1 WHERE id = ?').run(org.id);
+}
+
+// ── Day-14 re-engagement (zero activity after 2 weeks) ───────────
+
+export async function sendDay14Email(org: any): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey || !org.email || org.email_unsubscribed) return;
+  const resend = new Resend(apiKey);
+  const name = org.name || 'there';
+  const body = `
+    <p style="margin:0 0 12px;color:#6b7280;font-size:15px;line-height:1.7">Hey ${name},</p>
+    <p style="margin:0 0 20px;color:#374151;font-size:15px;line-height:1.7">It's been two weeks since you signed up for KraaFo and we haven't seen you send anything yet.</p>
+    <p style="margin:0 0 20px;color:#374151;font-size:15px;font-weight:700">That's money sitting on the table.</p>
+    <p style="margin:0 0 20px;color:#6b7280;font-size:15px;line-height:1.7">If you've been putting it off because it feels complicated - it really isn't. Here's the fastest path:</p>
+    ${step('1', 'Open the Generator', 'One click from the home screen.')}
+    ${step('2', 'Click Smart Fill', 'Pick your trade. Your invoice fills itself with real line items.')}
+    ${step('3', 'Send by WhatsApp', 'Your client gets a professional PDF. You look like a pro. Done.')}
+    ${cta(`${FRONTEND_URL}/generator`, 'Send my first invoice now →')}
+    <p style="margin:20px 0 0;color:#9ca3af;font-size:13px;text-align:center">Still free. No card. Takes 2 minutes.</p>
+  `;
+  await resend.emails.send({
+    from: `KraaFo <${MARKETING_FROM}>`,
+    to: [org.email],
+    subject: `${name}, there's money sitting on the table`,
+    html: emailShell('#1e1b4b', 'Still here 👀', 'Two weeks in - let\'s get your first invoice out', body,
+      `Sent to ${org.email} · <a href="${FRONTEND_URL}" style="color:#6b7280">kraafo.com</a>`),
+  });
+  db.prepare('UPDATE organizations SET day14_email_sent = 1 WHERE id = ?').run(org.id);
+}
+
 // ── Admin signup alert ───────────────────────────────────────────
 const ADMIN_EMAIL = process.env.ADMIN_ALERT_EMAIL || 'opokufred32@gmail.com';
+
+export async function sendAdminEventAlert(org: any, event: string): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return;
+  const resend = new Resend(apiKey);
+  const now = new Date().toLocaleString('en-GB', { timeZone: 'UTC', dateStyle: 'medium', timeStyle: 'short' });
+  const emoji: Record<string, string> = { 'First invoice': '📄', 'First WhatsApp send': '💬', 'First email send': '📧' };
+  await resend.emails.send({
+    from: `KraaFo Alerts <${FROM_ADDRESS}>`,
+    to: [ADMIN_EMAIL],
+    subject: `${emoji[event] ?? '⚡'} ${event}: ${org.name || org.email}`,
+    html: `
+      <div style="font-family:system-ui,sans-serif;max-width:480px;margin:0 auto;padding:24px;background:#f9fafb;border-radius:12px">
+        <p style="margin:0 0 4px;font-size:13px;color:#6b7280;text-transform:uppercase;letter-spacing:.06em">KraaFo · ${event}</p>
+        <h2 style="margin:0 0 20px;font-size:22px;color:#111827">${org.name || '(no name)'}</h2>
+        <table style="width:100%;border-collapse:collapse;font-size:14px;color:#374151">
+          <tr><td style="padding:6px 0;color:#6b7280;width:90px">Email</td><td style="padding:6px 0">${org.email || '—'}</td></tr>
+          <tr><td style="padding:6px 0;color:#6b7280">Country</td><td style="padding:6px 0">${org.country || '—'}</td></tr>
+          <tr><td style="padding:6px 0;color:#6b7280">Time</td><td style="padding:6px 0">${now} UTC</td></tr>
+        </table>
+        <a href="${FRONTEND_URL}/admin" style="display:inline-block;margin-top:20px;padding:10px 20px;background:#4f46e5;color:#fff;border-radius:6px;font-size:14px;font-weight:600;text-decoration:none">View in Admin →</a>
+      </div>
+    `,
+  });
+}
 
 export async function sendAdminSignupAlert(org: any): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;

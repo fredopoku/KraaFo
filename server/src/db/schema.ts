@@ -264,6 +264,8 @@ addCol('invoices', 'reminder_14_sent', 'INTEGER DEFAULT 0');
 addCol('organizations', 'reset_token', 'TEXT');
 addCol('organizations', 'reset_token_expires', 'TEXT');
 addCol('organizations', 'next_invoice_number', 'INTEGER DEFAULT 1');
+addCol('organizations', 'activation_email_sent', 'INTEGER DEFAULT 0');
+addCol('organizations', 'day14_email_sent', 'INTEGER DEFAULT 0');
 
 // Team members table
 db.exec(`

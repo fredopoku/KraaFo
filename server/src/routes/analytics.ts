@@ -94,6 +94,10 @@ router.get('/', (req: Request, res: Response) => {
     ORDER BY due_date ASC LIMIT 10
   `).all(org_id);
 
+  const totalClients = (db.prepare(
+    'SELECT COUNT(*) as c FROM clients WHERE org_id = ?'
+  ).get(org_id) as any).c;
+
   // Recent activity (all doc types)
   const recent = db.prepare(`
     SELECT id, type, number, client_name, total, amount_paid, status, issue_date
@@ -110,6 +114,7 @@ router.get('/', (req: Request, res: Response) => {
       totalInvoices, paidInvoices,
       totalReceipts, receiptRevenue,
       totalQuotes, acceptedQuotes, declinedQuotes, pendingQuotes,
+      totalClients,
       collectionRate: totalInvoiced > 0 ? Math.round((totalCollected / totalInvoiced) * 100) : 0,
     },
     monthly,

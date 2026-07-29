@@ -1,6 +1,6 @@
 import db from '../db/schema';
 import { v4 as uuidv4 } from 'uuid';
-import { sendDay2Email, sendDay4Email, sendDay7Email, sendPaymentReminder, sendInvoiceEmail } from './emailService';
+import { sendDay2Email, sendDay4Email, sendDay7Email, sendDay14Email, sendPaymentReminder, sendInvoiceEmail } from './emailService';
 
 async function runOnboardingSequence(): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
@@ -40,6 +40,19 @@ async function runOnboardingSequence(): Promise<void> {
       AND o.created_at >= datetime('now', '-14 days')
   `).all() as any[];
   for (const org of day7Orgs) await sendDay7Email(org).catch(console.error);
+
+  // Day 14 re-engagement: zero invoices or quotes after 2 weeks
+  const day14Orgs = db.prepare(`
+    SELECT o.* FROM organizations o
+    WHERE o.email IS NOT NULL
+      AND o.email_unsubscribed = 0
+      AND o.welcome_email_sent = 1
+      AND o.day14_email_sent = 0
+      AND o.created_at <= datetime('now', '-14 days')
+      AND NOT EXISTS (SELECT 1 FROM invoices WHERE org_id = o.id)
+      AND NOT EXISTS (SELECT 1 FROM quotes WHERE org_id = o.id)
+  `).all() as any[];
+  for (const org of day14Orgs) await sendDay14Email(org).catch(console.error);
 }
 
 async function runOverdueAndReminders(): Promise<void> {

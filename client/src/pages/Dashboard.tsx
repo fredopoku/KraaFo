@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock, AlertCircle, FileText, Receipt, Users, Quote, Plus, Settings, ArrowRight, ArrowLeft, CheckCircle, Zap, X, DollarSign, BarChart2, Trash2 } from 'lucide-react';
+import { Clock, AlertCircle, FileText, Receipt, Users, Quote, Plus, Settings, ArrowRight, ArrowLeft, CheckCircle, Zap, X, DollarSign, BarChart2, Trash2, Circle } from 'lucide-react';
 import { useOrg } from '../hooks/useOrg';
 import { api, formatCurrency } from '../utils/api';
 import { LogoMark, Logo } from '../components/Logo';
@@ -14,6 +14,9 @@ export default function Dashboard() {
   const [changelog, setChangelog] = useState<any[]>([]);
   const [hasUnread, setHasUnread] = useState(false);
   const [showWhatsNew, setShowWhatsNew] = useState(false);
+  const [checklistDismissed, setChecklistDismissed] = useState(
+    () => localStorage.getItem(`krafo_checklist_done_${org?.id}`) === '1'
+  );
 
   useEffect(() => { if (!loading && !org) navigate('/setup'); }, [loading, org, navigate]);
 
@@ -133,6 +136,69 @@ export default function Dashboard() {
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-tight">{org.name} 👋</h1>
           <p className="text-sm text-slate-400 mt-1">Here's your business overview</p>
         </div>
+
+        {/* Onboarding checklist - shown until dismissed or all steps done */}
+        {(() => {
+          const hasLogo = !!org.logo_url;
+          const hasDocs = (s.totalInvoices || 0) + (s.totalReceipts || 0) + (s.totalQuotes || 0) > 0;
+          const hasClients = (s.totalClients || 0) > 0;
+          const allDone = hasLogo && hasDocs && hasClients;
+          if (allDone && !checklistDismissed) {
+            localStorage.setItem(`krafo_checklist_done_${org.id}`, '1');
+          }
+          if (checklistDismissed || allDone) return null;
+          const steps = [
+            { label: 'Add your logo & brand colours', done: hasLogo, action: () => navigate('/setup') },
+            { label: 'Create your first document', done: hasDocs, action: () => navigate('/generator') },
+            { label: 'Save your first client', done: hasClients, action: () => navigate('/clients') },
+          ];
+          const doneCount = steps.filter(s => s.done).length;
+          return (
+            <div className="mb-6 animate-fade-up bg-white border border-indigo-100 rounded-2xl shadow-sm overflow-hidden">
+              <div className="px-5 py-4 flex items-center justify-between border-b border-slate-50">
+                <div>
+                  <p className="text-xs font-bold text-indigo-500 uppercase tracking-widest mb-0.5">Getting started</p>
+                  <h2 className="text-sm font-black text-slate-800">{doneCount} of 3 done</h2>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex gap-1">
+                    {steps.map((step, i) => (
+                      <div key={i} className={cn('w-2 h-2 rounded-full', step.done ? 'bg-indigo-500' : 'bg-slate-200')} />
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => { setChecklistDismissed(true); localStorage.setItem(`krafo_checklist_done_${org.id}`, '1'); }}
+                    className="p-1 rounded-lg text-slate-300 hover:text-slate-500 hover:bg-slate-100 transition-all"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+              <div className="divide-y divide-slate-50">
+                {steps.map((step, i) => (
+                  <button
+                    key={i}
+                    onClick={step.action}
+                    disabled={step.done}
+                    className={cn(
+                      'w-full px-5 py-3.5 flex items-center gap-3 text-left transition-colors',
+                      step.done ? 'opacity-50 cursor-default' : 'hover:bg-slate-50/80 group'
+                    )}
+                  >
+                    {step.done
+                      ? <CheckCircle className="w-4 h-4 text-indigo-500 shrink-0" />
+                      : <Circle className="w-4 h-4 text-slate-300 group-hover:text-indigo-400 shrink-0 transition-colors" />
+                    }
+                    <span className={cn('text-sm font-bold', step.done ? 'text-slate-400 line-through' : 'text-slate-700')}>
+                      {step.label}
+                    </span>
+                    {!step.done && <ArrowRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-indigo-400 ml-auto shrink-0 transition-colors" />}
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Stat cards - 2 col on mobile, 4 on desktop */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">

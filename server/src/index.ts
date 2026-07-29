@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import * as Sentry from '@sentry/node';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -27,6 +28,14 @@ import teamRouter from './routes/team';
 import trashRouter from './routes/trash';
 import { requireAuth } from './middleware/auth';
 import { startScheduler } from './services/scheduler';
+
+if (process.env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.NODE_ENV || 'development',
+    tracesSampleRate: 0.1,
+  });
+}
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -298,6 +307,11 @@ if (isProd && fs.existsSync(clientDist)) {
   });
 } else if (isProd) {
   console.warn('Warning: client/dist not found. Run `npm run build` from the project root first.');
+}
+
+// Sentry error handler (must be before the generic one, no-op if not configured)
+if (process.env.SENTRY_DSN) {
+  app.use(Sentry.expressErrorHandler());
 }
 
 // Global error handler
