@@ -438,7 +438,7 @@ export default function Admin() {
               {[
                 { label: 'Visitors', sub: `${days > 0 ? days + 'd' : 'all time'}`, value: (ov?.period ?? 0).toLocaleString(), extra: periodTrend ? `${periodTrend.up ? '▲' : '▼'} ${Math.abs(periodTrend.pct)}% vs prev` : null, extraColor: periodTrend?.up ? 'text-emerald-400' : 'text-red-400' },
                 { label: "Today's views", sub: 'page views', value: (ov?.today ?? 0).toLocaleString(), extra: null, extraColor: '' },
-                { label: 'Signups', sub: `${days > 0 ? days + 'd' : 'all time'}`, value: (analyticsData?.signupSummary?.period ?? 0).toLocaleString(), extra: `${analyticsData?.signupSummary?.today ?? 0} today`, extraColor: 'text-emerald-400' },
+                { label: 'Total Signups', sub: 'all time', value: (analyticsData?.signupSummary?.total ?? 0).toLocaleString(), extra: `${analyticsData?.signupSummary?.period ?? 0} last ${days > 0 ? days + 'd' : 'period'} · ${analyticsData?.signupSummary?.today ?? 0} today`, extraColor: 'text-emerald-400' },
                 { label: 'Active orgs', sub: 'last 30 days', value: (usersData?.summary?.active_orgs ?? 0).toLocaleString(), extra: `${usersData?.summary?.new_this_week ?? 0} this week`, extraColor: 'text-white/40' },
               ].map(item => (
                 <div key={item.label} className="bg-white/[0.07] hover:bg-white/10 transition-colors rounded-xl p-3.5 border border-white/10">
