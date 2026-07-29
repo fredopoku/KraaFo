@@ -82,7 +82,7 @@ export default function Admin() {
   const [showAllFeedback, setShowAllFeedback] = useState(false);
   const [broadcastForm, setBroadcastForm] = useState({ subject: '', body: '' });
   const [sending, setSending] = useState(false);
-  const [usersData, setUsersData] = useState<{ orgs: any[]; summary: any; recentPayments?: any[] } | null>(null);
+  const [usersData, setUsersData] = useState<{ orgs: any[]; summary: any; recentPayments?: any[]; platformRevenue?: any[]; platformRevenueYearly?: any[] } | null>(null);
   const [showAllOrgs, setShowAllOrgs] = useState(false);
   const [changelogEntries, setChangelogEntries] = useState<any[]>([]);
   const [clForm, setClForm] = useState({ title: '', description: '', tag: 'New' });
@@ -98,6 +98,7 @@ export default function Admin() {
   const [analyticsData, setAnalyticsData] = useState<any | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [days, setDays] = useState(30);
+  const [adminRevenueGranularity, setAdminRevenueGranularity] = useState<'monthly' | 'yearly'>('monthly');
   const [viewsModal, setViewsModal] = useState<{ open: boolean; page?: string }>({ open: false });
   const [viewsData, setViewsData] = useState<{ views: any[]; total: number } | null>(null);
   const [viewsLoading, setViewsLoading] = useState(false);
@@ -807,6 +808,51 @@ export default function Admin() {
             ))}
           </div>
         )}
+
+        {/* ── Platform revenue chart ───────────────────────────── */}
+        {usersData?.platformRevenue?.length > 0 && (() => {
+          const revData: any[] = adminRevenueGranularity === 'yearly'
+            ? (usersData.platformRevenueYearly ?? [])
+            : (usersData.platformRevenue ?? []);
+          const maxRev = Math.max(...revData.map((m: any) => m.revenue || 0), 1);
+          const fmtLabel = (p: string) => {
+            if (adminRevenueGranularity === 'yearly') return p;
+            const [y, mo] = p.split('-');
+            const d = new Date(Number(y), Number(mo) - 1, 1);
+            return d.toLocaleDateString('en-US', { month: 'short' }) + " '" + y.slice(2);
+          };
+          return (
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                <h2 className="text-sm font-black text-slate-700">Platform Revenue · All Time</h2>
+                <div className="flex items-center gap-1 bg-slate-100 rounded-xl p-0.5">
+                  {(['monthly', 'yearly'] as const).map(g => (
+                    <button key={g} onClick={() => setAdminRevenueGranularity(g)}
+                      className={`px-3 py-1 rounded-lg text-[10px] font-bold transition-all capitalize ${adminRevenueGranularity === g ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
+                      {g}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <div className="flex items-end gap-1 sm:gap-2 h-40" style={{ minWidth: revData.length > 18 ? `${revData.length * 30}px` : undefined }}>
+                  {revData.map((m: any) => {
+                    const h = Math.max(6, (m.revenue / maxRev) * 100);
+                    return (
+                      <div key={m.period} className="flex-1 flex flex-col items-center gap-1 min-w-[28px] group relative">
+                        <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 hidden group-hover:block bg-slate-800 text-white text-[9px] font-bold px-2 py-1 rounded-lg whitespace-nowrap z-10">
+                          {Number(m.revenue).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} · {m.count} paid
+                        </div>
+                        <div className="w-full rounded-t-lg transition-all bg-indigo-500" style={{ height: `${h}%`, opacity: 0.8 }} />
+                        <div className="text-[9px] text-slate-400 truncate w-full text-center">{fmtLabel(m.period)}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* ── Recent payments across all orgs ──────────────────── */}
         {(usersData?.recentPayments ?? []).length > 0 && (

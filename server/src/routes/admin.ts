@@ -79,7 +79,27 @@ router.get('/users', adminAuth, (_req: Request, res: Response) => {
     return o.created_at >= sevenDaysAgo;
   }).length;
 
-  res.json({ orgs, summary: { ...summary, active_orgs, new_this_week: newThisWeek }, recentPayments });
+  // All-time platform revenue by month
+  const platformRevenue = db.prepare(`
+    SELECT strftime('%Y-%m', issue_date) as period,
+           COALESCE(SUM(total),0) as revenue,
+           COUNT(*) as count
+    FROM invoices
+    WHERE status = 'paid' AND deleted_at IS NULL
+    GROUP BY period ORDER BY period ASC
+  `).all() as any[];
+
+  // All-time platform revenue by year
+  const platformRevenueYearly = db.prepare(`
+    SELECT strftime('%Y', issue_date) as period,
+           COALESCE(SUM(total),0) as revenue,
+           COUNT(*) as count
+    FROM invoices
+    WHERE status = 'paid' AND deleted_at IS NULL
+    GROUP BY period ORDER BY period ASC
+  `).all() as any[];
+
+  res.json({ orgs, summary: { ...summary, active_orgs, new_this_week: newThisWeek }, recentPayments, platformRevenue, platformRevenueYearly });
 });
 
 router.get('/orgs/:id', adminAuth, (req: Request, res: Response) => {
@@ -120,7 +140,7 @@ router.get('/orgs/:id', adminAuth, (req: Request, res: Response) => {
            COUNT(CASE WHEN type='invoice' THEN 1 END) as invoice_count,
            COUNT(CASE WHEN type='receipt' THEN 1 END) as receipt_count
     FROM invoices WHERE org_id = ? AND deleted_at IS NULL
-    GROUP BY month ORDER BY month DESC LIMIT 6
+    GROUP BY month ORDER BY month ASC
   `).all(req.params.id) as any[];
 
   // strip sensitive fields before sending

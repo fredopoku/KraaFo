@@ -17,13 +17,14 @@ export default function Dashboard() {
   const [checklistDismissed, setChecklistDismissed] = useState(
     () => localStorage.getItem(`krafo_checklist_done_${org?.id}`) === '1'
   );
+  const [granularity, setGranularity] = useState<'daily' | 'monthly' | 'yearly'>('monthly');
 
   useEffect(() => { if (!loading && !org) navigate('/setup'); }, [loading, org, navigate]);
 
   useEffect(() => {
     if (!org) return;
-    api.analytics.get().then(d => { setData(d); setFetching(false); }).catch(() => setFetching(false));
-    api.changelog.list().then(d => {
+    api.analytics.get({ granularity }).then((d: any) => { setData(d); setFetching(false); }).catch(() => setFetching(false));
+    api.changelog.list().then((d: any) => {
       const entries = d.entries || [];
       setChangelog(entries);
       if (entries.length > 0) {
@@ -31,7 +32,7 @@ export default function Dashboard() {
         setHasUnread(entries[0].published_at > lastSeen);
       }
     }).catch(() => {});
-  }, [org]);
+  }, [org, granularity]);
 
   const openWhatsNew = () => {
     setShowWhatsNew(true);
@@ -60,7 +61,26 @@ export default function Dashboard() {
     { label: 'Documents',   value: (s.totalInvoices || 0) + (s.totalReceipts || 0) + (s.totalQuotes || 0), sub: `${s.totalInvoices || 0}inv · ${s.totalReceipts || 0}rec · ${s.totalQuotes || 0}qte`, icon: BarChart2, color: 'text-indigo-600', bg: 'bg-indigo-50' },
   ];
 
-  const maxRevenue = Math.max(...(data?.monthly || []).map((m: any) => m.revenue || 0), 1);
+  const chartData = data?.chartData || data?.monthly || [];
+  const maxRevenue = Math.max(...chartData.map((m: any) => m.revenue || 0), 1);
+
+  const formatChartLabel = (period: string) => {
+    if (granularity === 'yearly') return period;
+    if (granularity === 'daily') {
+      const d = new Date(period + 'T00:00:00');
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+    // monthly: YYYY-MM → "Jun '24"
+    const [y, m] = period.split('-');
+    const date = new Date(Number(y), Number(m) - 1, 1);
+    return date.toLocaleDateString('en-US', { month: 'short' }) + " '" + y.slice(2);
+  };
+
+  const chartTitle = granularity === 'daily'
+    ? 'Revenue · Daily (Last 90 Days)'
+    : granularity === 'yearly'
+    ? 'Revenue · Yearly (All Time)'
+    : 'Revenue · Monthly (All Time)';
 
   const STATUS_COLOR: Record<string, string> = {
     paid:      'bg-emerald-50 text-emerald-700',
@@ -222,21 +242,39 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
           {/* Revenue chart */}
           <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm p-5 animate-fade-up delay-100">
-            <h2 className="text-sm font-black text-slate-700 tracking-tight mb-4">Revenue (Last 6 Months)</h2>
-            {data?.monthly?.length > 0 ? (
-              <div className="flex items-end gap-2 sm:gap-3 h-32">
-                {data.monthly.map((m: any) => {
-                  const height = Math.max(8, (m.revenue / maxRevenue) * 100);
-                  return (
-                    <div key={m.month} className="flex-1 flex flex-col items-center gap-1">
-                      <div className="text-[9px] sm:text-[10px] font-bold text-slate-500 truncate w-full text-center">
-                        {formatCurrency(m.revenue, sym, true)}
+            <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
+              <h2 className="text-sm font-black text-slate-700 tracking-tight">{chartTitle}</h2>
+              <div className="flex items-center gap-1 bg-slate-100 rounded-xl p-0.5">
+                {(['daily', 'monthly', 'yearly'] as const).map(g => (
+                  <button
+                    key={g}
+                    onClick={() => setGranularity(g)}
+                    className={cn(
+                      'px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all capitalize',
+                      granularity === g ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'
+                    )}
+                  >
+                    {g === 'daily' ? 'Daily' : g === 'monthly' ? 'Monthly' : 'Yearly'}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {chartData.length > 0 ? (
+              <div className="overflow-x-auto">
+                <div className="flex items-end gap-1 sm:gap-2 h-32" style={{ minWidth: chartData.length > 20 ? `${chartData.length * 28}px` : undefined }}>
+                  {chartData.map((m: any) => {
+                    const height = Math.max(8, (m.revenue / maxRevenue) * 100);
+                    return (
+                      <div key={m.period} className="flex-1 flex flex-col items-center gap-1 min-w-[24px]">
+                        <div className="text-[9px] font-bold text-slate-500 truncate w-full text-center">
+                          {formatCurrency(m.revenue, sym, true)}
+                        </div>
+                        <div className="w-full rounded-t-lg transition-all" style={{ height: `${height}%`, background: primary, opacity: 0.85 }} />
+                        <div className="text-[9px] text-slate-400 truncate w-full text-center">{formatChartLabel(m.period)}</div>
                       </div>
-                      <div className="w-full rounded-t-lg transition-all" style={{ height: `${height}%`, background: primary, opacity: 0.85 }} />
-                      <div className="text-[9px] sm:text-[10px] text-slate-400">{m.month.slice(5)}</div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             ) : (
               <div className="h-32 flex items-center justify-center text-sm text-slate-300">No paid invoices yet - start billing!</div>

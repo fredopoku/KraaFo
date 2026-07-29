@@ -6,7 +6,12 @@ const router = Router();
 router.get('/', (req: Request, res: Response) => {
   const org_id = req.auth!.orgId;
 
-  // Invoice financials
+  const VALID_GRANULARITIES = new Set(['daily', 'monthly', 'yearly']);
+  const granularity = VALID_GRANULARITIES.has(req.query.granularity as string)
+    ? (req.query.granularity as string)
+    : 'monthly';
+
+  // Invoice financials — all-time, no date cap
   const totalInvoiced = (db.prepare(
     "SELECT COALESCE(SUM(total),0) as val FROM invoices WHERE org_id = ? AND type = 'invoice'"
   ).get(org_id) as any).val;
@@ -65,18 +70,40 @@ router.get('/', (req: Request, res: Response) => {
     "SELECT COUNT(*) as c FROM quotes WHERE org_id = ? AND status IN ('draft','sent')"
   ).get(org_id) as any).c;
 
-  // Monthly revenue (paid invoices, last 6 months)
-  const monthly = db.prepare(`
-    SELECT strftime('%Y-%m', issue_date) as month,
-           SUM(total) as revenue,
-           COUNT(*) as count
-    FROM invoices
-    WHERE org_id = ? AND type = 'invoice' AND status = 'paid'
-      AND issue_date >= date('now', '-6 months')
-    GROUP BY month ORDER BY month ASC
-  `).all(org_id);
+  // Revenue chart — granularity-aware, always all-time except daily (last 90d for readability)
+  let chartData: any[];
+  if (granularity === 'daily') {
+    chartData = db.prepare(`
+      SELECT date(issue_date) as period,
+             COALESCE(SUM(total),0) as revenue,
+             COUNT(*) as count
+      FROM invoices
+      WHERE org_id = ? AND type = 'invoice' AND status = 'paid'
+        AND issue_date >= date('now', '-90 days')
+      GROUP BY period ORDER BY period ASC
+    `).all(org_id);
+  } else if (granularity === 'yearly') {
+    chartData = db.prepare(`
+      SELECT strftime('%Y', issue_date) as period,
+             COALESCE(SUM(total),0) as revenue,
+             COUNT(*) as count
+      FROM invoices
+      WHERE org_id = ? AND type = 'invoice' AND status = 'paid'
+      GROUP BY period ORDER BY period ASC
+    `).all(org_id);
+  } else {
+    // monthly — all time, no limit
+    chartData = db.prepare(`
+      SELECT strftime('%Y-%m', issue_date) as period,
+             COALESCE(SUM(total),0) as revenue,
+             COUNT(*) as count
+      FROM invoices
+      WHERE org_id = ? AND type = 'invoice' AND status = 'paid'
+      GROUP BY period ORDER BY period ASC
+    `).all(org_id);
+  }
 
-  // Top clients by collected amount
+  // Top clients by collected amount — all time
   const topClients = db.prepare(`
     SELECT client_name, COALESCE(client_company,'') as company,
            COALESCE(SUM(amount_paid),0) as total_revenue,
@@ -117,7 +144,9 @@ router.get('/', (req: Request, res: Response) => {
       totalClients,
       collectionRate: totalInvoiced > 0 ? Math.round((totalCollected / totalInvoiced) * 100) : 0,
     },
-    monthly,
+    granularity,
+    chartData,
+    monthly: chartData, // kept for any existing references
     topClients,
     overdueList,
     recent,

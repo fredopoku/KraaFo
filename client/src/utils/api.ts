@@ -152,7 +152,10 @@ export const api = {
   },
 
   analytics: {
-    get: () => request<any>('/analytics'),
+    get: (params?: { granularity?: string }) => {
+      const qs = params?.granularity ? `?granularity=${params.granularity}` : '';
+      return request<any>(`/analytics${qs}`);
+    },
   },
 
   statement: {
