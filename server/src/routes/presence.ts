@@ -20,7 +20,8 @@ router.post('/heartbeat', (req: Request, res: Response) => {
   `).get(orgId) as any;
 
   if (active) {
-    const pages: string[] = JSON.parse(active.pages || '[]');
+    let pages: string[] = [];
+    try { pages = JSON.parse(active.pages || '[]'); } catch {}
     if (!pages.includes(page)) pages.push(page);
     db.prepare(`
       UPDATE org_sessions
