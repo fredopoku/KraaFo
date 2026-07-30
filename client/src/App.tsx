@@ -57,7 +57,7 @@ function PresenceTracker() {
   const location = useLocation();
   useEffect(() => {
     const token = localStorage.getItem('krafo_token');
-    if (!token) return;
+    if (!token || location.pathname === '/admin') return;
     const beat = () => {
       fetch('/api/presence/heartbeat', {
         method: 'POST',
