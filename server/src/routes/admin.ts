@@ -111,7 +111,10 @@ router.get('/presence', adminAuth, (_req: Request, res: Response) => {
       COALESCE(o.total_logins, 0) as total_logins,
       (SELECT COUNT(*) FROM invoices WHERE org_id = o.id AND deleted_at IS NULL) +
       (SELECT COUNT(*) FROM quotes WHERE org_id = o.id AND deleted_at IS NULL) as total_docs,
-      CAST((julianday('now') - julianday(o.last_seen)) * 86400 AS INTEGER) as seconds_ago
+      CAST((julianday('now') - julianday(o.last_seen)) * 86400 AS INTEGER) as seconds_ago,
+      (SELECT COALESCE(SUM(duration_seconds), 0) FROM org_sessions
+       WHERE org_id = o.id AND date(started_at) = date('now')) as today_seconds,
+      (SELECT COUNT(*) FROM org_sessions WHERE org_id = o.id) as total_sessions
     FROM organizations o
     WHERE o.last_seen IS NOT NULL
       AND o.last_seen >= datetime('now', '-30 minutes')
@@ -122,6 +125,63 @@ router.get('/presence', adminAuth, (_req: Request, res: Response) => {
   const recently = rows.filter((r: any) => r.seconds_ago > 180);
 
   res.json({ online, recently, online_count: online.length });
+});
+
+// Per-org session analytics
+router.get('/orgs/:id/activity', adminAuth, (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  const sessions = db.prepare(`
+    SELECT id, started_at, last_seen, duration_seconds, pages
+    FROM org_sessions WHERE org_id = ?
+    ORDER BY started_at DESC LIMIT 50
+  `).all(id) as any[];
+
+  const stats = db.prepare(`
+    SELECT
+      COUNT(*) as total_sessions,
+      COALESCE(SUM(duration_seconds), 0) as total_seconds,
+      COALESCE(AVG(NULLIF(duration_seconds, 0)), 0) as avg_session_seconds
+    FROM org_sessions WHERE org_id = ?
+  `).get(id) as any;
+
+  // Aggregate page visits across all sessions
+  const pageCounts: Record<string, number> = {};
+  for (const s of sessions) {
+    try {
+      const pages: string[] = JSON.parse(s.pages || '[]');
+      for (const p of pages) pageCounts[p] = (pageCounts[p] || 0) + 1;
+    } catch {}
+  }
+  const topPages = Object.entries(pageCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([page, visits]) => ({ page, visits }));
+
+  // Sessions by hour of day (0-23)
+  const byHour = db.prepare(`
+    SELECT CAST(strftime('%H', started_at) AS INTEGER) as hour, COUNT(*) as sessions
+    FROM org_sessions WHERE org_id = ?
+    GROUP BY hour ORDER BY hour
+  `).all(id) as any[];
+
+  // Daily activity last 30 days
+  const daily = db.prepare(`
+    SELECT date(started_at) as date,
+           COUNT(*) as sessions,
+           COALESCE(SUM(duration_seconds), 0) as seconds
+    FROM org_sessions
+    WHERE org_id = ? AND started_at >= datetime('now', '-30 days')
+    GROUP BY date ORDER BY date
+  `).all(id) as any[];
+
+  res.json({
+    sessions: sessions.map(s => ({ ...s, pages: (() => { try { return JSON.parse(s.pages || '[]'); } catch { return []; } })() })),
+    stats,
+    topPages,
+    byHour,
+    daily,
+  });
 });
 
 router.get('/orgs/:id', adminAuth, (req: Request, res: Response) => {

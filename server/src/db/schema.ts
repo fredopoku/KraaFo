@@ -270,6 +270,19 @@ addCol('organizations', 'last_seen', 'TEXT');
 addCol('organizations', 'current_page', 'TEXT');
 addCol('organizations', 'total_logins', 'INTEGER DEFAULT 0');
 
+db.exec(`
+  CREATE TABLE IF NOT EXISTS org_sessions (
+    id TEXT PRIMARY KEY,
+    org_id TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    started_at TEXT DEFAULT (datetime('now')),
+    last_seen TEXT DEFAULT (datetime('now')),
+    duration_seconds INTEGER DEFAULT 0,
+    pages TEXT DEFAULT '[]'
+  );
+  CREATE INDEX IF NOT EXISTS idx_org_sessions_org     ON org_sessions(org_id);
+  CREATE INDEX IF NOT EXISTS idx_org_sessions_started ON org_sessions(started_at);
+`);
+
 // Team members table
 db.exec(`
   CREATE TABLE IF NOT EXISTS team_members (

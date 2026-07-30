@@ -27,6 +27,13 @@ function secsAgo(s: number) {
   if (s < 3600) return `${Math.floor(s / 60)}m ago`;
   return `${Math.floor(s / 3600)}h ago`;
 }
+function fmtDuration(s: number) {
+  if (s < 60) return `${s}s`;
+  if (s < 3600) return `${Math.floor(s / 60)}m`;
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  return m > 0 ? `${h}h ${m}m` : `${h}h`;
+}
 
 function getOrgStatus(org: any) {
   if (org.total_collected > 0) return { label: 'Power', cls: 'bg-emerald-50 text-emerald-700 border-emerald-100' };
@@ -123,7 +130,9 @@ export default function Admin() {
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
   const [orgDetail, setOrgDetail] = useState<any | null>(null);
   const [orgDetailLoading, setOrgDetailLoading] = useState(false);
-  const [orgDetailTab, setOrgDetailTab] = useState<'overview' | 'documents' | 'clients' | 'team'>('overview');
+  const [orgDetailTab, setOrgDetailTab] = useState<'overview' | 'documents' | 'clients' | 'team' | 'activity'>('overview');
+  const [orgActivity, setOrgActivity] = useState<any | null>(null);
+  const [orgActivityLoading, setOrgActivityLoading] = useState(false);
 
   const loadPresence = useCallback(async (t: string) => {
     const data = await adminFetch<any>('/admin/presence', t).catch(() => null);
@@ -163,6 +172,7 @@ export default function Admin() {
   const openOrgDetail = async (id: string) => {
     setSelectedOrgId(id);
     setOrgDetail(null);
+    setOrgActivity(null);
     setOrgDetailTab('overview');
     setOrgDetailLoading(true);
     try {
@@ -174,7 +184,16 @@ export default function Admin() {
     } finally { setOrgDetailLoading(false); }
   };
 
-  const closeOrgDetail = () => { setSelectedOrgId(null); setOrgDetail(null); };
+  const loadOrgActivity = async (id: string) => {
+    if (orgActivity) return; // already loaded
+    setOrgActivityLoading(true);
+    try {
+      const data = await adminFetch<any>(`/admin/orgs/${id}/activity`, token);
+      setOrgActivity(data);
+    } catch {} finally { setOrgActivityLoading(false); }
+  };
+
+  const closeOrgDetail = () => { setSelectedOrgId(null); setOrgDetail(null); setOrgActivity(null); };
 
   // Validate stored token on mount
   useEffect(() => {
@@ -449,7 +468,7 @@ export default function Admin() {
                 <span className="text-white font-black text-sm">Platform Pulse</span>
                 {analyticsData?.realtime?.active > 0 && (
                   <span className="bg-emerald-500/20 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-500/20">
-                    {analyticsData.realtime.active} online now
+                    {analyticsData.realtime.active} visitors on site
                   </span>
                 )}
               </div>
@@ -699,6 +718,7 @@ export default function Admin() {
                     <th className="px-5 py-2.5 text-left font-bold text-slate-400 uppercase tracking-wider text-[10px]">Business</th>
                     <th className="px-3 py-2.5 text-left font-bold text-slate-400 uppercase tracking-wider text-[10px]">Currently On</th>
                     <th className="px-3 py-2.5 text-center font-bold text-slate-400 uppercase tracking-wider text-[10px]">Last Seen</th>
+                    <th className="px-3 py-2.5 text-right font-bold text-slate-400 uppercase tracking-wider text-[10px] hidden sm:table-cell">Today</th>
                     <th className="px-3 py-2.5 text-right font-bold text-slate-400 uppercase tracking-wider text-[10px] hidden sm:table-cell">Sessions</th>
                     <th className="px-3 py-2.5 text-right font-bold text-slate-400 uppercase tracking-wider text-[10px] hidden sm:table-cell">Docs</th>
                   </tr>
@@ -727,8 +747,12 @@ export default function Admin() {
                         <span className="text-[10px] font-bold text-emerald-600">{secsAgo(u.seconds_ago)}</span>
                       </td>
                       <td className="px-3 py-3 text-right hidden sm:table-cell">
-                        <span className="font-bold text-slate-700">{u.total_logins || 1}</span>
-                        <div className="text-[10px] text-slate-300">logins</div>
+                        <span className="font-bold text-slate-700">{fmtDuration(u.today_seconds || 0)}</span>
+                        <div className="text-[10px] text-slate-300">online</div>
+                      </td>
+                      <td className="px-3 py-3 text-right hidden sm:table-cell">
+                        <span className="font-bold text-slate-700">{u.total_sessions || u.total_logins || 1}</span>
+                        <div className="text-[10px] text-slate-300">sessions</div>
                       </td>
                       <td className="px-3 py-3 text-right hidden sm:table-cell">
                         <span className="font-bold text-slate-700">{u.total_docs}</span>
@@ -1309,7 +1333,7 @@ export default function Admin() {
               {analyticsData?.realtime?.active > 0 && (
                 <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
                   <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse inline-block" />
-                  {analyticsData.realtime.active} live now
+                  {analyticsData.realtime.active} visitors on site
                 </span>
               )}
             </div>
@@ -2092,17 +2116,21 @@ export default function Admin() {
             </div>
 
             {/* Tabs */}
-            <div className="flex border-b border-slate-100 bg-slate-50/50">
-              {(['overview','documents','clients','team'] as const).map(tab => (
+            <div className="flex border-b border-slate-100 bg-slate-50/50 overflow-x-auto">
+              {(['overview','documents','clients','team','activity'] as const).map(tab => (
                 <button
                   key={tab}
-                  onClick={() => setOrgDetailTab(tab)}
-                  className={cn('flex-1 py-3 text-xs font-bold capitalize transition-colors', orgDetailTab === tab ? 'text-indigo-600 border-b-2 border-indigo-600 bg-white' : 'text-slate-400 hover:text-slate-600')}
+                  onClick={() => {
+                    setOrgDetailTab(tab);
+                    if (tab === 'activity' && selectedOrgId) loadOrgActivity(selectedOrgId);
+                  }}
+                  className={cn('flex-1 min-w-fit px-3 py-3 text-xs font-bold capitalize transition-colors whitespace-nowrap', orgDetailTab === tab ? 'text-indigo-600 border-b-2 border-indigo-600 bg-white' : 'text-slate-400 hover:text-slate-600')}
                 >
                   {tab === 'overview' && <BarChart2 className="w-3.5 h-3.5 inline mr-1" />}
                   {tab === 'documents' && <FileText className="w-3.5 h-3.5 inline mr-1" />}
                   {tab === 'clients' && <Users className="w-3.5 h-3.5 inline mr-1" />}
                   {tab === 'team' && <UserCheck className="w-3.5 h-3.5 inline mr-1" />}
+                  {tab === 'activity' && <Activity className="w-3.5 h-3.5 inline mr-1" />}
                   {tab}
                 </button>
               ))}
@@ -2259,6 +2287,135 @@ export default function Admin() {
                       ))}
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* ── Activity Tab ─────────────────────────────────── */}
+              {orgDetailTab === 'activity' && (
+                <div>
+                  {orgActivityLoading && (
+                    <div className="flex items-center justify-center h-48">
+                      <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  )}
+                  {!orgActivityLoading && !orgActivity && (
+                    <div className="py-12 text-center text-slate-300 text-sm">No activity data yet</div>
+                  )}
+                  {!orgActivityLoading && orgActivity && (() => {
+                    const { stats, topPages, byHour, daily, sessions } = orgActivity;
+                    const maxHour = Math.max(...byHour.map((h: any) => h.sessions), 1);
+                    const maxDaily = Math.max(...daily.map((d: any) => d.seconds), 1);
+                    return (
+                      <div>
+                        {/* Summary stats */}
+                        <div className="grid grid-cols-3 divide-x divide-slate-100 border-b border-slate-100">
+                          {[
+                            { label: 'Total Time Online', value: fmtDuration(stats.total_seconds || 0) },
+                            { label: 'Sessions', value: stats.total_sessions || 0 },
+                            { label: 'Avg Session', value: fmtDuration(Math.round(stats.avg_session_seconds || 0)) },
+                          ].map(s => (
+                            <div key={s.label} className="px-4 py-4 text-center">
+                              <div className="text-lg font-black text-slate-800">{s.value}</div>
+                              <div className="text-[10px] text-slate-400 mt-0.5">{s.label}</div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Top pages */}
+                        {topPages.length > 0 && (
+                          <div className="px-5 py-4 border-b border-slate-50">
+                            <p className="text-[10px] font-bold text-slate-400 mb-3 uppercase tracking-wider">Most Visited Pages</p>
+                            <div className="space-y-2">
+                              {topPages.map((p: any, i: number) => {
+                                const pct = Math.round((p.visits / topPages[0].visits) * 100);
+                                return (
+                                  <div key={i} className="flex items-center gap-3">
+                                    <span className="text-[10px] text-slate-400 w-4 text-right shrink-0">{i + 1}</span>
+                                    <span className="text-xs font-bold text-slate-700 w-32 shrink-0 truncate">{pageName(p.page)}</span>
+                                    <div className="flex-1 bg-slate-100 rounded-full h-1.5">
+                                      <div className="bg-indigo-500 h-1.5 rounded-full" style={{ width: `${pct}%` }} />
+                                    </div>
+                                    <span className="text-[10px] font-bold text-slate-500 w-8 text-right shrink-0">{p.visits}×</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Activity by hour */}
+                        {byHour.length > 0 && (
+                          <div className="px-5 py-4 border-b border-slate-50">
+                            <p className="text-[10px] font-bold text-slate-400 mb-3 uppercase tracking-wider">Active Hours (local time)</p>
+                            <div className="flex items-end gap-0.5 h-16">
+                              {Array.from({ length: 24 }, (_, h) => {
+                                const entry = byHour.find((b: any) => b.hour === h);
+                                const count = entry?.sessions || 0;
+                                const heightPct = count > 0 ? Math.max(10, Math.round((count / maxHour) * 100)) : 0;
+                                return (
+                                  <div key={h} className="flex-1 flex flex-col items-center gap-0.5" title={`${h}:00 — ${count} session${count !== 1 ? 's' : ''}`}>
+                                    <div className="w-full rounded-sm" style={{ height: `${heightPct}%`, background: count > 0 ? '#6366f1' : '#e2e8f0', minHeight: count > 0 ? 4 : 2 }} />
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            <div className="flex justify-between text-[9px] text-slate-300 mt-1">
+                              <span>12am</span><span>6am</span><span>12pm</span><span>6pm</span><span>11pm</span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Daily activity last 30 days */}
+                        {daily.length > 0 && (
+                          <div className="px-5 py-4 border-b border-slate-50">
+                            <p className="text-[10px] font-bold text-slate-400 mb-3 uppercase tracking-wider">Daily Activity (last 30 days)</p>
+                            <div className="flex items-end gap-0.5 h-12">
+                              {daily.map((d: any) => {
+                                const heightPct = Math.max(6, Math.round((d.seconds / maxDaily) * 100));
+                                return (
+                                  <div key={d.date} className="flex-1 rounded-sm bg-emerald-400" style={{ height: `${heightPct}%` }}
+                                    title={`${d.date}: ${d.sessions} session${d.sessions !== 1 ? 's' : ''}, ${fmtDuration(d.seconds)}`} />
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Recent sessions list */}
+                        <div className="px-5 py-4">
+                          <p className="text-[10px] font-bold text-slate-400 mb-3 uppercase tracking-wider">Recent Sessions</p>
+                          {sessions.length === 0 ? (
+                            <p className="text-xs text-slate-300">No sessions recorded yet</p>
+                          ) : (
+                            <div className="space-y-2">
+                              {sessions.slice(0, 20).map((s: any) => (
+                                <div key={s.id} className="flex items-start gap-3 py-2 border-b border-slate-50 last:border-0">
+                                  <div className="w-1 h-full min-h-4 bg-indigo-200 rounded-full mt-1 shrink-0" />
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <span className="text-xs font-bold text-slate-700">
+                                        {new Date(s.started_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                        {' · '}
+                                        {new Date(s.started_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                                      </span>
+                                      <span className="text-[10px] font-bold bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded-full">{fmtDuration(s.duration_seconds)}</span>
+                                    </div>
+                                    {s.pages.length > 0 && (
+                                      <div className="flex flex-wrap gap-1 mt-1">
+                                        {s.pages.map((p: string) => (
+                                          <span key={p} className="text-[10px] text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded">{pageName(p)}</span>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
 
