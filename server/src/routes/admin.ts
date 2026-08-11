@@ -602,8 +602,18 @@ router.post('/signups/:id/review', adminAuth, (req: Request, res: Response) => {
 // See middleware/maintenance.ts - this is exempt from the gate itself so
 // toggling it off is always reachable regardless of current state.
 
+// effectiveEnabled reflects what visitors are actually seeing right now,
+// which can differ from the saved toggle if MAINTENANCE_MODE is set on the
+// host (see middleware/maintenance.ts) - surfaced so the panel never shows
+// "off" while the env var is actually forcing it on.
+function maintenanceStatus() {
+  const config = getMaintenanceConfig();
+  const forcedByEnv = process.env.MAINTENANCE_MODE === 'true';
+  return { ...config, forcedByEnv, effectiveEnabled: config.enabled || forcedByEnv };
+}
+
 router.get('/maintenance', adminAuth, (_req: Request, res: Response) => {
-  res.json(getMaintenanceConfig());
+  res.json(maintenanceStatus());
 });
 
 router.put('/maintenance', adminAuth, (req: Request, res: Response) => {
@@ -611,11 +621,11 @@ router.put('/maintenance', adminAuth, (req: Request, res: Response) => {
   if (typeof enabled !== 'boolean' && typeof message !== 'string') {
     return res.status(400).json({ error: 'Provide enabled and/or message to update' });
   }
-  const updated = setMaintenanceConfig({
+  setMaintenanceConfig({
     ...(typeof enabled === 'boolean' ? { enabled } : {}),
     ...(typeof message === 'string' && message.trim() ? { message: message.trim() } : {}),
   });
-  res.json(updated);
+  res.json(maintenanceStatus());
 });
 
 export default router;

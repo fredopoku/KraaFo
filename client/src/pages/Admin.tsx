@@ -129,7 +129,7 @@ export default function Admin() {
   const [savingRiskConfig, setSavingRiskConfig] = useState(false);
   const [reviewingSignupId, setReviewingSignupId] = useState<string | null>(null);
   const [signupStatusFilter, setSignupStatusFilter] = useState<string>('');
-  const [maintenance, setMaintenance] = useState<{ enabled: boolean; message: string } | null>(null);
+  const [maintenance, setMaintenance] = useState<{ enabled: boolean; message: string; forcedByEnv?: boolean; effectiveEnabled?: boolean } | null>(null);
   const [maintenanceMessageDraft, setMaintenanceMessageDraft] = useState('');
   const [savingMaintenance, setSavingMaintenance] = useState(false);
   const [activityData, setActivityData] = useState<any[]>([]);
@@ -1402,20 +1402,25 @@ export default function Admin() {
         {activeTab === 'security' && (<>
 
         {/* ── Maintenance mode ─────────────────────────────────── */}
-        <div className={cn('rounded-2xl ring-1 shadow-sm overflow-hidden', maintenance?.enabled ? 'bg-red-50 ring-red-100' : 'bg-white ring-slate-100')}>
+        <div className={cn('rounded-2xl ring-1 shadow-sm overflow-hidden', maintenance?.effectiveEnabled ? 'bg-red-50 ring-red-100' : 'bg-white ring-slate-100')}>
           <div className="px-5 py-4 flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-2.5">
-              <AlertCircle className={cn('w-4 h-4', maintenance?.enabled ? 'text-red-500' : 'text-slate-300')} />
+              <AlertCircle className={cn('w-4 h-4', maintenance?.effectiveEnabled ? 'text-red-500' : 'text-slate-300')} />
               <div>
                 <h2 className="text-sm font-black text-slate-700">Maintenance Mode</h2>
                 <p className="text-[10px] text-slate-400">
-                  {maintenance?.enabled ? 'LIVE - visitors are seeing the maintenance page right now' : 'Off - the live site is running normally'}
+                  {maintenance?.forcedByEnv
+                    ? 'LIVE - forced on by the MAINTENANCE_MODE env var on the host (survives deploys). Remove it there to turn off.'
+                    : maintenance?.enabled
+                    ? 'LIVE - visitors are seeing the maintenance page right now'
+                    : 'Off - the live site is running normally'}
                 </p>
               </div>
             </div>
             <button
               onClick={() => handleToggleMaintenance(!maintenance?.enabled)}
-              disabled={savingMaintenance || !maintenance}
+              disabled={savingMaintenance || !maintenance || maintenance?.forcedByEnv}
+              title={maintenance?.forcedByEnv ? 'Forced on by the MAINTENANCE_MODE env var - remove it on the host to regain control here' : undefined}
               className={cn(
                 'px-4 py-2 rounded-xl text-xs font-bold transition-all disabled:opacity-40',
                 maintenance?.enabled ? 'bg-white text-red-600 ring-1 ring-red-200 hover:bg-red-50' : 'bg-slate-800 text-white hover:bg-slate-900'
