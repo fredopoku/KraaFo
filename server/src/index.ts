@@ -28,6 +28,7 @@ import teamRouter from './routes/team';
 import trashRouter from './routes/trash';
 import presenceRouter from './routes/presence';
 import { requireAuth } from './middleware/auth';
+import { maintenanceGate } from './middleware/maintenance';
 import { startScheduler } from './services/scheduler';
 
 if (process.env.SENTRY_DSN) {
@@ -44,6 +45,11 @@ const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
 const isProd = process.env.NODE_ENV === 'production';
 
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+
+// Maintenance mode - first thing checked on every request, ahead of CORS/
+// rate limiting/everything else, so a toggle from the admin Security tab
+// takes effect immediately with no other code path able to run around it.
+app.use(maintenanceGate);
 
 // CORS - allow configured frontend URL + localhost for dev only
 const allowedOrigins = [

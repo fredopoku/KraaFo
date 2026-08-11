@@ -129,6 +129,9 @@ export default function Admin() {
   const [savingRiskConfig, setSavingRiskConfig] = useState(false);
   const [reviewingSignupId, setReviewingSignupId] = useState<string | null>(null);
   const [signupStatusFilter, setSignupStatusFilter] = useState<string>('');
+  const [maintenance, setMaintenance] = useState<{ enabled: boolean; message: string } | null>(null);
+  const [maintenanceMessageDraft, setMaintenanceMessageDraft] = useState('');
+  const [savingMaintenance, setSavingMaintenance] = useState(false);
   const [activityData, setActivityData] = useState<any[]>([]);
   const [orgSearch, setOrgSearch] = useState('');
 
@@ -146,7 +149,7 @@ export default function Admin() {
   }, []);
 
   const loadData = useCallback(async (t: string, d = 30) => {
-    const [fb, subs, bcs, users, cl, analytics, activity, flagged, risk] = await Promise.all([
+    const [fb, subs, bcs, users, cl, analytics, activity, flagged, risk, maint] = await Promise.all([
       adminFetch<any>('/feedback', t).catch(() => null),
       adminFetch<any>('/subscribers', t).catch(() => ({ subscribers: [], total: 0 })),
       adminFetch<any[]>('/broadcasts', t).catch(() => []),
@@ -156,6 +159,7 @@ export default function Admin() {
       adminFetch<any>('/admin/activity', t).catch(() => ({ events: [] })),
       adminFetch<any>('/admin/signups/flagged', t).catch(() => ({ signups: [] })),
       adminFetch<any>('/admin/risk-config', t).catch(() => null),
+      adminFetch<any>('/admin/maintenance', t).catch(() => null),
     ]);
     if (fb) setFeedbackData(fb);
     setSubCount(subs?.total ?? 0);
@@ -167,6 +171,7 @@ export default function Admin() {
     setActivityData(activity?.events || []);
     setFlaggedSignups(flagged?.signups || []);
     if (risk) { setRiskConfig(risk); setRiskConfigDraft(risk); }
+    if (maint) { setMaintenance(maint); setMaintenanceMessageDraft(maint.message); }
     await loadPresence(t);
   }, [loadPresence]);
 
@@ -202,6 +207,33 @@ export default function Admin() {
       showToast('error', err.message || 'Could not save risk config');
     } finally {
       setSavingRiskConfig(false);
+    }
+  };
+
+  const handleToggleMaintenance = async (enabled: boolean) => {
+    setSavingMaintenance(true);
+    try {
+      const updated = await adminFetch<any>('/admin/maintenance', token, { method: 'PUT', body: JSON.stringify({ enabled }) });
+      setMaintenance(updated);
+      showToast('success', enabled ? 'Maintenance mode is now ON - the live site is showing the maintenance page.' : 'Maintenance mode is now off.');
+    } catch (err: any) {
+      showToast('error', err.message || 'Could not update maintenance mode');
+    } finally {
+      setSavingMaintenance(false);
+    }
+  };
+
+  const handleSaveMaintenanceMessage = async () => {
+    setSavingMaintenance(true);
+    try {
+      const updated = await adminFetch<any>('/admin/maintenance', token, { method: 'PUT', body: JSON.stringify({ message: maintenanceMessageDraft }) });
+      setMaintenance(updated);
+      setMaintenanceMessageDraft(updated.message);
+      showToast('success', 'Maintenance message saved.');
+    } catch (err: any) {
+      showToast('error', err.message || 'Could not save maintenance message');
+    } finally {
+      setSavingMaintenance(false);
     }
   };
 
@@ -1368,6 +1400,53 @@ export default function Admin() {
 
         {/* ══ SECURITY TAB ═════════════════════════════════════ */}
         {activeTab === 'security' && (<>
+
+        {/* ── Maintenance mode ─────────────────────────────────── */}
+        <div className={cn('rounded-2xl ring-1 shadow-sm overflow-hidden', maintenance?.enabled ? 'bg-red-50 ring-red-100' : 'bg-white ring-slate-100')}>
+          <div className="px-5 py-4 flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-2.5">
+              <AlertCircle className={cn('w-4 h-4', maintenance?.enabled ? 'text-red-500' : 'text-slate-300')} />
+              <div>
+                <h2 className="text-sm font-black text-slate-700">Maintenance Mode</h2>
+                <p className="text-[10px] text-slate-400">
+                  {maintenance?.enabled ? 'LIVE - visitors are seeing the maintenance page right now' : 'Off - the live site is running normally'}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => handleToggleMaintenance(!maintenance?.enabled)}
+              disabled={savingMaintenance || !maintenance}
+              className={cn(
+                'px-4 py-2 rounded-xl text-xs font-bold transition-all disabled:opacity-40',
+                maintenance?.enabled ? 'bg-white text-red-600 ring-1 ring-red-200 hover:bg-red-50' : 'bg-slate-800 text-white hover:bg-slate-900'
+              )}
+            >
+              {maintenance?.enabled ? 'Turn off' : 'Turn on'}
+            </button>
+          </div>
+          {maintenance && (
+            <div className="px-5 pb-5">
+              <label className="block">
+                <span className="text-[10px] text-slate-500 font-medium">Message shown to visitors</span>
+                <textarea
+                  value={maintenanceMessageDraft}
+                  onChange={e => setMaintenanceMessageDraft(e.target.value)}
+                  rows={2}
+                  className="w-full mt-1 border border-slate-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"
+                />
+              </label>
+              {maintenanceMessageDraft !== maintenance.message && (
+                <button
+                  onClick={handleSaveMaintenanceMessage}
+                  disabled={savingMaintenance}
+                  className="mt-2 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-bold transition-all disabled:opacity-40"
+                >
+                  Save message
+                </button>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* ── Risk scoring config ─────────────────────────────── */}
         <div className="bg-white rounded-2xl ring-1 ring-slate-100 shadow-sm overflow-hidden">

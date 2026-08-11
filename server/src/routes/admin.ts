@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import db from '../db/schema';
 import { adminAuth } from '../middleware/adminAuth';
 import { getRiskConfig, saveRiskConfig, reloadRiskConfig } from '../config/riskConfig';
+import { getMaintenanceConfig, setMaintenanceConfig } from '../config/maintenanceConfig';
 
 const router = Router();
 
@@ -595,6 +596,26 @@ router.post('/signups/:id/review', adminAuth, (req: Request, res: Response) => {
   const nextStatus = decision === 'reject' ? 'rejected' : decision === 'verify' ? 'verified' : 'pending_verification';
   db.prepare('UPDATE organizations SET verification_status = ? WHERE id = ?').run(nextStatus, req.params.id);
   res.json({ id: req.params.id, verification_status: nextStatus });
+});
+
+// ── Maintenance mode ─────────────────────────────────────────────
+// See middleware/maintenance.ts - this is exempt from the gate itself so
+// toggling it off is always reachable regardless of current state.
+
+router.get('/maintenance', adminAuth, (_req: Request, res: Response) => {
+  res.json(getMaintenanceConfig());
+});
+
+router.put('/maintenance', adminAuth, (req: Request, res: Response) => {
+  const { enabled, message } = req.body || {};
+  if (typeof enabled !== 'boolean' && typeof message !== 'string') {
+    return res.status(400).json({ error: 'Provide enabled and/or message to update' });
+  }
+  const updated = setMaintenanceConfig({
+    ...(typeof enabled === 'boolean' ? { enabled } : {}),
+    ...(typeof message === 'string' && message.trim() ? { message: message.trim() } : {}),
+  });
+  res.json(updated);
 });
 
 export default router;
