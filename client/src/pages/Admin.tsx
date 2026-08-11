@@ -122,7 +122,13 @@ export default function Admin() {
   const [viewsModal, setViewsModal] = useState<{ open: boolean; page?: string }>({ open: false });
   const [viewsData, setViewsData] = useState<{ views: any[]; total: number } | null>(null);
   const [viewsLoading, setViewsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'traffic' | 'users' | 'financials' | 'comms'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'traffic' | 'users' | 'financials' | 'comms' | 'security'>('overview');
+  const [flaggedSignups, setFlaggedSignups] = useState<any[]>([]);
+  const [riskConfig, setRiskConfig] = useState<{ weights: Record<string, number>; thresholds: Record<string, number> } | null>(null);
+  const [riskConfigDraft, setRiskConfigDraft] = useState<{ weights: Record<string, number>; thresholds: Record<string, number> } | null>(null);
+  const [savingRiskConfig, setSavingRiskConfig] = useState(false);
+  const [reviewingSignupId, setReviewingSignupId] = useState<string | null>(null);
+  const [signupStatusFilter, setSignupStatusFilter] = useState<string>('');
   const [activityData, setActivityData] = useState<any[]>([]);
   const [orgSearch, setOrgSearch] = useState('');
 
@@ -140,7 +146,7 @@ export default function Admin() {
   }, []);
 
   const loadData = useCallback(async (t: string, d = 30) => {
-    const [fb, subs, bcs, users, cl, analytics, activity] = await Promise.all([
+    const [fb, subs, bcs, users, cl, analytics, activity, flagged, risk] = await Promise.all([
       adminFetch<any>('/feedback', t).catch(() => null),
       adminFetch<any>('/subscribers', t).catch(() => ({ subscribers: [], total: 0 })),
       adminFetch<any[]>('/broadcasts', t).catch(() => []),
@@ -148,6 +154,8 @@ export default function Admin() {
       fetch(`${BASE}/changelog`).then(r => r.json()).catch(() => ({ entries: [] })),
       adminFetch<any>(`/admin/analytics?days=${d}`, t).catch(() => null),
       adminFetch<any>('/admin/activity', t).catch(() => ({ events: [] })),
+      adminFetch<any>('/admin/signups/flagged', t).catch(() => ({ signups: [] })),
+      adminFetch<any>('/admin/risk-config', t).catch(() => null),
     ]);
     if (fb) setFeedbackData(fb);
     setSubCount(subs?.total ?? 0);
@@ -157,8 +165,45 @@ export default function Admin() {
     setChangelogEntries(cl?.entries || []);
     if (analytics) setAnalyticsData(analytics);
     setActivityData(activity?.events || []);
+    setFlaggedSignups(flagged?.signups || []);
+    if (risk) { setRiskConfig(risk); setRiskConfigDraft(risk); }
     await loadPresence(t);
   }, [loadPresence]);
+
+  const loadFlaggedSignups = useCallback(async (status: string) => {
+    if (!token) return;
+    const qs = status ? `?status=${encodeURIComponent(status)}` : '';
+    const data = await adminFetch<any>(`/admin/signups/flagged${qs}`, token).catch(() => ({ signups: [] }));
+    setFlaggedSignups(data?.signups || []);
+  }, [token]);
+
+  const handleReviewSignup = async (id: string, decision: 'clear' | 'verify' | 'reject') => {
+    setReviewingSignupId(id);
+    try {
+      await adminFetch(`/admin/signups/${id}/review`, token, { method: 'POST', body: JSON.stringify({ decision }) });
+      await loadFlaggedSignups(signupStatusFilter);
+      showToast('success', `Signup ${decision === 'reject' ? 'rejected' : decision === 'verify' ? 'verified' : 'cleared'}.`);
+    } catch (err: any) {
+      showToast('error', err.message || 'Could not update signup');
+    } finally {
+      setReviewingSignupId(null);
+    }
+  };
+
+  const handleSaveRiskConfig = async () => {
+    if (!riskConfigDraft) return;
+    setSavingRiskConfig(true);
+    try {
+      const updated = await adminFetch<any>('/admin/risk-config', token, { method: 'PUT', body: JSON.stringify(riskConfigDraft) });
+      setRiskConfig(updated);
+      setRiskConfigDraft(updated);
+      showToast('success', 'Risk config saved.');
+    } catch (err: any) {
+      showToast('error', err.message || 'Could not save risk config');
+    } finally {
+      setSavingRiskConfig(false);
+    }
+  };
 
   const refreshAnalytics = async (d: number) => {
     if (!token) return;
@@ -418,6 +463,7 @@ export default function Admin() {
             { key: 'users', label: 'Users', icon: Users },
             { key: 'financials', label: 'Financials', icon: TrendingUp },
             { key: 'comms', label: 'Comms', icon: Megaphone },
+            { key: 'security', label: 'Security', icon: Shield },
           ] as const).map(tab => (
             <button
               key={tab.key}
@@ -1314,6 +1360,188 @@ export default function Admin() {
                   </div>
                 );
               })}
+            </div>
+          )}
+        </div>
+
+        </>)}
+
+        {/* ══ SECURITY TAB ═════════════════════════════════════ */}
+        {activeTab === 'security' && (<>
+
+        {/* ── Risk scoring config ─────────────────────────────── */}
+        <div className="bg-white rounded-2xl ring-1 ring-slate-100 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-50 flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <Shield className="w-4 h-4 text-indigo-500" />
+              <h2 className="text-sm font-black text-slate-700">Signup Risk Scoring</h2>
+            </div>
+            <p className="text-[10px] text-slate-300">Takes effect immediately - no restart needed</p>
+          </div>
+          {!riskConfigDraft ? (
+            <div className="py-10 text-center text-xs text-slate-300">Loading…</div>
+          ) : (
+            <div className="p-5 space-y-4">
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Signal weights</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {Object.entries(riskConfigDraft.weights).map(([key, val]) => (
+                    <label key={key} className="block">
+                      <span className="text-[10px] text-slate-500 font-medium">{key}</span>
+                      <input
+                        type="number"
+                        value={val}
+                        onChange={e => setRiskConfigDraft(d => d && ({ ...d, weights: { ...d.weights, [key]: Number(e.target.value) } }))}
+                        className="w-full mt-1 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                      />
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Thresholds</p>
+                <div className="grid grid-cols-2 gap-3 max-w-xs">
+                  {Object.entries(riskConfigDraft.thresholds).map(([key, val]) => (
+                    <label key={key} className="block">
+                      <span className="text-[10px] text-slate-500 font-medium capitalize">{key}</span>
+                      <input
+                        type="number"
+                        value={val}
+                        onChange={e => setRiskConfigDraft(d => d && ({ ...d, thresholds: { ...d.thresholds, [key]: Number(e.target.value) } }))}
+                        className="w-full mt-1 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                      />
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center gap-3 pt-1">
+                <button
+                  onClick={handleSaveRiskConfig}
+                  disabled={savingRiskConfig || JSON.stringify(riskConfigDraft) === JSON.stringify(riskConfig)}
+                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {savingRiskConfig ? 'Saving…' : 'Save changes'}
+                </button>
+                {JSON.stringify(riskConfigDraft) !== JSON.stringify(riskConfig) && (
+                  <button onClick={() => setRiskConfigDraft(riskConfig)} className="text-xs font-bold text-slate-400 hover:text-slate-600">
+                    Discard
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ── Flagged signups ──────────────────────────────────── */}
+        <div className="bg-white rounded-2xl ring-1 ring-slate-100 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-50 flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-amber-500" />
+              <h2 className="text-sm font-black text-slate-700">Flagged Signups</h2>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">{flaggedSignups.length}</span>
+            </div>
+            <select
+              value={signupStatusFilter}
+              onChange={e => { setSignupStatusFilter(e.target.value); loadFlaggedSignups(e.target.value); }}
+              className="text-[10px] font-bold border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white"
+            >
+              <option value="">All flagged (default view)</option>
+              <option value="pending_verification">Pending verification</option>
+              <option value="held_for_review">Held for review</option>
+              <option value="verified">Verified</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+
+          {flaggedSignups.length === 0 ? (
+            <div className="py-10 text-center">
+              <CheckCircle className="w-8 h-8 text-emerald-200 mx-auto mb-2" />
+              <p className="text-xs text-slate-300">Nothing flagged right now</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-slate-50 bg-slate-50/50">
+                    <th className="px-5 py-2.5 text-left font-bold text-slate-400 uppercase tracking-wider text-[10px]">Account</th>
+                    <th className="px-3 py-2.5 text-left font-bold text-slate-400 uppercase tracking-wider text-[10px]">Status</th>
+                    <th className="px-3 py-2.5 text-center font-bold text-slate-400 uppercase tracking-wider text-[10px]">Risk</th>
+                    <th className="px-3 py-2.5 text-left font-bold text-slate-400 uppercase tracking-wider text-[10px] hidden sm:table-cell">Signals</th>
+                    <th className="px-3 py-2.5 text-right font-bold text-slate-400 uppercase tracking-wider text-[10px] hidden sm:table-cell">Signed up</th>
+                    <th className="px-5 py-2.5 text-right font-bold text-slate-400 uppercase tracking-wider text-[10px]">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {flaggedSignups.map((s: any) => {
+                    const statusCls: Record<string, string> = {
+                      held_for_review: 'bg-red-50 text-red-600',
+                      pending_verification: 'bg-amber-50 text-amber-700',
+                      verified: 'bg-emerald-50 text-emerald-700',
+                      rejected: 'bg-slate-100 text-slate-400',
+                    };
+                    const actionCls: Record<string, string> = {
+                      hold: 'text-red-600',
+                      friction: 'text-amber-600',
+                      allow: 'text-slate-400',
+                    };
+                    const signals: string[] = [];
+                    if (s.signup_is_proxy) signals.push('Proxy');
+                    if (s.signup_is_hosting) signals.push('Hosting');
+                    if (s.fingerprint_hash) signals.push('FP seen');
+                    return (
+                      <tr key={s.id} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="px-5 py-3">
+                          <div className="font-bold text-slate-800">{s.name || '—'}</div>
+                          <div className="text-[10px] text-slate-400">{s.email}</div>
+                        </td>
+                        <td className="px-3 py-3">
+                          <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full capitalize', statusCls[s.verification_status] || 'bg-slate-100 text-slate-400')}>
+                            {(s.verification_status || '').replace(/_/g, ' ')}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 text-center">
+                          <span className={cn('font-black', actionCls[s.risk_action] || 'text-slate-400')}>{s.risk_score}</span>
+                        </td>
+                        <td className="px-3 py-3 hidden sm:table-cell">
+                          <span className="text-[10px] text-slate-400">{signals.join(' · ') || '—'}</span>
+                          {s.signup_country && <span className="text-[10px] text-slate-300 ml-1">({s.signup_country})</span>}
+                        </td>
+                        <td className="px-3 py-3 text-right hidden sm:table-cell text-[10px] text-slate-400">
+                          {timeAgo(s.created_at)}
+                        </td>
+                        <td className="px-5 py-3">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => handleReviewSignup(s.id, 'verify')}
+                              disabled={reviewingSignupId === s.id}
+                              title="Mark verified - skips email verification"
+                              className="text-[10px] font-bold text-emerald-600 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-2 py-1 rounded-lg transition-all disabled:opacity-40"
+                            >
+                              Verify
+                            </button>
+                            <button
+                              onClick={() => handleReviewSignup(s.id, 'clear')}
+                              disabled={reviewingSignupId === s.id}
+                              title="Clear the hold - still requires email verification"
+                              className="text-[10px] font-bold text-slate-500 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-lg transition-all disabled:opacity-40"
+                            >
+                              Clear
+                            </button>
+                            <button
+                              onClick={() => handleReviewSignup(s.id, 'reject')}
+                              disabled={reviewingSignupId === s.id}
+                              title="Reject - blocks the account"
+                              className="text-[10px] font-bold text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 px-2 py-1 rounded-lg transition-all disabled:opacity-40"
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
