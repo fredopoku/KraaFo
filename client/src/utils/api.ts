@@ -62,7 +62,7 @@ function pdfOpen(url: string, filename: string): Promise<void> {
 export const api = {
   organizations: {
     get: (id: string) => request<Organization>(`/organizations/${id}`),
-    create: (data: Partial<Organization>) => request<Organization>('/organizations', { method: 'POST', body: JSON.stringify(data) }),
+    create: (data: Partial<Organization> & { cf_turnstile_response?: string; fingerprint_hash?: string }) => request<Organization>('/organizations', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: Partial<Organization>) => request<Organization>(`/organizations/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   },
 
@@ -186,7 +186,7 @@ export const api = {
     get: () => request<{ documents: number; countries: number; avgRating: number | null; ratingCount: number }>('/stats'),
   },
   feedback: {
-    submit: (data: { name: string; email?: string; rating: number; message?: string }) =>
+    submit: (data: { name: string; email?: string; rating: number; message?: string; cf_turnstile_response?: string }) =>
       request<{ success: boolean }>('/feedback', { method: 'POST', body: JSON.stringify(data) }),
     list: () => request<{ feedback: any[]; averageRating: number; total: number }>('/feedback'),
     highlights: () => request<{ highlights: Array<{ id: string; name: string; rating: number; message: string; created_at: string }> }>('/feedback/highlights'),
@@ -226,6 +226,10 @@ export const api = {
       request<{ email: string; orgName: string; role: string }>(`/auth/join/${token}`),
     acceptInvite: (token: string, name: string, password: string) =>
       request<{ org: any; token: string; role: string }>(`/auth/join/${token}`, { method: 'POST', body: JSON.stringify({ name, password }) }),
+    verifyEmail: (token: string) =>
+      request<{ success: boolean; held: boolean }>(`/auth/verify-email?token=${encodeURIComponent(token)}`),
+    resendVerification: () =>
+      request<{ sent: boolean; alreadyVerified?: boolean }>('/auth/resend-verification', { method: 'POST' }),
   },
 
   team: {

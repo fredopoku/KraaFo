@@ -16,6 +16,7 @@ const Login = lazy(() => import('./pages/Login'));
 const Join = lazy(() => import('./pages/Join'));
 const Team = lazy(() => import('./pages/Team'));
 const Trash = lazy(() => import('./pages/Trash'));
+const EmailVerify = lazy(() => import('./pages/EmailVerify'));
 const InvoiceGeneratorPage = lazy(() => import('./pages/InvoiceGeneratorPage'));
 const ReceiptGeneratorPage = lazy(() => import('./pages/ReceiptGeneratorPage'));
 const QuoteGeneratorPage = lazy(() => import('./pages/QuoteGeneratorPage'));
@@ -104,6 +105,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/join/:token" element={<Join />} />
           <Route path="/team" element={<Team />} />
+          <Route path="/verify-email" element={<EmailVerify />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>

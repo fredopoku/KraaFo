@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import db from '../db/schema';
 import { adminAuth } from '../middleware/adminAuth';
+import { getRiskConfig, saveRiskConfig, reloadRiskConfig } from '../config/riskConfig';
 
 const router = Router();
 
@@ -528,6 +529,72 @@ router.get('/analytics/views', adminAuth, (req: Request, res: Response) => {
   ).get(...countParams) as any;
 
   res.json({ views, total, limit, offset });
+});
+
+// ── Signup risk scoring: config + flagged signups ──────────────────
+
+router.get('/risk-config', adminAuth, (_req: Request, res: Response) => {
+  res.json(getRiskConfig());
+});
+
+router.put('/risk-config', adminAuth, (req: Request, res: Response) => {
+  const { weights, thresholds } = req.body || {};
+  if (!weights && !thresholds) {
+    return res.status(400).json({ error: 'Provide weights and/or thresholds to update' });
+  }
+  const updated = saveRiskConfig({ weights, thresholds });
+  res.json(updated);
+});
+
+// For an operator who hand-edited the config JSON file directly on the
+// server instead of going through PUT above - picks up the file as-is.
+router.post('/risk-config/reload', adminAuth, (_req: Request, res: Response) => {
+  res.json(reloadRiskConfig());
+});
+
+router.get('/signups/flagged', adminAuth, (req: Request, res: Response) => {
+  const limit = Math.min(Number(req.query.limit) || 100, 500);
+  const offset = Number(req.query.offset) || 0;
+  const status = req.query.status as string | undefined; // 'held_for_review' | 'pending_verification' | 'verified' | 'rejected'
+
+  const where = status
+    ? 'WHERE verification_status = ?'
+    : `WHERE verification_status NOT IN ('verified') OR risk_action != 'allow'`;
+  const params: any[] = status ? [status, limit, offset] : [limit, offset];
+  const countParams: any[] = status ? [status] : [];
+
+  const signups = db.prepare(`
+    SELECT id, name, email, phone, country, created_at,
+           verification_status, risk_score, risk_action,
+           signup_ip, signup_asn, signup_country, signup_is_proxy, signup_is_hosting,
+           fingerprint_hash, email_verified_at
+    FROM organizations
+    ${where}
+    ORDER BY created_at DESC
+    LIMIT ? OFFSET ?
+  `).all(...params);
+
+  const { total } = db.prepare(`SELECT COUNT(*) as total FROM organizations ${where}`).get(...countParams) as any;
+
+  res.json({ signups, total, limit, offset });
+});
+
+// Manual review outcome for a held/flagged signup - keeps a plain audit
+// trail via verification_status rather than a separate log table, since
+// that column already drives the access gate in middleware/auth.ts.
+router.post('/signups/:id/review', adminAuth, (req: Request, res: Response) => {
+  const { decision } = req.body as { decision?: 'clear' | 'verify' | 'reject' };
+  if (!decision || !['clear', 'verify', 'reject'].includes(decision)) {
+    return res.status(400).json({ error: "decision must be 'clear', 'verify', or 'reject'" });
+  }
+  const org = db.prepare('SELECT id FROM organizations WHERE id = ?').get(req.params.id);
+  if (!org) return res.status(404).json({ error: 'Signup not found' });
+
+  // 'clear' still requires the normal email-verification step; 'verify'
+  // is for an admin who has independently confirmed the account is real.
+  const nextStatus = decision === 'reject' ? 'rejected' : decision === 'verify' ? 'verified' : 'pending_verification';
+  db.prepare('UPDATE organizations SET verification_status = ? WHERE id = ?').run(nextStatus, req.params.id);
+  res.json({ id: req.params.id, verification_status: nextStatus });
 });
 
 export default router;

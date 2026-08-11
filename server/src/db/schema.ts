@@ -270,6 +270,35 @@ addCol('organizations', 'last_seen', 'TEXT');
 addCol('organizations', 'current_page', 'TEXT');
 addCol('organizations', 'total_logins', 'INTEGER DEFAULT 0');
 
+// Signup fraud hardening: verification state, risk signals logged at signup,
+// and the email-verification token lifecycle. See routes/organizations.ts,
+// services/riskScoring.ts, and routes/auth.ts (verify/resend).
+addCol('organizations', 'verification_status', "TEXT DEFAULT 'pending_verification'"); // pending_verification | verified | held_for_review
+addCol('organizations', 'risk_score', 'INTEGER DEFAULT 0');
+addCol('organizations', 'risk_action', "TEXT DEFAULT 'allow'"); // allow | friction | hold
+addCol('organizations', 'signup_ip', 'TEXT');
+addCol('organizations', 'signup_asn', 'TEXT');
+addCol('organizations', 'signup_country', 'TEXT');
+addCol('organizations', 'signup_is_proxy', 'INTEGER DEFAULT 0');
+addCol('organizations', 'signup_is_hosting', 'INTEGER DEFAULT 0');
+addCol('organizations', 'fingerprint_hash', 'TEXT');
+addCol('organizations', 'email_verify_token_hash', 'TEXT');
+addCol('organizations', 'email_verify_expires', 'TEXT');
+addCol('organizations', 'email_verified_at', 'TEXT');
+addCol('organizations', 'email_verify_sent_at', 'TEXT');
+addCol('organizations', 'email_verify_resend_count', 'INTEGER DEFAULT 0');
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS signup_fingerprints (
+    id TEXT PRIMARY KEY,
+    fingerprint_hash TEXT NOT NULL,
+    org_id TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    ip TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_signup_fp_hash ON signup_fingerprints(fingerprint_hash);
+`);
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS org_sessions (
     id TEXT PRIMARY KEY,

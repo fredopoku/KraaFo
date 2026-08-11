@@ -41,6 +41,7 @@ export interface Organization {
   dkim_selector?: string;
   dkim_private_key?: string;
   account_type?: 'solo' | 'team';
+  verification_status?: 'pending_verification' | 'verified' | 'held_for_review' | 'rejected';
   created_at: string;
   updated_at: string;
 }

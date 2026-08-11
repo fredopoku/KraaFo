@@ -86,6 +86,16 @@ const forgotLimiter = rateLimit({
   message: { error: 'Too many password reset requests. Please try again in 1 hour.' },
   skip: () => !isProd,
 });
+// Verification-email resend - separate from forgotLimiter since it's a
+// different spam surface (unauthenticated, sends mail to any address).
+const verifyResendLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,   // 1 hour
+  max: 5,                       // 5 resend requests per hour per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many verification email requests. Please try again in 1 hour.' },
+  skip: () => !isProd,
+});
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -114,6 +124,7 @@ app.use('/api/stats', statsRouter);
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/forgot', forgotLimiter);
 app.use('/api/auth/reset', authLimiter);
+app.use('/api/auth/resend-verification', verifyResendLimiter);
 app.use('/api/auth', authRouter);
 app.use('/api/team', teamRouter);
 app.use('/api/trash', trashRouter);

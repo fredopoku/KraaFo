@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock, AlertCircle, FileText, Receipt, Users, Quote, Plus, Settings, ArrowRight, ArrowLeft, CheckCircle, Zap, X, DollarSign, BarChart2, Trash2, Circle } from 'lucide-react';
+import { Clock, AlertCircle, FileText, Receipt, Users, Quote, Plus, Settings, ArrowRight, ArrowLeft, CheckCircle, Zap, X, DollarSign, BarChart2, Trash2, Circle, Mail } from 'lucide-react';
 import { useOrg } from '../hooks/useOrg';
 import { api, formatCurrency } from '../utils/api';
 import { LogoMark, Logo } from '../components/Logo';
@@ -18,8 +18,19 @@ export default function Dashboard() {
     () => localStorage.getItem(`krafo_checklist_done_${org?.id}`) === '1'
   );
   const [granularity, setGranularity] = useState<'daily' | 'monthly' | 'yearly'>('monthly');
+  const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent'>('idle');
 
   useEffect(() => { if (!loading && !org) navigate('/setup'); }, [loading, org, navigate]);
+
+  const handleResendVerification = async () => {
+    setResendState('sending');
+    try {
+      await api.auth.resendVerification();
+      setResendState('sent');
+    } catch {
+      setResendState('idle');
+    }
+  };
 
   useEffect(() => {
     if (!org) return;
@@ -156,6 +167,25 @@ export default function Dashboard() {
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-tight">{org.name} 👋</h1>
           <p className="text-sm text-slate-400 mt-1">Here's your business overview</p>
         </div>
+
+        {/* Email verification banner - core-feature writes are blocked
+            server-side (middleware/auth.ts) until this clears, so this is
+            reminder/UX, not the actual enforcement. */}
+        {org.verification_status === 'pending_verification' && (
+          <div className="mb-6 animate-fade-up bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 flex items-center gap-3 flex-wrap">
+            <Mail className="w-4 h-4 text-amber-600 shrink-0" />
+            <p className="text-sm text-amber-800 font-medium flex-1 min-w-[200px]">
+              Please verify your email to unlock invoicing, quotes, clients and team features.
+            </p>
+            <button
+              onClick={handleResendVerification}
+              disabled={resendState !== 'idle'}
+              className="text-xs font-bold text-amber-700 hover:text-amber-900 bg-white border border-amber-200 rounded-lg px-3 py-1.5 transition-all disabled:opacity-60"
+            >
+              {resendState === 'sending' ? 'Sending...' : resendState === 'sent' ? 'Email sent!' : 'Resend email'}
+            </button>
+          </div>
+        )}
 
         {/* Onboarding checklist - shown until dismissed or all steps done */}
         {(() => {

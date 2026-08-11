@@ -60,6 +60,17 @@ function isPublic(req: Request): boolean {
   return false;
 }
 
+// Routes gated behind email verification / risk review. Everything else
+// (org settings, presence, analytics reads, etc.) stays reachable so an
+// unverified user isn't locked out of the app entirely - just out of
+// creating/sending real documents and managing a team, which is where
+// bulk-signup abuse actually does damage.
+const CORE_FEATURE_PREFIXES = ['/api/invoices', '/api/quotes', '/api/clients', '/api/deliver', '/api/ai', '/api/team'];
+
+function isCoreFeatureRequest(req: Request): boolean {
+  return CORE_FEATURE_PREFIXES.some(prefix => req.path.startsWith(prefix));
+}
+
 export function requireAuth(req: Request, res: Response, next: NextFunction): void {
   if (isPublic(req)) { next(); return; }
 
@@ -78,6 +89,25 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
   try {
     const payload = jwt.verify(token, JWT_SECRET) as AuthPayload;
     req.auth = payload;
+
+    const org = db.prepare('SELECT verification_status FROM organizations WHERE id = ?').get(payload.orgId) as { verification_status?: string } | undefined;
+    // Accounts created before this column existed have no value - treat as
+    // verified rather than retroactively locking out existing users.
+    const status = org?.verification_status || 'verified';
+
+    // Any status other than these two is a full hold (held_for_review,
+    // or rejected after manual review) - block core features entirely
+    // rather than enumerating every non-good status by name.
+    const isFullyHeld = status !== 'verified' && status !== 'pending_verification';
+    if (isFullyHeld && isCoreFeatureRequest(req)) {
+      res.status(403).json({ error: "This account is under review before it can be used. We'll email you once it's cleared." });
+      return;
+    }
+    if (status === 'pending_verification' && req.method !== 'GET' && isCoreFeatureRequest(req)) {
+      res.status(403).json({ error: 'Please verify your email address to unlock this feature. Check your inbox for the verification link.' });
+      return;
+    }
+
     db.prepare("UPDATE organizations SET last_active_at = datetime('now') WHERE id = ?").run(payload.orgId);
     next();
   } catch {

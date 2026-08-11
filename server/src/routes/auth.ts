@@ -1,9 +1,10 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
 import db from '../db/schema';
-import { signToken, UserRole } from '../middleware/auth';
-import { sendPasswordReset } from '../services/emailService';
+import { signToken, UserRole, JWT_SECRET } from '../middleware/auth';
+import { sendPasswordReset, sendVerificationEmail } from '../services/emailService';
 
 const router = Router();
 
@@ -128,6 +129,63 @@ router.post('/join/:token', async (req: Request, res: Response) => {
   const token = signToken({ orgId: member.org_id, userId: member.id, role: member.role as UserRole, email: member.email });
   const { password_hash: _, ...safeOrg } = org;
   res.json({ org: safeOrg, token, role: member.role });
+});
+
+// Hit by the EmailVerify page (client/src/pages/EmailVerify.tsx) after the
+// user clicks the link in their verification email - the frontend page reads
+// ?token= and calls this as a normal JSON request rather than following a
+// server-side redirect, so it can show a proper loading/success/error state.
+// Looks up the org by hashed token so a DB leak alone can't be replayed as a
+// live link (public - the user isn't necessarily logged in on this device).
+router.get('/verify-email', (req: Request, res: Response) => {
+  const token = req.query.token as string | undefined;
+  if (!token) return res.status(400).json({ success: false, error: 'Token required' });
+
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+  const org = db.prepare('SELECT * FROM organizations WHERE email_verify_token_hash = ?').get(tokenHash) as any;
+
+  if (!org || !org.email_verify_expires || new Date(org.email_verify_expires) < new Date()) {
+    return res.status(400).json({ success: false, error: 'This verification link is invalid or has expired.' });
+  }
+
+  // Verifying the email confirms ownership, but a high-risk signup still
+  // needs a human to clear it - only promote pending_verification accounts.
+  db.prepare(`
+    UPDATE organizations
+    SET verification_status = CASE WHEN verification_status = 'held_for_review' THEN verification_status ELSE 'verified' END,
+        email_verified_at = datetime('now'), email_verify_token_hash = NULL, email_verify_expires = NULL
+    WHERE id = ?
+  `).run(org.id);
+
+  res.json({ success: true, held: org.verification_status === 'held_for_review' });
+});
+
+// Resend the verification email for the signed-in account. Identifies the
+// org from the bearer token (this route sits under the blanket '/api/auth/'
+// public prefix in middleware/auth.ts, so it verifies the JWT itself rather
+// than relying on req.auth) instead of taking an email in the body - avoids
+// any account-enumeration question entirely. Rate-limited in index.ts
+// (mirrors authLimiter/forgotLimiter) since it still sends mail on demand.
+router.post('/resend-verification', async (req: Request, res: Response) => {
+  const header = req.headers['authorization'];
+  const token = header?.startsWith('Bearer ') ? header.slice(7) : null;
+  if (!token) return res.status(401).json({ error: 'Authentication required' });
+
+  let payload: { orgId: string };
+  try {
+    payload = jwt.verify(token, JWT_SECRET) as any;
+  } catch {
+    return res.status(401).json({ error: 'Session expired. Please sign in again.' });
+  }
+
+  const org = db.prepare('SELECT * FROM organizations WHERE id = ?').get(payload.orgId) as any;
+  if (!org) return res.status(404).json({ error: 'Account not found' });
+  if (org.verification_status === 'verified') {
+    return res.json({ sent: false, alreadyVerified: true });
+  }
+
+  await sendVerificationEmail(org).catch(() => {});
+  res.json({ sent: true });
 });
 
 export default router;
