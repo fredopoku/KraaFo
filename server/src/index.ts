@@ -96,6 +96,17 @@ const verifyResendLimiter = rateLimit({
   message: { error: 'Too many verification email requests. Please try again in 1 hour.' },
   skip: () => !isProd,
 });
+// Smart Fill / Smart Import - now reachable with no account (see
+// middleware/auth.ts), and each call is a paid Anthropic API request, so
+// this needs its own limit rather than relying on the signup/auth limiters.
+const aiGuestLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,   // 1 hour
+  max: 15,                      // 15 AI calls per hour per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many AI requests from this address. Please try again later, or sign up for unlimited access.' },
+  skip: () => !isProd,
+});
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -108,6 +119,8 @@ app.use(requireAuth);
 app.use('/api/organizations', organizationsRouter);
 app.use('/api/invoices', invoicesRouter);
 app.use('/api/upload', uploadRouter);
+app.use('/api/ai/suggest', aiGuestLimiter);
+app.use('/api/ai/parse-receipt', aiGuestLimiter);
 app.use('/api/ai', aiRouter);
 app.use('/api/pdf', pdfRouter);
 app.use('/api/clients', clientsRouter);
