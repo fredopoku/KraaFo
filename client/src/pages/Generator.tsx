@@ -3,13 +3,14 @@ import confetti from 'canvas-confetti';
 import { Plus, Trash2, Sparkles, Download, Eye, Save, FileText, Receipt, Loader2, Settings, ChevronDown, X, CheckCircle, PenLine, ScanLine, Send, MessageCircle, CreditCard, BarChart2, Users, Lock, Share2, Copy, Menu, Star, DollarSign, ThumbsUp, ThumbsDown, ArrowRightLeft } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useOrg } from '../hooks/useOrg';
-import { api, formatCurrency, generateInvoiceNumber, today, addDays } from '../utils/api';
+import { api, formatCurrency, generateInvoiceNumber, today, addDays, ApiError } from '../utils/api';
 import { InvoiceItem, Invoice, Client } from '../types';
 import { cn } from '../utils/cn';
 import { INDUSTRIES, getClientTypes } from '../utils/industryData';
 import { LogoMark, Logo } from '../components/Logo';
 import SignaturePad from '../components/SignaturePad';
 import { TurnstileWidget, TURNSTILE_ENABLED } from '../components/Turnstile';
+import FingerprintJS from '@fingerprintjs/fingerprintjs';
 
 interface FormState {
   type: 'invoice' | 'receipt' | 'quote';
@@ -76,6 +77,7 @@ const DEMO_ORG = {
 export default function Generator() {
   const navigate = useNavigate();
   const { org, setOrg, loading: orgLoading, canManageTeam } = useOrg();
+  const [fingerprintHash, setFingerprintHash] = useState('');
   const [items, setItems] = useState<InvoiceItem[]>([{ description: '', quantity: 1, unit: 'session', unit_price: 0, amount: 0 }]);
   const [aiLoading, setAiLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -243,6 +245,19 @@ export default function Generator() {
   const total = taxable + taxAmount;
   const balanceDue = Math.max(0, total - form.amount_paid);
 
+  // Device fingerprint for Smart Fill's guest trial count (server side, see
+  // routes/ai.ts) - only needed pre-signup; logged-in calls are identified by
+  // their auth token instead. Same free/open-source FingerprintJS build used
+  // at signup, with the same caveat: spoofable by clearing browser data, so
+  // it's paired with a looser per-IP daily ceiling server-side as a backstop.
+  useEffect(() => {
+    if (org) return;
+    FingerprintJS.load()
+      .then(fp => fp.get())
+      .then(result => setFingerprintHash(result.visitorId))
+      .catch(() => {});
+  }, [org]);
+
   const handleSmartFill = async () => {
     setAiLoading(true);
     try {
@@ -251,7 +266,7 @@ export default function Generator() {
         existing_items: items.filter(i => i.description).map(i => i.description),
         client_type: clientType,
         notes: form.notes,
-      });
+      }, fingerprintHash || undefined);
       if (result.items.length > 0) {
         setFreshItems(true);
         setItems(result.items.map(item => ({ ...item, amount: item.quantity * item.unit_price })));
@@ -262,8 +277,16 @@ export default function Generator() {
       const industryLabel = INDUSTRIES.find(i => i.value === industry)?.label ?? industry;
       const clientLabel = getClientTypes(industry).find(c => c.value === clientType)?.label ?? clientType;
       showToast(`Smart filled - ${industryLabel} · ${clientLabel}`, 'success');
-    } catch {
-      showToast('Could not load suggestions. Try again.', 'error');
+    } catch (err) {
+      const code = err instanceof ApiError ? err.code : undefined;
+      if (code === 'guest_trial_exhausted') {
+        showToast((err as Error).message, 'info');
+        setTimeout(() => navigate('/setup'), 1500);
+      } else if (code === 'verification_required') {
+        showToast((err as Error).message, 'info');
+      } else {
+        showToast('Could not load suggestions. Try again.', 'error');
+      }
     } finally {
       setAiLoading(false);
     }

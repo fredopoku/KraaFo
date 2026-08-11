@@ -7,6 +7,14 @@ function authHeader(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+export class ApiError extends Error {
+  code?: string;
+  constructor(message: string, code?: string) {
+    super(message);
+    this.code = code;
+  }
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     headers: { 'Content-Type': 'application/json', ...authHeader(), ...(options?.headers || {}) },
@@ -16,7 +24,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     const err = await res.json().catch(() => ({ error: res.statusText }));
     // Token expired - clear it so the app redirects to login
     if (res.status === 401) localStorage.removeItem('krafo_token');
-    throw new Error(err.error || 'Request failed');
+    throw new ApiError(err.error || 'Request failed', err.code);
   }
   return res.json();
 }
@@ -89,17 +97,28 @@ export const api = {
 
   ai: {
     status: () => request<{ ai_enabled: boolean }>('/ai/status'),
-    suggest: (opts: { industry?: string; existing_items?: string[]; client_type?: string; notes?: string }) =>
-      request<AISuggestion & { source: 'ai' | 'templates' }>('/ai/suggest', { method: 'POST', body: JSON.stringify(opts) }),
+    // fingerprintHash is only meaningful for guests (no account yet) - it's how
+    // the server tracks the free-trial count on the public generator. Logged-in
+    // calls are identified by their auth token instead and aren't trial-limited.
+    suggest: (opts: { industry?: string; existing_items?: string[]; client_type?: string; notes?: string }, fingerprintHash?: string) =>
+      request<AISuggestion & { source: 'ai' | 'templates' }>('/ai/suggest', {
+        method: 'POST',
+        body: JSON.stringify(opts),
+        headers: fingerprintHash ? { 'X-Fingerprint-Hash': fingerprintHash } : {},
+      }),
     enhance: (description: string) =>
       request<{ enhanced: string }>('/ai/enhance', { method: 'POST', body: JSON.stringify({ description }) }),
-    parseReceipt: async (file: File): Promise<Record<string, unknown>> => {
+    parseReceipt: async (file: File, fingerprintHash?: string): Promise<Record<string, unknown>> => {
       const formData = new FormData();
       formData.append('image', file); // field name stays 'image'; backend accepts PDF too
-      const res = await fetch(`${BASE}/ai/parse-receipt`, { method: 'POST', body: formData });
+      const res = await fetch(`${BASE}/ai/parse-receipt`, {
+        method: 'POST',
+        body: formData,
+        headers: { ...authHeader(), ...(fingerprintHash ? { 'X-Fingerprint-Hash': fingerprintHash } : {}) },
+      });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: res.statusText }));
-        throw new Error(err.error || 'Parse failed');
+        throw new ApiError(err.error || 'Parse failed', err.code);
       }
       return res.json();
     },
