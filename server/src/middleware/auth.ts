@@ -56,12 +56,6 @@ function isPublic(req: Request): boolean {
   if (req.method === 'POST' && p === '/api/feedback') return true;
   if (req.method === 'POST' && p === '/api/organizations') return true; // initial signup - no token yet
   if (req.method === 'POST' && p === '/api/upload/logo') return true; // logo uploaded before auth exists
-  // Smart Fill / Smart Import on the public generator (client/src/pages/Generator.tsx) -
-  // "no account needed" only actually held for saving/sending, not for these; they were
-  // silently 401ing for every guest. Rate-limited by IP in index.ts since each call hits
-  // a paid Anthropic API request and this is now reachable with no account at all.
-  if (req.method === 'POST' && p === '/api/ai/suggest') return true;
-  if (req.method === 'POST' && p === '/api/ai/parse-receipt') return true;
   if (p.startsWith('/api/admin') || p.startsWith('/api/broadcasts')) return true;
   return false;
 }
@@ -107,11 +101,11 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
     // rather than enumerating every non-good status by name.
     const isFullyHeld = status !== 'verified' && status !== 'pending_verification';
     if (isFullyHeld && isCoreFeatureRequest(req)) {
-      res.status(403).json({ error: "This account is under review before it can be used. We'll email you once it's cleared." });
+      res.status(403).json({ error: "This account is under review before it can be used. We'll email you once it's cleared.", code: 'account_held' });
       return;
     }
     if (status === 'pending_verification' && req.method !== 'GET' && isCoreFeatureRequest(req)) {
-      res.status(403).json({ error: 'Please verify your email address to unlock this feature. Check your inbox for the verification link.' });
+      res.status(403).json({ error: 'Please verify your email address to unlock this feature. Check your inbox for the verification link.', code: 'verification_required' });
       return;
     }
 

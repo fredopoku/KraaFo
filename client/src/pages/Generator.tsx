@@ -10,7 +10,6 @@ import { INDUSTRIES, getClientTypes } from '../utils/industryData';
 import { LogoMark, Logo } from '../components/Logo';
 import SignaturePad from '../components/SignaturePad';
 import { TurnstileWidget, TURNSTILE_ENABLED } from '../components/Turnstile';
-import FingerprintJS from '@fingerprintjs/fingerprintjs';
 
 interface FormState {
   type: 'invoice' | 'receipt' | 'quote';
@@ -77,7 +76,6 @@ const DEMO_ORG = {
 export default function Generator() {
   const navigate = useNavigate();
   const { org, setOrg, loading: orgLoading, canManageTeam } = useOrg();
-  const [fingerprintHash, setFingerprintHash] = useState('');
   const [items, setItems] = useState<InvoiceItem[]>([{ description: '', quantity: 1, unit: 'session', unit_price: 0, amount: 0 }]);
   const [aiLoading, setAiLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -245,20 +243,14 @@ export default function Generator() {
   const total = taxable + taxAmount;
   const balanceDue = Math.max(0, total - form.amount_paid);
 
-  // Device fingerprint for Smart Fill's guest trial count (server side, see
-  // routes/ai.ts) - only needed pre-signup; logged-in calls are identified by
-  // their auth token instead. Same free/open-source FingerprintJS build used
-  // at signup, with the same caveat: spoofable by clearing browser data, so
-  // it's paired with a looser per-IP daily ceiling server-side as a backstop.
-  useEffect(() => {
-    if (org) return;
-    FingerprintJS.load()
-      .then(fp => fp.get())
-      .then(result => setFingerprintHash(result.visitorId))
-      .catch(() => {});
-  }, [org]);
-
   const handleSmartFill = async () => {
+    // Requires a real, verified account - same gate as Save/Import below.
+    // (Previously guest-accessible with a device-fingerprint trial count,
+    // but that's trivially defeated by browsers like Brave/Safari that
+    // deliberately randomize fingerprinting signals, so it wasn't actually
+    // limiting anyone determined to bypass it. Requiring signup reuses the
+    // account verification we already built instead of a second, weaker gate.)
+    if (isDemo) { showToast('Sign up free to use Smart Fill', 'info'); setTimeout(() => navigate('/setup'), 1200); return; }
     setAiLoading(true);
     try {
       const result = await api.ai.suggest({
@@ -266,7 +258,7 @@ export default function Generator() {
         existing_items: items.filter(i => i.description).map(i => i.description),
         client_type: clientType,
         notes: form.notes,
-      }, fingerprintHash || undefined);
+      });
       if (result.items.length > 0) {
         setFreshItems(true);
         setItems(result.items.map(item => ({ ...item, amount: item.quantity * item.unit_price })));
@@ -279,10 +271,7 @@ export default function Generator() {
       showToast(`Smart filled - ${industryLabel} · ${clientLabel}`, 'success');
     } catch (err) {
       const code = err instanceof ApiError ? err.code : undefined;
-      if (code === 'guest_trial_exhausted') {
-        showToast((err as Error).message, 'info');
-        setTimeout(() => navigate('/setup'), 1500);
-      } else if (code === 'verification_required') {
+      if (code === 'verification_required' || code === 'account_held') {
         showToast((err as Error).message, 'info');
       } else {
         showToast('Could not load suggestions. Try again.', 'error');

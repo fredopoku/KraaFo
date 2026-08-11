@@ -295,17 +295,6 @@ addCol('organizations', 'email_verify_sent_at', 'TEXT');
 addCol('organizations', 'email_verify_resend_count', 'INTEGER DEFAULT 0');
 
 db.exec(`
-  CREATE TABLE IF NOT EXISTS ai_guest_usage (
-    id TEXT PRIMARY KEY,
-    fingerprint_hash TEXT,
-    ip TEXT,
-    created_at TEXT DEFAULT (datetime('now'))
-  );
-  CREATE INDEX IF NOT EXISTS idx_ai_guest_usage_fp ON ai_guest_usage(fingerprint_hash);
-  CREATE INDEX IF NOT EXISTS idx_ai_guest_usage_ip ON ai_guest_usage(ip, created_at);
-`);
-
-db.exec(`
   CREATE TABLE IF NOT EXISTS signup_fingerprints (
     id TEXT PRIMARY KEY,
     fingerprint_hash TEXT NOT NULL,

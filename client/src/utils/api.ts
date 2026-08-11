@@ -103,24 +103,20 @@ export const api = {
 
   ai: {
     status: () => request<{ ai_enabled: boolean }>('/ai/status'),
-    // fingerprintHash is only meaningful for guests (no account yet) - it's how
-    // the server tracks the free-trial count on the public generator. Logged-in
-    // calls are identified by their auth token instead and aren't trial-limited.
-    suggest: (opts: { industry?: string; existing_items?: string[]; client_type?: string; notes?: string }, fingerprintHash?: string) =>
-      request<AISuggestion & { source: 'ai' | 'templates' }>('/ai/suggest', {
-        method: 'POST',
-        body: JSON.stringify(opts),
-        headers: fingerprintHash ? { 'X-Fingerprint-Hash': fingerprintHash } : {},
-      }),
+    // Requires a verified account (see middleware/auth.ts) - the caller
+    // (Generator.tsx) checks isDemo before calling and redirects to /setup
+    // instead, so this only ever runs for a real logged-in request.
+    suggest: (opts: { industry?: string; existing_items?: string[]; client_type?: string; notes?: string }) =>
+      request<AISuggestion & { source: 'ai' | 'templates' }>('/ai/suggest', { method: 'POST', body: JSON.stringify(opts) }),
     enhance: (description: string) =>
       request<{ enhanced: string }>('/ai/enhance', { method: 'POST', body: JSON.stringify({ description }) }),
-    parseReceipt: async (file: File, fingerprintHash?: string): Promise<Record<string, unknown>> => {
+    parseReceipt: async (file: File): Promise<Record<string, unknown>> => {
       const formData = new FormData();
       formData.append('image', file); // field name stays 'image'; backend accepts PDF too
       const res = await fetch(`${BASE}/ai/parse-receipt`, {
         method: 'POST',
         body: formData,
-        headers: { ...authHeader(), ...(fingerprintHash ? { 'X-Fingerprint-Hash': fingerprintHash } : {}) },
+        headers: authHeader(),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: res.statusText }));
