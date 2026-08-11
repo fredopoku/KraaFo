@@ -272,7 +272,14 @@ addCol('organizations', 'total_logins', 'INTEGER DEFAULT 0');
 // Signup fraud hardening: verification state, risk signals logged at signup,
 // and the email-verification token lifecycle. See routes/organizations.ts,
 // services/riskScoring.ts, and routes/auth.ts (verify/resend).
-addCol('organizations', 'verification_status', "TEXT DEFAULT 'pending_verification'"); // pending_verification | verified | held_for_review
+//
+// Default is 'verified', not 'pending_verification' - SQLite's ADD COLUMN
+// backfills this default into every EXISTING row, not just new ones. New
+// signups always set the real value explicitly in their INSERT (see
+// routes/organizations.ts), so this default only matters for legacy rows,
+// and 'pending_verification' there would lock out every existing customer
+// with no verification email ever sent to them (that only fires at signup).
+addCol('organizations', 'verification_status', "TEXT DEFAULT 'verified'"); // pending_verification | verified | held_for_review | rejected
 addCol('organizations', 'risk_score', 'INTEGER DEFAULT 0');
 addCol('organizations', 'risk_action', "TEXT DEFAULT 'allow'"); // allow | friction | hold
 addCol('organizations', 'signup_ip', 'TEXT');

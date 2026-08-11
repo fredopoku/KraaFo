@@ -91,8 +91,9 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
     req.auth = payload;
 
     const org = db.prepare('SELECT verification_status FROM organizations WHERE id = ?').get(payload.orgId) as { verification_status?: string } | undefined;
-    // Accounts created before this column existed have no value - treat as
-    // verified rather than retroactively locking out existing users.
+    // Column default is 'verified' (see schema.ts's addCol comment) so
+    // existing accounts get that value automatically; the fallback here is
+    // just defense in depth (e.g. the org row somehow not being found).
     const status = org?.verification_status || 'verified';
 
     // Any status other than these two is a full hold (held_for_review,
