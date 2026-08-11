@@ -14,6 +14,7 @@ export interface RiskWeights {
   proxyIp: number;
   hostingIp: number;
   highVelocity: number;
+  turnstileUnavailable: number;
 }
 
 export interface RiskThresholds {
@@ -35,6 +36,10 @@ const DEFAULT_CONFIG: RiskConfig = {
     proxyIp: 25,
     hostingIp: 20,
     highVelocity: 35,
+    // Legitimate visitors with strict privacy tools (Brave Shields, uBlock,
+    // corporate filters) can trigger this too, so it's a moderate nudge
+    // toward friction/review - not automatically a hold by itself.
+    turnstileUnavailable: 20,
   },
   thresholds: {
     friction: 30,

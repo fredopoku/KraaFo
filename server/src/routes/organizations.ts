@@ -71,14 +71,25 @@ router.post('/', signupIpLimiter, signupSubnetLimiter, async (req: Request, res:
     smtp_host, smtp_port, smtp_user, smtp_pass, smtp_from,
     whatsapp_number, mpesa_number, mtn_number, airtel_number, telecel_number, paypal_email,
     dkim_domain, dkim_selector, dkim_private_key,
-    cf_turnstile_response, fingerprint_hash,
+    cf_turnstile_response, fingerprint_hash, turnstile_unavailable,
   } = req.body;
 
   if (!name) return res.status(400).json({ error: 'Organization name is required' });
   if (!email) return res.status(400).json({ error: 'Email address is required' });
 
-  const human = await verifyTurnstile(cf_turnstile_response, getIp(req));
-  if (!human) return res.status(403).json({ error: 'Security check failed. Please refresh and try again.' });
+  // turnstile_unavailable is only set by the client after it actually tried
+  // to load the widget and timed out (see TurnstileWidget's onUnavailable) -
+  // ad blockers/privacy extensions/corporate filters commonly block it for
+  // real visitors. Rather than lock them out entirely, let them through
+  // without a verified token but feed that into the risk score below, so it
+  // adds friction/review instead of being either a free pass or a hard wall.
+  let turnstileUnavailable = false;
+  if (turnstile_unavailable) {
+    turnstileUnavailable = true;
+  } else {
+    const human = await verifyTurnstile(cf_turnstile_response, getIp(req));
+    if (!human) return res.status(403).json({ error: 'Security check failed. Please refresh and try again.' });
+  }
 
   const trimmedEmail = String(email).trim();
   if (!isValidEmailSyntax(trimmedEmail)) {
@@ -113,6 +124,7 @@ router.post('/', signupIpLimiter, signupSubnetLimiter, async (req: Request, res:
     proxyIp: geo.isProxy,
     hostingIp: geo.isHosting,
     highVelocity,
+    turnstileUnavailable,
   };
   const risk = calculateRiskScore(signals);
   const verificationStatus = risk.action === 'hold' ? 'held_for_review' : 'pending_verification';

@@ -9,6 +9,7 @@ export interface RiskSignals {
   proxyIp: boolean;
   hostingIp: boolean;
   highVelocity: boolean;
+  turnstileUnavailable: boolean;
 }
 
 export type RiskAction = 'allow' | 'friction' | 'hold';

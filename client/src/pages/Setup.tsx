@@ -7,6 +7,7 @@ import { Organization, BrandColors } from '../types';
 import { cn } from '../utils/cn';
 import { useOrg } from '../hooks/useOrg';
 import { TurnstileWidget, TURNSTILE_ENABLED } from '../components/Turnstile';
+import FingerprintJS from '@fingerprintjs/fingerprintjs';
 
 const STEPS = [
   { id: 1, label: 'Company Info', icon: Building2 },
@@ -36,6 +37,9 @@ export default function Setup() {
   const [showPassword, setShowPassword] = useState(false);
   const [humanVerified, setHumanVerified] = useState(false);
   const [cfToken, setCfToken] = useState('');
+  const [turnstileUnavailable, setTurnstileUnavailable] = useState(false);
+  const [turnstileKey, setTurnstileKey] = useState(0);
+  const [fingerprintHash, setFingerprintHash] = useState('');
 
   // Account type selection (new accounts only)
   const [accountType, setAccountType] = useState<'solo' | 'team'>('solo');
@@ -118,6 +122,30 @@ export default function Setup() {
     if (org.logo_url) setLogoPreview(org.logo_url);
   }, [org?.id]);
 
+  // Device fingerprint for new signups - one signal among several server-side,
+  // not a standalone gate. This is the free open-source FingerprintJS build,
+  // which a determined attacker can spoof or rotate (incognito, browser
+  // automation with a randomized canvas/audio fingerprint, etc.) - it just
+  // raises the cost of naive bulk signups, it doesn't stop a targeted one.
+  useEffect(() => {
+    if (org) return;
+    FingerprintJS.load()
+      .then(fp => fp.get())
+      .then(result => setFingerprintHash(result.visitorId))
+      .catch(() => {});
+  }, [org]);
+
+  // The gate-screen Turnstile token can go stale by the time a new user
+  // reaches the final step (multi-minute form). Force a fresh solve right
+  // before the account is actually created.
+  useEffect(() => {
+    if (org) return;
+    if (step === STEPS.length) {
+      setCfToken('');
+      setTurnstileKey(k => k + 1);
+    }
+  }, [step, org]);
+
   const handleGenerateDkim = async () => {
     if (!form.dkim_domain) return;
     setGeneratingDkim(true);
@@ -167,6 +195,10 @@ export default function Setup() {
       setSaveError('Password must be at least 8 characters.');
       return;
     }
+    if (!org && TURNSTILE_ENABLED && !cfToken && !turnstileUnavailable) {
+      setSaveError('Please complete the security check.');
+      return;
+    }
     setSaving(true);
     setSaveError('');
     try {
@@ -175,7 +207,7 @@ export default function Setup() {
         setOrg(saved);
         navigate(org ? '/dashboard' : '/generator');
       } else {
-        const created = await api.organizations.create({ ...form, account_type: accountType });
+        const created = await api.organizations.create({ ...form, account_type: accountType, cf_turnstile_response: cfToken, fingerprint_hash: fingerprintHash || undefined, turnstile_unavailable: turnstileUnavailable || undefined });
         const { org: authedOrg, token } = await api.auth.setPassword(created.id, password);
         setOrg(authedOrg, token);
         if (accountType === 'team') {
@@ -187,6 +219,10 @@ export default function Setup() {
     } catch (err) {
       console.error('Setup failed:', err);
       setSaveError((err as Error).message || 'Could not connect to server. Make sure the backend is running on port 3001.');
+      if (!org) {
+        setCfToken('');
+        setTurnstileKey(k => k + 1);
+      }
     } finally {
       setSaving(false);
     }
@@ -210,10 +246,11 @@ export default function Setup() {
             <TurnstileWidget
               onVerify={token => { setCfToken(token); }}
               onExpire={() => setCfToken('')}
+              onUnavailable={() => setTurnstileUnavailable(true)}
             />
             <button
               onClick={() => setHumanVerified(true)}
-              disabled={!cfToken}
+              disabled={!cfToken && !turnstileUnavailable}
               className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               Continue to Setup <ChevronRight className="w-4 h-4" />
@@ -662,6 +699,14 @@ export default function Setup() {
                 <div className="flex items-center gap-2 text-blue-700 font-semibold text-sm mb-2"><Check className="w-4 h-4" /> {org ? 'Update your settings' : "You're all set!"}</div>
                 <p className="text-blue-600 text-sm">{org ? 'Click "Save Settings" to apply your changes and return to the dashboard.' : 'Click "Launch KraaFo" to start generating professional invoices and receipts for your business.'}</p>
               </div>
+              {!org && TURNSTILE_ENABLED && (
+                <TurnstileWidget
+                  onVerify={token => setCfToken(token)}
+                  onExpire={() => setCfToken('')}
+                  onUnavailable={() => setTurnstileUnavailable(true)}
+                  resetKey={turnstileKey}
+                />
+              )}
             </div>
           )}
         </div>
@@ -684,7 +729,7 @@ export default function Setup() {
           ) : (
             <button
               onClick={handleSubmit}
-              disabled={saving || !form.name.trim()}
+              disabled={saving || !form.name.trim() || (!org && TURNSTILE_ENABLED && !cfToken && !turnstileUnavailable)}
               className="flex items-center gap-2 text-white px-6 py-2.5 rounded-lg font-semibold text-sm transition-all disabled:opacity-50"
               style={{ background: form.primary_color }}
             >

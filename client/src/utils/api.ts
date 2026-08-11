@@ -62,7 +62,7 @@ function pdfOpen(url: string, filename: string): Promise<void> {
 export const api = {
   organizations: {
     get: (id: string) => request<Organization>(`/organizations/${id}`),
-    create: (data: Partial<Organization> & { cf_turnstile_response?: string; fingerprint_hash?: string }) => request<Organization>('/organizations', { method: 'POST', body: JSON.stringify(data) }),
+    create: (data: Partial<Organization> & { cf_turnstile_response?: string; fingerprint_hash?: string; turnstile_unavailable?: boolean }) => request<Organization>('/organizations', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: Partial<Organization>) => request<Organization>(`/organizations/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   },
 
