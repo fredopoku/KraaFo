@@ -16,9 +16,15 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  // `headers` must be spread AFTER `...options`, not before - options also
+  // has its own `headers` key, and a later spread of the same key replaces
+  // the earlier one entirely rather than merging. Doing it the other way
+  // around (as this used to) silently drops Content-Type/Authorization
+  // whenever a caller passes its own headers (e.g. api.ai.suggest's
+  // fingerprint header), since object spread doesn't merge nested keys.
   const res = await fetch(`${BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...authHeader(), ...(options?.headers || {}) },
     ...options,
+    headers: { 'Content-Type': 'application/json', ...authHeader(), ...(options?.headers || {}) },
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
