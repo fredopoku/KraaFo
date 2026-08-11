@@ -170,7 +170,6 @@ db.exec(`
 
   CREATE INDEX IF NOT EXISTS idx_invoices_org ON invoices(org_id);
   CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(status);
-  CREATE INDEX IF NOT EXISTS idx_invoices_recurring ON invoices(is_recurring, recurring_next_date);
   CREATE INDEX IF NOT EXISTS idx_invoice_items_invoice ON invoice_items(invoice_id);
   CREATE INDEX IF NOT EXISTS idx_clients_org ON clients(org_id);
   CREATE INDEX IF NOT EXISTS idx_quotes_org ON quotes(org_id);
@@ -335,6 +334,10 @@ addCol('invoices', 'recurring_interval', 'TEXT'); // 'weekly' | 'monthly' | 'qua
 addCol('invoices', 'recurring_next_date', 'TEXT');
 addCol('invoices', 'recurring_end_date', 'TEXT');
 addCol('invoices', 'recurring_parent_id', 'TEXT'); // points to original template invoice
+// Index depends on columns added just above - must be created after they
+// exist, not in the initial CREATE TABLE block (fails on a fresh database
+// otherwise, since is_recurring/recurring_next_date don't exist yet there).
+db.exec('CREATE INDEX IF NOT EXISTS idx_invoices_recurring ON invoices(is_recurring, recurring_next_date);');
 
 // Recycle bin / soft delete
 addCol('invoices', 'deleted_at', 'TEXT');
