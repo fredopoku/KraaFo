@@ -556,14 +556,14 @@ Server-side verification uses the `TURNSTILE_SECRET` environment variable. If th
 
 ## Maintenance Mode
 
-KraaFo can take the entire site offline behind a branded, reassuring maintenance page instead of a blank error or a broken deploy - an animated crane-and-building illustration, the real KraaFo logo, and a short note telling visitors nothing is lost and the team is actively working.
+KraaFo can take the entire site offline behind a branded, reassuring full page instead of a blank error or a broken deploy - a real top bar (matching the actual app's own header), an animated crane-and-building illustration, and a short note telling visitors nothing is lost and the team is actively working.
 
 ### What visitors see
 
 - `server/src/templates/maintenanceTemplate.ts` renders a fully self-contained HTML page - the logo is embedded as a base64 data URI and every animation is plain CSS, so there are no external font/image/script requests that could themselves fail while the site is down.
 - The page shows the custom message set in the admin panel, three short reassurance notes, and auto-refreshes every 30 seconds so visitors don't have to remember to check back.
 - API requests get a JSON `503` (`{ error, maintenance: true }`) instead of the HTML page, so any mobile client or integration relying on the API fails predictably rather than receiving a page of HTML.
-- `/api/health` and `/api/admin/*` are always exempt, so uptime monitors never report a false outage and admins are never locked out of turning it back off.
+- `/api/health` and `/api/admin/*` are always exempt, so uptime monitors never report a false outage. `/admin` (the frontend page itself) and `/assets` (its JS/CSS bundle) are exempt too - an earlier version only exempted the API, which meant enabling maintenance mode also blocked the admin dashboard's own page from loading, with no way back in through the UI. Safe to expose: the page renders nothing until Admin.tsx's own password prompt passes, checked server-side via `x-admin-token`. The password check itself calls `GET /api/admin/maintenance` specifically (not just any authenticated endpoint) so it keeps working during maintenance too.
 
 ### Turning it ON
 

@@ -2,6 +2,19 @@
 
 ---
 
+## August 2026
+
+### Every World Currency
+The currency picker now covers every ISO currency code, not just a short list - pick yours by name or code when you set up your account. The free demo generator got the same picker too, so you can try KraaFo in your own currency before signing up.
+
+### Stronger Account Protection
+New accounts now confirm their email address before sending documents to real clients, and we no longer accept disposable or temporary email addresses at signup. This keeps KraaFo's delivery reputation clean so your invoices and receipts land in the inbox, not spam.
+
+### Maintenance Page
+If KraaFo is ever briefly offline for planned work, you'll now see a proper page explaining what's going on instead of a blank error - not a sign anything's wrong, just us keeping you in the loop.
+
+---
+
 ## July 2026
 
 ### Recycle Bin
