@@ -22,7 +22,9 @@ export function buildMaintenancePage(message: string): string {
 <title>KraaFo - Down for maintenance</title>
 <style>
   * { box-sizing: border-box; }
+  html, body { overflow-x: hidden; }
   body {
+    position: relative;
     margin: 0;
     min-height: 100vh;
     display: flex;
@@ -32,7 +34,28 @@ export function buildMaintenancePage(message: string): string {
     background: linear-gradient(135deg, #eef2ff 0%, #eff6ff 55%, #f5f3ff 100%);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
   }
+
+  /* Soft, slow-drifting colour fields so the rest of the viewport reads as
+     "designed" rather than empty on large screens - not literally stretching
+     the card, since a huge card looks worse than a focused one. The field
+     wrapper is fixed at exactly the viewport size (never larger) with its
+     own overflow:hidden, so the oversized blobs inside it are clipped by a
+     safe ancestor instead of having their own boxes poke past the viewport -
+     letting a position:fixed element's box exceed the viewport can make
+     mobile browsers expand the whole layout viewport to fit it, distorting
+     everything else on the page. */
+  .blob-field { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+  .blob { position: absolute; border-radius: 50%; filter: blur(60px); }
+  .blob1 { width: 420px; height: 420px; top: -120px; left: -120px; background: radial-gradient(circle, #6366f1 0%, transparent 70%); opacity: 0.25; animation: drift1 22s ease-in-out infinite; }
+  .blob2 { width: 380px; height: 380px; bottom: -140px; right: -100px; background: radial-gradient(circle, #7c3aed 0%, transparent 70%); opacity: 0.22; animation: drift2 26s ease-in-out infinite; }
+  .blob3 { width: 300px; height: 300px; top: 40%; right: 8%; background: radial-gradient(circle, #4f46e5 0%, transparent 70%); opacity: 0.15; animation: drift3 19s ease-in-out infinite; }
+  @keyframes drift1 { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(30px, 20px) scale(1.08); } }
+  @keyframes drift2 { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(-25px, -20px) scale(1.06); } }
+  @keyframes drift3 { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(-20px, 25px) scale(0.94); } }
+
   .card {
+    position: relative;
+    z-index: 1;
     width: 100%;
     max-width: 480px;
     background: #ffffff;
@@ -45,16 +68,27 @@ export function buildMaintenancePage(message: string): string {
     padding: 28px 32px 24px;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
   }
-  .header img { width: 34px; height: 34px; border-radius: 8px; display: block; }
+  .logo-badge {
+    flex: none;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+  .logo-badge img { width: 30px; height: 30px; border-radius: 6px; display: block; }
   .wordmark { font-size: 20px; font-weight: 900; letter-spacing: -0.5px; color: #ffffff; }
   .wordmark span { color: #c7d2fe; }
   .scene {
     background: linear-gradient(180deg, #eef2ff 0%, #ffffff 100%);
     padding: 28px 20px 8px;
   }
-  .scene svg { display: block; margin: 0 auto; }
+  .scene svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
 
   /* Building floors rise into place and settle, one after another, like
      construction that never actually stops - a visual echo of "still working". */
@@ -124,12 +158,26 @@ export function buildMaintenancePage(message: string): string {
   }
   .footnote { font-size: 12px; color: #9ca3af; margin: 0; }
   .footnote a { color: #4f46e5; font-weight: 600; text-decoration: none; }
+
+  @media (max-width: 380px) {
+    body { padding: 16px; }
+    .header { padding: 22px 20px 20px; }
+    .body { padding: 18px 20px 4px; }
+    .notes { margin-left: 20px; margin-right: 20px; padding: 14px 16px; }
+    .footer { padding: 16px 20px 22px; }
+    h1 { font-size: 19px; }
+  }
 </style>
 </head>
 <body>
+  <div class="blob-field">
+    <div class="blob blob1"></div>
+    <div class="blob blob2"></div>
+    <div class="blob blob3"></div>
+  </div>
   <div class="card">
     <div class="header">
-      <img src="${LOGO_DATA_URI}" alt="KraaFo" width="34" height="34">
+      <div class="logo-badge"><img src="${LOGO_DATA_URI}" alt="KraaFo" width="30" height="30"></div>
       <div class="wordmark">Kraa<span>Fo</span></div>
     </div>
 
