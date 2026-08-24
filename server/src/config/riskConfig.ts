@@ -12,6 +12,7 @@ const CONFIG_PATH = process.env.RISK_CONFIG_PATH || path.join(DB_DIR, 'risk-conf
 export interface RiskWeights {
   repeatedFingerprint: number;
   repeatedNormalizedEmail: number;
+  countryPhoneMismatch: number;
   proxyIp: number;
   hostingIp: number;
   highVelocity: number;
@@ -38,6 +39,11 @@ const DEFAULT_CONFIG: RiskConfig = {
     // than a repeated fingerprint (a fingerprint can coincide innocently;
     // this means the same person literally clicked verify from one inbox).
     repeatedNormalizedEmail: 40,
+    // Deliberately NOT a hard block on its own - a diaspora business owner
+    // (e.g. running Ghana mobile money from abroad) legitimately trips this
+    // with zero other signals firing. Only actually blocks a signup when
+    // combined with something else (see routes/organizations.ts).
+    countryPhoneMismatch: 25,
     proxyIp: 25,
     hostingIp: 20,
     highVelocity: 35,

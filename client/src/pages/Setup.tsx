@@ -9,23 +9,15 @@ import { useOrg } from '../hooks/useOrg';
 import { TurnstileWidget, TURNSTILE_ENABLED } from '../components/Turnstile';
 import FingerprintJS from '@fingerprintjs/fingerprintjs';
 import { COUNTRIES } from '../utils/countries';
+import { getAllCurrencies } from '../utils/currencies';
+
+const CURRENCIES = getAllCurrencies();
 
 const STEPS = [
   { id: 1, label: 'Company Info', icon: Building2 },
   { id: 2, label: 'Branding', icon: Palette },
   { id: 3, label: 'Invoice Settings', icon: FileText },
   { id: 4, label: 'Banking & Payments', icon: CreditCard },
-];
-
-const CURRENCIES = [
-  { code: 'USD', symbol: '$', name: 'US Dollar' },
-  { code: 'GBP', symbol: '£', name: 'British Pound' },
-  { code: 'EUR', symbol: '€', name: 'Euro' },
-  { code: 'CAD', symbol: 'CA$', name: 'Canadian Dollar' },
-  { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
-  { code: 'GHS', symbol: 'GH₵', name: 'Ghanaian Cedi' },
-  { code: 'NGN', symbol: '₦', name: 'Nigerian Naira' },
-  { code: 'ZAR', symbol: 'R', name: 'South African Rand' },
 ];
 
 type InviteRole = 'admin' | 'staff' | 'accountant';
@@ -488,7 +480,7 @@ export default function Setup() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Phone {!org && '*'} <span className="font-normal text-gray-400">{!org && '(must match your country, above)'}</span>
+                    Phone {!org && '*'}
                   </label>
                   <input value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="+1 555 000 0000" required={!org} className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>

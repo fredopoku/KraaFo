@@ -7,6 +7,7 @@ import { getRiskConfig } from '../config/riskConfig';
 export interface RiskSignals {
   repeatedFingerprint: boolean;
   repeatedNormalizedEmail: boolean;
+  countryPhoneMismatch: boolean;
   proxyIp: boolean;
   hostingIp: boolean;
   highVelocity: boolean;

@@ -6,7 +6,7 @@ import { sendOrgWelcome, sendAdminSignupAlert, sendVerificationEmail } from '../
 import { verifyTurnstile } from '../utils/turnstile';
 import { isValidEmailSyntax, domainAcceptsMail, getEmailDomain, normalizeEmailForAbuseCheck } from '../utils/emailValidation';
 import { isDisposableEmailDomain, isDisposableEmailDomainLive } from '../utils/disposableEmail';
-import { isValidPhoneForCountry } from '../utils/phoneValidation';
+import { checkPhoneForCountry } from '../utils/phoneValidation';
 import { geolocate } from '../utils/geo';
 import { calculateRiskScore, RiskSignals } from '../services/riskScoring';
 
@@ -113,8 +113,9 @@ router.post('/', signupIpLimiter, signupSubnetLimiter, async (req: Request, res:
   }
 
   const signupCountry = country || 'US';
-  if (!isValidPhoneForCountry(phone, signupCountry)) {
-    return res.status(400).json({ error: `Please enter a valid phone number for ${signupCountry}.` });
+  const phoneCheck = checkPhoneForCountry(phone, signupCountry);
+  if (!phoneCheck.valid) {
+    return res.status(400).json({ error: 'Please enter a valid phone number.' });
   }
 
   const signupIp = getIp(req);
@@ -145,6 +146,7 @@ router.post('/', signupIpLimiter, signupSubnetLimiter, async (req: Request, res:
   const signals: RiskSignals = {
     repeatedFingerprint,
     repeatedNormalizedEmail,
+    countryPhoneMismatch: phoneCheck.countryMismatch,
     proxyIp: geo.isProxy,
     hostingIp: geo.isHosting,
     highVelocity,
