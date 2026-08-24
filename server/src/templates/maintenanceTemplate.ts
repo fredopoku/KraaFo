@@ -27,23 +27,18 @@ export function buildMaintenancePage(message: string): string {
     position: relative;
     margin: 0;
     min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
     background: linear-gradient(135deg, #eef2ff 0%, #eff6ff 55%, #f5f3ff 100%);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
   }
 
-  /* Soft, slow-drifting colour fields so the rest of the viewport reads as
-     "designed" rather than empty on large screens - not literally stretching
-     the card, since a huge card looks worse than a focused one. The field
-     wrapper is fixed at exactly the viewport size (never larger) with its
-     own overflow:hidden, so the oversized blobs inside it are clipped by a
-     safe ancestor instead of having their own boxes poke past the viewport -
-     letting a position:fixed element's box exceed the viewport can make
-     mobile browsers expand the whole layout viewport to fit it, distorting
-     everything else on the page. */
+  /* Soft, slow-drifting colour fields so the page reads as an intentionally
+     designed surface rather than a mostly-empty background behind a small
+     box. The field wrapper is fixed at exactly the viewport size (never
+     larger) with its own overflow:hidden, so the oversized blobs inside it
+     are clipped by a safe ancestor instead of having their own boxes poke
+     past the viewport - letting a position:fixed element's box exceed the
+     viewport can make mobile browsers expand the whole layout viewport to
+     fit it, distorting everything else on the page. */
   .blob-field { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
   .blob { position: absolute; border-radius: 50%; filter: blur(60px); }
   .blob1 { width: 420px; height: 420px; top: -120px; left: -120px; background: radial-gradient(circle, #6366f1 0%, transparent 70%); opacity: 0.25; animation: drift1 22s ease-in-out infinite; }
@@ -53,41 +48,36 @@ export function buildMaintenancePage(message: string): string {
   @keyframes drift2 { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(-25px, -20px) scale(1.06); } }
   @keyframes drift3 { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(-20px, 25px) scale(0.94); } }
 
-  .card {
+  /* Plain top bar (white, hairline bottom border, no card/box anywhere) -
+     matches the real app's own header (client/src/pages/Dashboard.tsx uses
+     the same bg-white + border-slate-100 treatment) so this reads as a page
+     of the actual product instead of a separate branded widget. */
+  .topbar {
     position: relative;
     z-index: 1;
-    width: 100%;
-    max-width: 480px;
-    background: #ffffff;
-    border-radius: 24px;
-    box-shadow: 0 20px 25px -5px rgba(79,70,229,0.12), 0 8px 10px -6px rgba(79,70,229,0.08);
-    overflow: hidden;
-  }
-  .header {
-    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-    padding: 28px 32px 24px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .logo-badge {
-    flex: none;
-    width: 42px;
-    height: 42px;
-    border-radius: 12px;
-    background: #ffffff;
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid #e5e7eb;
+    padding: 16px 24px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
   }
-  .logo-badge img { width: 30px; height: 30px; border-radius: 6px; display: block; }
-  .wordmark { font-size: 20px; font-weight: 900; letter-spacing: -0.5px; color: #ffffff; }
-  .wordmark span { color: #c7d2fe; }
-  .scene {
-    background: linear-gradient(180deg, #eef2ff 0%, #ffffff 100%);
-    padding: 28px 20px 8px;
+  .topbar-inner { display: flex; align-items: center; gap: 10px; }
+  .topbar img { width: 32px; height: 32px; border-radius: 8px; display: block; }
+  .wordmark { font-size: 19px; font-weight: 900; letter-spacing: -0.5px; color: #0f172a; }
+  .wordmark span { color: #4f46e5; }
+
+  .content {
+    position: relative;
+    z-index: 1;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 56px 24px 64px;
+    text-align: center;
   }
+  .scene { max-width: 400px; margin: 0 auto 8px; }
   .scene svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
 
   /* Building floors rise into place and settle, one after another, like
@@ -119,16 +109,15 @@ export function buildMaintenancePage(message: string): string {
   .gear { animation: spin 7s linear infinite; transform-origin: 36px 110px; }
   @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-  .body { padding: 22px 32px 8px; text-align: center; }
-  h1 { margin: 0 0 10px; font-size: 22px; font-weight: 900; color: #111827; letter-spacing: -0.4px; }
-  .msg { margin: 0; font-size: 14px; line-height: 1.6; color: #6b7280; }
+  h1 { margin: 24px 0 12px; font-size: 30px; font-weight: 900; color: #111827; letter-spacing: -0.6px; }
+  .msg { margin: 0; font-size: 16px; line-height: 1.6; color: #6b7280; }
 
   .notes {
-    margin: 22px 32px 0;
+    margin: 32px auto 0;
+    max-width: 480px;
     background: #eef2ff;
-    border: 1px solid #e0e7ff;
     border-radius: 16px;
-    padding: 18px 20px;
+    padding: 20px 22px;
     text-align: left;
   }
   .notes-title {
@@ -152,20 +141,15 @@ export function buildMaintenancePage(message: string): string {
   .notes li:last-child { margin-bottom: 0; }
   .notes li svg { flex: none; margin-top: 2px; }
 
-  .footer {
-    padding: 20px 32px 28px;
-    text-align: center;
-  }
-  .footnote { font-size: 12px; color: #9ca3af; margin: 0; }
+  .footer { margin-top: 32px; }
+  .footnote { font-size: 13px; color: #9ca3af; margin: 0; }
   .footnote a { color: #4f46e5; font-weight: 600; text-decoration: none; }
 
   @media (max-width: 380px) {
-    body { padding: 16px; }
-    .header { padding: 22px 20px 20px; }
-    .body { padding: 18px 20px 4px; }
-    .notes { margin-left: 20px; margin-right: 20px; padding: 14px 16px; }
-    .footer { padding: 16px 20px 22px; }
-    h1 { font-size: 19px; }
+    .topbar { padding: 14px 20px; }
+    .content { padding: 40px 20px 48px; }
+    h1 { font-size: 24px; }
+    .notes { padding: 16px 18px; }
   }
 </style>
 </head>
@@ -175,12 +159,15 @@ export function buildMaintenancePage(message: string): string {
     <div class="blob blob2"></div>
     <div class="blob blob3"></div>
   </div>
-  <div class="card">
-    <div class="header">
-      <div class="logo-badge"><img src="${LOGO_DATA_URI}" alt="KraaFo" width="30" height="30"></div>
+
+  <div class="topbar">
+    <div class="topbar-inner">
+      <img src="${LOGO_DATA_URI}" alt="KraaFo" width="32" height="32">
       <div class="wordmark">Kraa<span>Fo</span></div>
     </div>
+  </div>
 
+  <div class="content">
     <div class="scene">
       <svg width="260" height="150" viewBox="0 0 260 150" fill="none">
         <line x1="8" y1="134" x2="252" y2="134" stroke="#c7d2fe" stroke-width="2" stroke-linecap="round"/>
@@ -232,10 +219,8 @@ export function buildMaintenancePage(message: string): string {
       </svg>
     </div>
 
-    <div class="body">
-      <h1>We're building something better</h1>
-      <p class="msg">${safeMessage}</p>
-    </div>
+    <h1>We're building something better</h1>
+    <p class="msg">${safeMessage}</p>
 
     <div class="notes">
       <p class="notes-title">A quick note from the team</p>
