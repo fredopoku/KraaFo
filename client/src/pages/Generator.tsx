@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import confetti from 'canvas-confetti';
 import { Plus, Trash2, Sparkles, Download, Eye, Save, FileText, Receipt, Loader2, Settings, ChevronDown, X, CheckCircle, PenLine, ScanLine, Send, MessageCircle, CreditCard, BarChart2, Users, Lock, Share2, Copy, Menu, Star, DollarSign, ThumbsUp, ThumbsDown, ArrowRightLeft } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -7,6 +7,7 @@ import { api, formatCurrency, generateInvoiceNumber, today, addDays, ApiError } 
 import { InvoiceItem, Invoice, Client } from '../types';
 import { cn } from '../utils/cn';
 import { INDUSTRIES, getClientTypes } from '../utils/industryData';
+import { getAllCurrencies } from '../utils/currencies';
 import { LogoMark, Logo } from '../components/Logo';
 import SignaturePad from '../components/SignaturePad';
 import { TurnstileWidget, TURNSTILE_ENABLED } from '../components/Turnstile';
@@ -122,7 +123,20 @@ export default function Generator() {
   const [turnstileKey, setTurnstileKey] = useState(0);
   const location = useLocation();
   const isDemo = new URLSearchParams(location.search).get('demo') === 'true' || !org;
-  const effectiveOrg = isDemo ? DEMO_ORG : org;
+
+  // Guests never go through Setup, so DEMO_ORG's currency would otherwise be
+  // permanently stuck at USD - this lets a guest pick their own before
+  // signing up, persisted so it survives a reload of the same demo session.
+  const [demoCurrency, setDemoCurrency] = useState<string>(() => localStorage.getItem('krafo_demo_currency') || 'USD');
+  const currencyOptions = useMemo(() => getAllCurrencies(), []);
+  const handleDemoCurrencyChange = (code: string) => {
+    setDemoCurrency(code);
+    localStorage.setItem('krafo_demo_currency', code);
+  };
+
+  const effectiveOrg = isDemo
+    ? { ...DEMO_ORG, currency: demoCurrency, currency_symbol: currencyOptions.find(c => c.code === demoCurrency)?.symbol || '$' }
+    : org;
 
   // Landed here via App.tsx's RequireVerified redirect (tried to open the
   // real dashboard/clients/quotes/team/trash while unverified).
@@ -1097,8 +1111,18 @@ export default function Generator() {
 
       {/* Demo Mode Banner */}
       {isDemo && (
-        <div className="bg-indigo-600 text-white px-5 py-2.5 flex items-center justify-center gap-4 text-sm">
+        <div className="bg-indigo-600 text-white px-5 py-2.5 flex items-center justify-center gap-4 text-sm flex-wrap">
           <span className="font-medium">Demo Mode - Download free, no account needed. Sign up free to save your work and send by WhatsApp, SMS or email.</span>
+          <select
+            value={demoCurrency}
+            onChange={(e) => handleDemoCurrencyChange(e.target.value)}
+            className="shrink-0 bg-white/15 hover:bg-white/25 text-white text-xs font-bold rounded-lg px-2 py-1 border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 cursor-pointer"
+            title="Currency"
+          >
+            {currencyOptions.map(c => (
+              <option key={c.code} value={c.code} className="text-slate-900">{c.code} ({c.symbol})</option>
+            ))}
+          </select>
           <button
             onClick={() => navigate('/setup')}
             className="shrink-0 bg-white text-indigo-600 px-4 py-1 rounded-lg text-xs font-black hover:bg-indigo-50 transition-colors"
