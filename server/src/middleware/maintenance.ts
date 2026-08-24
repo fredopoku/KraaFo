@@ -5,7 +5,13 @@ import { buildMaintenancePage } from '../templates/maintenanceTemplate';
 // Exempt so an admin is never locked out of turning maintenance mode back
 // off, and so the host's health check doesn't see the site as crashed and
 // restart it (which would fight the "we're doing planned maintenance" point).
-const EXEMPT_PREFIXES = ['/api/health', '/api/admin'];
+// '/api/admin' alone isn't enough - the browser also needs to load the
+// /admin *page* itself (the React SPA shell) and its JS/CSS bundle under
+// /assets, or the admin dashboard is just as gated as everything else and
+// there's no way back in through the UI. Safe to expose: the shell renders
+// nothing until Admin.tsx's own password prompt (checked server-side via
+// x-admin-token) passes, so nothing protected is reachable without it.
+const EXEMPT_PREFIXES = ['/api/health', '/api/admin', '/admin', '/assets'];
 
 export function maintenanceGate(req: Request, res: Response, next: NextFunction): void {
   const { enabled, message } = getMaintenanceConfig();
