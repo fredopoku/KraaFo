@@ -65,8 +65,8 @@ export function buildMaintenancePage(message: string): string {
     justify-content: center;
   }
   .topbar-inner { display: flex; align-items: center; gap: 10px; }
-  .topbar img { width: 32px; height: 32px; border-radius: 8px; display: block; }
-  .wordmark { font-size: 19px; font-weight: 900; letter-spacing: -0.5px; color: #0f172a; }
+  .topbar img { width: 46px; height: 46px; border-radius: 10px; display: block; }
+  .wordmark { font-size: 23px; font-weight: 900; letter-spacing: -0.5px; color: #0f172a; }
   .wordmark span { color: #4f46e5; }
 
   .content {
