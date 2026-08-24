@@ -11,6 +11,7 @@ const CONFIG_PATH = process.env.RISK_CONFIG_PATH || path.join(DB_DIR, 'risk-conf
 
 export interface RiskWeights {
   repeatedFingerprint: number;
+  repeatedNormalizedEmail: number;
   proxyIp: number;
   hostingIp: number;
   highVelocity: number;
@@ -33,6 +34,10 @@ export interface RiskConfig {
 const DEFAULT_CONFIG: RiskConfig = {
   weights: {
     repeatedFingerprint: 30,
+    // Same real inbox behind a Gmail dot/plus variation - stronger evidence
+    // than a repeated fingerprint (a fingerprint can coincide innocently;
+    // this means the same person literally clicked verify from one inbox).
+    repeatedNormalizedEmail: 40,
     proxyIp: 25,
     hostingIp: 20,
     highVelocity: 35,

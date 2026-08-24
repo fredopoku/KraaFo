@@ -69,3 +69,23 @@ export async function domainAcceptsMail(domain: string): Promise<boolean> {
   mxCache.set(domain, { ok, expires: Date.now() + MX_CACHE_TTL_MS });
   return ok;
 }
+
+// Collapses the well-documented Gmail dot/plus-alias trick (and generic
+// +tag aliasing on other providers) down to the one real inbox behind it -
+// e.g. "j.o.hn+work@gmail.com" and "john@gmail.com" both land in the same
+// mailbox. Without this, someone with a single real Gmail inbox can create
+// unlimited "unique-looking" accounts that each pass syntax/MX/disposable
+// checks and can each complete real email verification, since they all
+// genuinely do control every one of those addresses. Used only to detect
+// repeat signups (see routes/organizations.ts) - the account's stored
+// email stays exactly what the user typed.
+export function normalizeEmailForAbuseCheck(email: string): string {
+  const at = email.lastIndexOf('@');
+  const local = email.slice(0, at).toLowerCase();
+  const domain = email.slice(at + 1).toLowerCase();
+  const noTag = local.split('+')[0];
+  if (domain === 'gmail.com' || domain === 'googlemail.com') {
+    return `${noTag.replace(/\./g, '')}@gmail.com`;
+  }
+  return `${noTag}@${domain}`;
+}

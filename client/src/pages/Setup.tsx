@@ -8,6 +8,7 @@ import { cn } from '../utils/cn';
 import { useOrg } from '../hooks/useOrg';
 import { TurnstileWidget, TURNSTILE_ENABLED } from '../components/Turnstile';
 import FingerprintJS from '@fingerprintjs/fingerprintjs';
+import { COUNTRIES } from '../utils/countries';
 
 const STEPS = [
   { id: 1, label: 'Company Info', icon: Building2 },
@@ -472,14 +473,24 @@ export default function Setup() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Company Name *</label>
                 <input value={form.name} onChange={e => set('name', e.target.value)} placeholder="Sparkle Clean Co." className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
               </div>
+              {!org && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Country *</label>
+                  <select value={form.country} onChange={e => set('country', e.target.value)} required className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                    {COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
+                  </select>
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Business Email * <span className="font-normal text-gray-400">(you'll use this to sign in)</span></label>
                   <input value={form.email} onChange={e => set('email', e.target.value)} type="email" placeholder="info@example.com" required autoComplete="email" className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                  <input value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="+1 (555) 000-0000" className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Phone {!org && '*'} <span className="font-normal text-gray-400">{!org && '(must match your country, above)'}</span>
+                  </label>
+                  <input value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="+1 555 000 0000" required={!org} className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
               </div>
               {!org && (

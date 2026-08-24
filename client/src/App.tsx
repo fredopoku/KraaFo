@@ -1,7 +1,8 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, lazy, Suspense, Component, ReactNode } from 'react';
 import Landing from './pages/Landing';
 import { trackPage } from './utils/tracker';
+import { useOrg } from './hooks/useOrg';
 
 const Setup = lazy(() => import('./pages/Setup'));
 const Generator = lazy(() => import('./pages/Generator'));
@@ -77,6 +78,29 @@ function PageLoader() {
   return <div style={{ minHeight: '100vh', background: '#fff' }} />;
 }
 
+// Gate for the real dashboard/clients/quotes/team/trash pages - unverified
+// accounts are redirected to the demo generator instead of seeing these at
+// all. This is UX only; the actual enforcement is server-side (see
+// CORE_FEATURE_PREFIXES in middleware/auth.ts), so this just avoids showing
+// an unverified visitor a dashboard shell full of buttons that would 403.
+function RequireVerified({ children }: { children: ReactNode }) {
+  const { org, loading } = useOrg();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (loading) return;
+    if (!org) { navigate('/setup'); return; }
+    if (org.verification_status && org.verification_status !== 'verified') {
+      navigate('/generator?demo=true&verify=1');
+    }
+  }, [org, loading, navigate]);
+
+  if (loading || !org || (org.verification_status && org.verification_status !== 'verified')) {
+    return <PageLoader />;
+  }
+  return <>{children}</>;
+}
+
 export default function App() {
   return (
     <ErrorBoundary>
@@ -88,13 +112,13 @@ export default function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/setup" element={<Setup />} />
           <Route path="/generator" element={<Generator />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/clients" element={<Clients />} />
-          <Route path="/quotes" element={<Quotes />} />
+          <Route path="/dashboard" element={<RequireVerified><Dashboard /></RequireVerified>} />
+          <Route path="/clients" element={<RequireVerified><Clients /></RequireVerified>} />
+          <Route path="/quotes" element={<RequireVerified><Quotes /></RequireVerified>} />
           <Route path="/unsubscribe" element={<Unsubscribe />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/changelog" element={<Changelog />} />
-          <Route path="/trash" element={<Trash />} />
+          <Route path="/trash" element={<RequireVerified><Trash /></RequireVerified>} />
           <Route path="/invoice-generator" element={<InvoiceGeneratorPage />} />
           <Route path="/receipt-generator" element={<ReceiptGeneratorPage />} />
           <Route path="/quote-generator" element={<QuoteGeneratorPage />} />
@@ -104,7 +128,7 @@ export default function App() {
           <Route path="/view/:id" element={<InvoiceView />} />
           <Route path="/login" element={<Login />} />
           <Route path="/join/:token" element={<Join />} />
-          <Route path="/team" element={<Team />} />
+          <Route path="/team" element={<RequireVerified><Team /></RequireVerified>} />
           <Route path="/verify-email" element={<EmailVerify />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

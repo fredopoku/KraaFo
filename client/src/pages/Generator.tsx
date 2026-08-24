@@ -124,6 +124,15 @@ export default function Generator() {
   const isDemo = new URLSearchParams(location.search).get('demo') === 'true' || !org;
   const effectiveOrg = isDemo ? DEMO_ORG : org;
 
+  // Landed here via App.tsx's RequireVerified redirect (tried to open the
+  // real dashboard/clients/quotes/team/trash while unverified).
+  useEffect(() => {
+    if (new URLSearchParams(location.search).get('verify') === '1') {
+      showToast('Verify your email to unlock your dashboard - check your inbox for the link.', 'info');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const [form, setForm] = useState<FormState>({
     type: 'invoice', number: '', status: 'draft',
     issue_date: today(), due_date: addDays(today(), 30), paid_date: '',

@@ -6,6 +6,7 @@ import { getRiskConfig } from '../config/riskConfig';
 // no single signal acts as a hard gate on its own.
 export interface RiskSignals {
   repeatedFingerprint: boolean;
+  repeatedNormalizedEmail: boolean;
   proxyIp: boolean;
   hostingIp: boolean;
   highVelocity: boolean;

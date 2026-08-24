@@ -293,6 +293,13 @@ addCol('organizations', 'email_verify_expires', 'TEXT');
 addCol('organizations', 'email_verified_at', 'TEXT');
 addCol('organizations', 'email_verify_sent_at', 'TEXT');
 addCol('organizations', 'email_verify_resend_count', 'INTEGER DEFAULT 0');
+// Gmail dot/plus-alias normalized form of the signup email (see
+// utils/emailValidation.ts's normalizeEmailForAbuseCheck) - lets a repeat
+// signup from the same real inbox be recognized as a repeat even when each
+// address looks unique. Indexed the same way as fingerprint_hash below.
+addCol('organizations', 'signup_email_normalized', 'TEXT');
+
+db.exec(`CREATE INDEX IF NOT EXISTS idx_orgs_signup_email_normalized ON organizations(signup_email_normalized);`);
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS signup_fingerprints (
