@@ -81,6 +81,15 @@
 - **Error monitoring** - Sentry captures and alerts on unhandled exceptions in both the Node server (`@sentry/node`) and the React frontend (`@sentry/react`); guarded by environment variables so it is a no-op in development unless configured
 - **Frontend error boundary** - `Sentry.ErrorBoundary` wraps the entire React app; if the UI crashes the user sees a friendly "Something went wrong" fallback with a one-click reload instead of a blank screen
 - **Uptime monitoring** - external uptime checks via UptimeRobot ping `/api/health` every 5 minutes; alerts sent to admin if the server goes down
+- **Maintenance mode** - the whole site can be switched to a branded, self-contained "under maintenance" page in one click from the admin panel, with zero redeploy needed - see [Maintenance Mode](#maintenance-mode) below
+
+### Account Verification & Anti-Fraud
+- **Signup risk scoring** - every new signup is scored against weighted signals - repeated device fingerprint, repeated email under Gmail dot/plus-alias normalisation, phone/country mismatch, VPN/proxy IP, hosting/datacenter IP, high signup velocity, and Turnstile being unavailable - and routed to allow / friction / hold accordingly; weights and thresholds are tunable live from the admin Security tab, no redeploy needed
+- **Email verification gate** - every new account must click the link in their verification email before they can send a document (email/WhatsApp/SMS) or invite a team member; the rest of the app (dashboard, generator, saving documents) stays usable while unverified so the product never feels locked out during the wait
+- **Disposable & fake email blocking** - a maintained blocklist (~3,700 domains, `disposable-email-domains` npm package) plus a live real-time API check (debounce.io, fails open on any outage) reject temporary-inbox signups; the claimed domain's MX records are also checked to catch typos and non-existent domains
+- **Phone number validation** - every signup requires a phone number, validated for correct format against the claimed country via `libphonenumber-js`; a country/phone mismatch (e.g. a US number on a Ghana signup) feeds the risk score rather than auto-blocking, since diaspora-run businesses legitimately trigger this pattern with zero other signals firing
+- **IP reputation & geolocation** - signup IPs are checked against known VPN/proxy and hosting/datacenter ranges and geolocated (country, ASN) via ip-api.com, feeding the risk score
+- **Flagged signup review queue** - the admin panel lists every held or flagged signup with its full signal breakdown; one click to clear, manually verify, or reject
 
 ### Website Analytics
 - **Privacy-first page tracking** - every page view is recorded server-side via `navigator.sendBeacon`; no cookies, no third-party scripts, no personal data stored
@@ -96,8 +105,21 @@
 - **Feedback management** - all submitted ratings and comments with average score
 - **Subscribers** - full subscriber list and broadcast history
 - **Changelog editor** - publish and remove What's New entries visible to all users
+- **Live presence** - see which organisations are active right now and what page they're on
+- **Org detail & activity drill-down** - click into any organisation for its full profile and activity trail
+- **Signup risk scoring controls** - tune risk weights/thresholds and review flagged signups (see [Account Verification & Anti-Fraud](#account-verification--anti-fraud))
+- **Maintenance mode toggle** - see [Maintenance Mode](#maintenance-mode)
 - **Admin event alerts** - instant email notification when a new organisation signs up or creates their first invoice, including org details and a direct link to the admin panel
 - **Protected by `ADMIN_TOKEN`** - all admin endpoints require `x-admin-token` header; the frontend stores the token in `sessionStorage`
+
+### Team Accounts
+- **Roles** - Owner, Admin, Staff, and Accountant, each with different write and team-management permissions
+- **Email invites** - invite a member by email and role; they set their own name and password via a one-time link
+- **Resend / revoke** - resend a pending invite or remove a member at any time; admins cannot remove other admins or the owner
+
+### Trash / Recycle Bin
+- **Soft delete** - deleted invoices, receipts, quotes, and clients are recoverable, not gone
+- **Restore or purge** - restore any item back to its list, or permanently delete it from the Trash view
 
 ### Lifecycle Emails & Engagement
 - **Onboarding drip sequence** - automated email sequence (Day 2, Day 4, Day 7) guides new users through key features: branding, clients, delivery, and multi-channel sending; sent from a background scheduler that runs every hour
@@ -127,8 +149,10 @@
 - **Admin-managed** - publish and remove entries from the admin panel; no redeployment needed
 
 ### Internationalisation
-- **Multi-currency** - USD, GBP, EUR, CAD, AUD, GHS, NGN, ZAR and more
+- **Every ISO 4217 currency** - the full currency list (code, symbol, and display name) is derived live from the browser's own ICU data via `Intl.supportedValuesOf('currency')`, so it's always current with no hand-maintained list to go stale
+- **~100-country selector** - used both for organisation setup and as a signal for the phone/country validation described in [Account Verification & Anti-Fraud](#account-verification--anti-fraud)
 - **12+ Industries** - Cleaning, Plumbing, Electrical, Landscaping, Personal Training, Tutoring, IT Support, Photography, Pet Services, Hair & Beauty, Catering, and more
+- Language/UI translation is on the [Roadmap](#roadmap) - not yet implemented
 
 ---
 
@@ -151,6 +175,8 @@
 | Analytics | Custom - `navigator.sendBeacon` + ip-api.com geo + SQLite |
 | Error Monitoring | Sentry (`@sentry/node` on server, `@sentry/react` on frontend) |
 | Lifecycle Emails | Resend API + hourly scheduler (day2/4/7 onboarding, day14 re-engagement, activation milestone) |
+| Signup Anti-Fraud | `libphonenumber-js` (phone/country validation), `disposable-email-domains` + debounce.io (disposable email), ip-api.com (IP reputation/geo) |
+| Auth | JWT (`jsonwebtoken`) + `bcryptjs` password hashing, role-based access (Owner/Admin/Staff/Accountant) |
 | SEO | Post-build pre-renderer (`scripts/prerender.cjs`) - landing page, generator, and changelog rendered to static HTML at build time so search crawlers see full content |
 
 ---
@@ -192,6 +218,16 @@ FRONTEND_URL=https://kraafo.com
 
 # Admin dashboard password - set a long random string
 ADMIN_TOKEN=your_secret_admin_token_here
+
+# JWT signing secret for login sessions - required in production (the server
+# refuses to start without it); a dev default is used automatically otherwise
+JWT_SECRET=your_long_random_jwt_secret_here
+
+# Maintenance mode - forces the whole site into maintenance regardless of the
+# admin panel toggle; survives redeploys since it's an env var, not a file.
+# Leave unset/false normally and use the admin Security tab instead - see
+# the Maintenance Mode section below.
+MAINTENANCE_MODE=false
 
 # AI - Smart Fill (optional, falls back to built-in templates)
 # Primary: get a key at console.anthropic.com
@@ -278,6 +314,8 @@ KraaFo/
 │       │   ├── Setup.tsx            # Organisation setup wizard (Turnstile gate for new users)
 │       │   ├── Login.tsx            # Sign-in page
 │       │   ├── Join.tsx             # Team invite / join page
+│       │   ├── EmailVerify.tsx      # Handles the link from the verification email
+│       │   ├── FeedbackPage.tsx     # Standalone rating/feedback form (linked from lifecycle emails)
 │       │   ├── Dashboard.tsx        # Business overview + revenue chart (daily/monthly/yearly) + onboarding checklist + feedback panel
 │       │   ├── Generator.tsx        # Invoice / receipt / quote builder
 │       │   ├── InvoiceView.tsx      # Hosted invoice preview (shareable via WhatsApp / SMS link)
@@ -308,11 +346,17 @@ KraaFo/
 │   │   ├── db/
 │   │   │   └── schema.ts            # SQLite schema (organizations, invoices, clients,
 │   │   │                            #   quotes, subscribers, feedback, broadcasts,
-│   │   │                            #   page_views, changelog_entries, …)
+│   │   │                            #   page_views, changelog_entries, team_members, …)
 │   │   ├── middleware/
-│   │   │   └── adminAuth.ts         # x-admin-token header guard for admin routes
+│   │   │   ├── auth.ts              # JWT auth, roles, email-verification gate on core features
+│   │   │   ├── adminAuth.ts         # x-admin-token header guard for admin routes
+│   │   │   ├── verification.ts      # requireVerified - gates send actions (email/WhatsApp, team invites)
+│   │   │   └── maintenance.ts       # Site-wide maintenance gate - see Maintenance Mode section
+│   │   ├── config/
+│   │   │   ├── riskConfig.ts        # Signup risk-scoring weights/thresholds, hot-reloadable
+│   │   │   └── maintenanceConfig.ts # Persisted maintenance-mode enabled/message state
 │   │   ├── routes/
-│   │   │   ├── organizations.ts
+│   │   │   ├── organizations.ts     # Signup (with anti-fraud checks) + org read/update
 │   │   │   ├── invoices.ts
 │   │   │   ├── quotes.ts
 │   │   │   ├── clients.ts
@@ -321,22 +365,33 @@ KraaFo/
 │   │   │   ├── pdf.ts               # PDF generation + serving
 │   │   │   ├── analytics.ts         # Dashboard KPI metrics (per-org); revenue chart with daily/monthly/yearly granularity, all-time data
 │   │   │   ├── track.ts             # Privacy-first website page view tracking
-│   │   │   ├── admin.ts             # Admin endpoints - users, site analytics, views drill-down
+│   │   │   ├── stats.ts             # Public platform-wide stats (documents, countries, rating)
+│   │   │   ├── presence.ts          # Live "who's active" heartbeat
+│   │   │   ├── auth.ts              # Login, password reset, team-invite accept, email verification
+│   │   │   ├── team.ts              # Team member invite / role / remove
+│   │   │   ├── trash.ts             # Soft-delete recovery + permanent delete
+│   │   │   ├── admin.ts             # Admin endpoints - users, analytics, risk config, flagged signups, maintenance
 │   │   │   ├── upload.ts            # Logo upload + colour extraction
 │   │   │   ├── feedback.ts          # Star ratings + feedback submission (Turnstile protected)
 │   │   │   ├── subscribers.ts       # Newsletter subscribe / unsubscribe (Turnstile protected)
 │   │   │   ├── broadcasts.ts        # Send update emails to all subscribers
 │   │   │   └── changelog.ts         # What's New entries (admin create/delete, public read)
 │   │   ├── services/
-│   │   │   ├── emailService.ts      # Invoice delivery + welcome + broadcasts + lifecycle emails (activation, day14, admin alerts) via Resend
+│   │   │   ├── emailService.ts      # Invoice delivery + welcome + broadcasts + lifecycle + verification/reset/invite emails via Resend
 │   │   │   ├── scheduler.ts         # Hourly cron - fires day2/4/7 onboarding sequence, day14 re-engagement for inactive users
 │   │   │   ├── aiService.ts         # Claude / Groq / OCR logic
 │   │   │   ├── pdfService.ts        # Puppeteer PDF rendering
-│   │   │   └── imageService.ts      # Logo processing + colour extraction
+│   │   │   ├── imageService.ts      # Logo processing + colour extraction
+│   │   │   └── riskScoring.ts       # Weighted signup risk score → allow / friction / hold
 │   │   ├── utils/
-│   │   │   └── turnstile.ts         # Cloudflare Turnstile server-side verification helper
+│   │   │   ├── turnstile.ts         # Cloudflare Turnstile server-side verification helper
+│   │   │   ├── emailValidation.ts   # Syntax + MX check + Gmail dot/plus-alias normalisation
+│   │   │   ├── disposableEmail.ts   # Static blocklist + live real-time disposable-domain check
+│   │   │   ├── phoneValidation.ts   # Phone format + country-match check (libphonenumber-js)
+│   │   │   └── geo.ts               # IP geolocation + proxy/hosting reputation (ip-api.com)
 │   │   └── templates/
-│   │       └── invoiceTemplate.ts   # HTML invoice / receipt / quote template
+│   │       ├── invoiceTemplate.ts     # HTML invoice / receipt / quote template
+│   │       └── maintenanceTemplate.ts # Self-contained "under maintenance" page - see Maintenance Mode
 │   └── uploads/                     # Uploaded logos & signatures (git-ignored)
 │
 ├── scripts/
@@ -400,13 +455,62 @@ KraaFo/
 |---|---|---|
 | POST | `/api/track` | Record a page view (bot-filtered, geo-resolved) |
 
+### Auth & Team
+
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/api/auth/login` | Sign in (org owner or team member) |
+| POST | `/api/auth/set-password` | First-time password set during setup |
+| POST | `/api/auth/forgot` | Request a 6-digit password reset code by email |
+| POST | `/api/auth/reset` | Verify the reset code and set a new password |
+| GET | `/api/auth/join/:token` | Validate a team invite token (public) |
+| POST | `/api/auth/join/:token` | Accept a team invite - set name/password |
+| GET | `/api/auth/verify-email` | Confirm an email address from the verification link |
+| POST | `/api/auth/resend-verification` | Resend the verification email (rate-limited) |
+| GET | `/api/team` | List team members (owner/admin only) |
+| POST | `/api/team/invite` | Invite a member by email + role |
+| PATCH | `/api/team/:memberId/role` | Change a member's role (owner only) |
+| DELETE | `/api/team/:memberId` | Remove a team member |
+| POST | `/api/team/:memberId/resend` | Resend a pending invite |
+
+### Trash
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/trash` | All soft-deleted invoices, quotes, and clients for the org |
+| GET | `/api/trash/count` | Trash item count |
+| POST | `/api/trash/invoices/:id/restore` | Restore a deleted invoice |
+| POST | `/api/trash/quotes/:id/restore` | Restore a deleted quote |
+| POST | `/api/trash/clients/:id/restore` | Restore a deleted client |
+| DELETE | `/api/trash/invoices/:id` | Permanently delete an invoice |
+| DELETE | `/api/trash/quotes/:id` | Permanently delete a quote |
+| DELETE | `/api/trash/clients/:id` | Permanently delete a client |
+
+### Presence & Public Stats
+
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/api/presence/heartbeat` | Report the current user's active page (drives live presence in the admin panel) |
+| GET | `/api/stats` | Public platform stats - documents created, countries reached, average rating |
+
 ### Admin (requires `x-admin-token` header)
 
 | Method | Endpoint | Description |
 |---|---|---|
 | GET | `/api/admin/users` | All organisations with usage stats |
+| GET | `/api/admin/presence` | Organisations currently active, with their current page |
+| GET | `/api/admin/orgs/:id` | Full detail for one organisation |
+| GET | `/api/admin/orgs/:id/activity` | Activity trail for one organisation |
+| GET | `/api/admin/activity` | Recent activity across all organisations |
 | GET | `/api/admin/analytics` | Site-wide analytics - overview, countries, cities, daily chart, pages, devices, browsers, referrers |
 | GET | `/api/admin/analytics/views` | Individual page view records (filterable by page, paginated) |
+| GET | `/api/admin/risk-config` | Current signup risk-scoring weights and thresholds |
+| PUT | `/api/admin/risk-config` | Update risk-scoring weights and/or thresholds |
+| POST | `/api/admin/risk-config/reload` | Reload risk config from disk (after a manual file edit) |
+| GET | `/api/admin/signups/flagged` | Signups held for review or flagged by the risk score |
+| POST | `/api/admin/signups/:id/review` | Clear, verify, or reject a flagged signup |
+| GET | `/api/admin/maintenance` | Current maintenance mode state |
+| PUT | `/api/admin/maintenance` | Turn maintenance mode on/off and/or update its message |
 
 ### Community
 
@@ -450,6 +554,42 @@ Server-side verification uses the `TURNSTILE_SECRET` environment variable. If th
 
 ---
 
+## Maintenance Mode
+
+KraaFo can take the entire site offline behind a branded, reassuring maintenance page instead of a blank error or a broken deploy - an animated crane-and-building illustration, the real KraaFo logo, and a short note telling visitors nothing is lost and the team is actively working.
+
+### What visitors see
+
+- `server/src/templates/maintenanceTemplate.ts` renders a fully self-contained HTML page - the logo is embedded as a base64 data URI and every animation is plain CSS, so there are no external font/image/script requests that could themselves fail while the site is down.
+- The page shows the custom message set in the admin panel, three short reassurance notes, and auto-refreshes every 30 seconds so visitors don't have to remember to check back.
+- API requests get a JSON `503` (`{ error, maintenance: true }`) instead of the HTML page, so any mobile client or integration relying on the API fails predictably rather than receiving a page of HTML.
+- `/api/health` and `/api/admin/*` are always exempt, so uptime monitors never report a false outage and admins are never locked out of turning it back off.
+
+### Turning it ON
+
+**Option A - Admin panel (instant, no redeploy):**
+1. Go to `/admin` → **Security** tab.
+2. Find the **Maintenance Mode** card.
+3. Optionally edit the message shown to visitors.
+4. Click **Enable**.
+
+This calls `PUT /api/admin/maintenance` with `{ enabled: true }` and takes effect on the very next request.
+
+**Option B - Environment variable** (survives redeploys; forces maintenance mode on regardless of the admin panel):
+
+Set `MAINTENANCE_MODE=true` in the server's environment (e.g. Render dashboard → Environment) and redeploy/restart. Use this for a planned deploy where maintenance mode needs to be guaranteed on *before* the new code is even live, since it doesn't depend on the persisted config file surviving the deploy.
+
+### Turning it OFF
+
+- **Admin panel:** same Security tab, click **Disable** (`PUT /api/admin/maintenance` with `{ enabled: false }`).
+- **Env var override:** if `MAINTENANCE_MODE=true` is set on the host, the site stays in maintenance regardless of the admin toggle - remove the env var and redeploy/restart to fully turn it off. The admin panel shows a distinct "forced by environment variable" state so this is never mistaken for a stuck toggle.
+
+### How it's stored
+
+The `{ enabled, message }` config is persisted to a JSON file next to the SQLite database (default `<DB_DIR>/maintenance.json`, override with `MAINTENANCE_CONFIG_PATH`) so it survives a server restart. `GET /api/admin/maintenance` returns the current state plus `forcedByEnv` and `effectiveEnabled` (what visitors are actually seeing right now), so the panel never silently shows "off" while the env var is forcing it on.
+
+---
+
 ## Roadmap
 
 - [x] Invoice, Receipt & Quote builder
@@ -463,7 +603,6 @@ Server-side verification uses the `TURNSTILE_SECRET` environment variable. If th
 - [x] Privacy-first website analytics
 - [x] Admin dashboard (users, analytics, feedback, subscribers, changelog)
 - [x] Recurring invoice schedules
-- [x] Multi-user / team accounts
 - [x] Triple-channel delivery (WhatsApp + SMS + Email simultaneously)
 - [x] Security hardening (org isolation, CORS exact-match, HTTP security headers)
 - [x] Multi-device access (sign in from any browser or device - data lives on the server)
@@ -475,9 +614,17 @@ Server-side verification uses the `TURNSTILE_SECRET` environment variable. If th
 - [x] Error monitoring (Sentry - server + React frontend)
 - [x] Uptime monitoring (UptimeRobot)
 - [x] Admin real-time alerts (signup, first invoice)
+- [x] Multi-currency expanded to every ISO 4217 currency (via `Intl.supportedValuesOf`)
+- [x] Signup risk scoring (device fingerprint, email/phone signals, IP reputation, velocity)
+- [x] Email verification gate before sending real documents or inviting a team member
+- [x] Disposable email + phone/country validation on signup
+- [x] Team accounts with roles (Owner, Admin, Staff, Accountant)
+- [x] Trash / recycle bin with restore
+- [x] Maintenance mode (admin toggle + env var override, branded self-contained page)
 - [ ] Stripe / PayPal payment link integration
 - [ ] Client portal (view & pay invoices online)
 - [ ] Feature request voting board
+- [ ] Language / i18n support
 
 ---
 
