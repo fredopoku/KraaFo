@@ -272,10 +272,13 @@ export default function Admin() {
 
   const closeOrgDetail = () => { setSelectedOrgId(null); setOrgDetail(null); setOrgActivity(null); };
 
-  // Validate stored token on mount
+  // Validate stored token on mount. Uses an /admin/* endpoint specifically
+  // (not just any authenticated route) so this keeps working even while
+  // maintenance mode is on - the maintenance gate only exempts /api/admin,
+  // and a non-admin endpoint would 503 there and look like a wrong password.
   useEffect(() => {
     if (!token) return;
-    adminFetch('/feedback', token)
+    adminFetch('/admin/maintenance', token)
       .then(() => { setAuthed(true); loadData(token); })
       .catch(() => { sessionStorage.removeItem(STORAGE_KEY); setToken(''); });
   }, []);
@@ -292,7 +295,7 @@ export default function Admin() {
     if (!input.trim()) return;
     setChecking(true); setAuthError('');
     try {
-      await adminFetch('/feedback', input.trim());
+      await adminFetch('/admin/maintenance', input.trim());
       sessionStorage.setItem(STORAGE_KEY, input.trim());
       setToken(input.trim());
       setAuthed(true);
