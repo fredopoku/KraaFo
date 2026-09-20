@@ -2,6 +2,19 @@
 
 ---
 
+## September 2026
+
+### A Dashboard That Shows Real Money
+Your dashboard now tells you what's actually happening with your business. See what you billed next to what you collected, how this month compares with last month, where your invoices stand, and who owes you - broken down by how late they are. You can also see how quickly clients tend to pay and which of your top clients still have a balance open.
+
+### Deleted Means Deleted
+Anything you delete now disappears everywhere, not just from your lists. It no longer counts in your dashboard totals, appears in a client's history, or triggers a payment reminder to your client. You can still restore it from the Trash.
+
+### Currency Fixes
+Your own currency is now used everywhere. Invoices created from a quote or on a recurring schedule keep your currency instead of switching to dollars, and amounts show the right local symbol (₦, GH₵, R). When you sign up, picking your country pre-selects its currency, and a currency you chose in the free demo carries over to your new account.
+
+---
+
 ## August 2026
 
 ### Every World Currency

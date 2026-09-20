@@ -72,6 +72,16 @@
 - **Payment Details** - add bank account, PayPal, M-Pesa, MTN Mobile Money, Airtel Money, Telecel Cash
 - **QR Code** - auto-generated payment QR on invoices linking to PayPal or mobile money
 
+### Dashboard & Analytics (per business)
+- **Billed vs Collected chart** - cash actually collected (by payment date) next to what was billed, with Daily / Monthly / Yearly views; drafts and cancelled invoices are never counted as billed
+- **This month vs last month** - collected and billed, each with a % change
+- **Invoice status** - stacked breakdown of paid, sent, overdue, draft and cancelled invoices with counts and amounts
+- **Who Owes You** - unpaid balances aged into not-yet-due, 1-30, 31-60, 61-90 and 90+ days late
+- **How Clients Pay** - average days to get paid and the share paid on time
+- **Top clients** - what each has paid plus what they still owe
+- **Overdue list, receipts and quote acceptance rate** - overdue invoices flip automatically once the due date passes
+- All figures are scoped to the signed-in organisation and ignore anything in the Trash
+
 ### Security & Monitoring
 - **HTTP Security Headers** - `helmet` sets `X-Frame-Options`, `Strict-Transport-Security`, `X-Content-Type-Options`, `X-DNS-Prefetch-Control`, and `Referrer-Policy` on every response; protects against clickjacking, MIME sniffing, and protocol downgrade attacks
 - **Org Isolation** - every API endpoint that creates or reads documents derives the organisation ID from the verified JWT, not from request body or query parameters; User A cannot read or write User B's data
@@ -120,6 +130,7 @@
 ### Trash / Recycle Bin
 - **Soft delete** - deleted invoices, receipts, quotes, and clients are recoverable, not gone
 - **Restore or purge** - restore any item back to its list, or permanently delete it from the Trash view
+- **Deleted means deleted everywhere** - anything in the Trash is excluded from dashboard totals, client history and statements, and can't be paid, converted, downloaded or emailed; overdue reminders and recurring-invoice runs skip it too. Invoice and receipt numbers still count deleted items so a number is never reused
 
 ### Lifecycle Emails & Engagement
 - **Onboarding drip sequence** - automated email sequence (Day 2, Day 4, Day 7) guides new users through key features: branding, clients, delivery, and multi-channel sending; sent from a background scheduler that runs every hour
@@ -150,6 +161,9 @@
 
 ### Internationalisation
 - **Every ISO 4217 currency** - the full currency list (code, symbol, and display name) is derived live from the browser's own ICU data via `Intl.supportedValuesOf('currency')`, so it's always current with no hand-maintained list to go stale
+- **Right currency, right symbol** - local symbols are used where the browser only knows a bare code (₦, GH₵, R, ZK), and letter symbols like KES get a space (`KES 1,000.00`); an organisation saved with a currency but no symbol gets one derived server-side, and symbols saved wrong earlier are repaired on boot
+- **Currency follows the country** - at signup, picking a country pre-selects its currency (Nigeria → NGN, Ghana → GHS); a currency chosen in the free demo generator carries over into signup and isn't overridden
+- **Converted documents keep the currency** - quote → invoice conversions and recurring invoices use the organisation's currency instead of falling back to USD
 - **~100-country selector** - used both for organisation setup and as a signal for the phone/country validation described in [Account Verification & Anti-Fraud](#account-verification--anti-fraud)
 - **12+ Industries** - Cleaning, Plumbing, Electrical, Landscaping, Personal Training, Tutoring, IT Support, Photography, Pet Services, Hair & Beauty, Catering, and more
 - Language/UI translation is on the [Roadmap](#roadmap) - not yet implemented
@@ -316,7 +330,7 @@ KraaFo/
 │       │   ├── Join.tsx             # Team invite / join page
 │       │   ├── EmailVerify.tsx      # Handles the link from the verification email
 │       │   ├── FeedbackPage.tsx     # Standalone rating/feedback form (linked from lifecycle emails)
-│       │   ├── Dashboard.tsx        # Business overview + revenue chart (daily/monthly/yearly) + onboarding checklist + feedback panel
+│       │   ├── Dashboard.tsx        # Business overview: billed vs collected, month-on-month, status, aging, payment behaviour, top clients + onboarding checklist
 │       │   ├── Generator.tsx        # Invoice / receipt / quote builder
 │       │   ├── InvoiceView.tsx      # Hosted invoice preview (shareable via WhatsApp / SMS link)
 │       │   ├── Admin.tsx            # Admin dashboard - users, analytics, feedback, subscribers
@@ -338,6 +352,8 @@ KraaFo/
 │       └── utils/
 │           ├── api.ts               # Typed API client (incl. mobile PDF + community APIs)
 │           ├── cn.ts                # Tailwind class helper
+│           ├── currencies.ts        # Every ISO currency + symbol logic (narrow symbols, fallback list)
+│           ├── countries.ts         # Country list + country → currency suggestions
 │           ├── industryData.ts      # Industry → line item map
 │           └── tracker.ts           # Privacy-first page view tracker (sendBeacon)
 │
@@ -363,7 +379,7 @@ KraaFo/
 │   │   │   ├── deliver.ts           # Invoice/quote email, WhatsApp delivery, payment links
 │   │   │   ├── ai.ts                # Smart Fill + document import
 │   │   │   ├── pdf.ts               # PDF generation + serving
-│   │   │   ├── analytics.ts         # Dashboard KPI metrics (per-org); revenue chart with daily/monthly/yearly granularity, all-time data
+│   │   │   ├── analytics.ts         # Dashboard analytics (per-org): KPIs, billed-vs-collected chart, month comparison, status, aging, payment stats, top clients
 │   │   │   ├── track.ts             # Privacy-first website page view tracking
 │   │   │   ├── stats.ts             # Public platform-wide stats (documents, countries, rating)
 │   │   │   ├── presence.ts          # Live "who's active" heartbeat
@@ -388,6 +404,7 @@ KraaFo/
 │   │   │   ├── emailValidation.ts   # Syntax + MX check + Gmail dot/plus-alias normalisation
 │   │   │   ├── disposableEmail.ts   # Static blocklist + live real-time disposable-domain check
 │   │   │   ├── phoneValidation.ts   # Phone format + country-match check (libphonenumber-js)
+│   │   │   ├── currencySymbol.ts    # Currency code → correct symbol (server-side twin of the client logic)
 │   │   │   └── geo.ts               # IP geolocation + proxy/hosting reputation (ip-api.com)
 │   │   └── templates/
 │   │       ├── invoiceTemplate.ts     # HTML invoice / receipt / quote template
@@ -447,7 +464,7 @@ KraaFo/
 | POST | `/api/ai/enhance` | Improve a line item description |
 | POST | `/api/ai/parse-receipt` | Import document via AI / OCR |
 | POST | `/api/upload/logo` | Upload company logo + extract brand colours |
-| GET | `/api/analytics` | Dashboard KPI metrics (per-org); accepts `?granularity=daily\|monthly\|yearly` for revenue chart (daily = last 90 days, monthly/yearly = all time) |
+| GET | `/api/analytics` | Per-organisation dashboard analytics; accepts `?granularity=daily\|monthly\|yearly` (daily = last 90 days, monthly/yearly = all time). Returns `summary`, `chartData` (billed + collected per period), `comparison` (this vs last month), `statusBreakdown`, `aging`, `paymentStats`, `topClients` (with what each still owes), `overdueList` and `recent`. Deleted items are excluded |
 
 ### Tracking & Analytics
 
@@ -621,6 +638,9 @@ The `{ enabled, message }` config is persisted to a JSON file next to the SQLite
 - [x] Team accounts with roles (Owner, Admin, Staff, Accountant)
 - [x] Trash / recycle bin with restore
 - [x] Maintenance mode (admin toggle + env var override, branded self-contained page)
+- [x] Dashboard analytics that reflect real money (billed vs collected, month-on-month, aging, payment behaviour)
+- [x] Soft-deleted documents excluded everywhere (analytics, reminders, recurring runs, by-ID actions)
+- [x] Currency fixes (country-based default, demo choice carried into signup, quote/recurring conversions keep currency, proper symbols)
 - [ ] Stripe / PayPal payment link integration
 - [ ] Client portal (view & pay invoices online)
 - [ ] Feature request voting board
