@@ -200,7 +200,7 @@
 
 ### Prerequisites
 
-- Node.js 20.9+ (22 recommended - pinned in `.node-version`, which Render also reads)
+- Node.js 20.9+ (22 recommended - see `.node-version`)
 - npm
 
 ### Installation
