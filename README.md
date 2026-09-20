@@ -130,6 +130,7 @@
 ### Trash / Recycle Bin
 - **Soft delete** - deleted invoices, receipts, quotes, and clients are recoverable, not gone
 - **Restore or purge** - restore any item back to its list, or permanently delete it from the Trash view
+- **Paid and unpaid stay in step** - marking an invoice Paid records the full amount and date; moving it back to Unpaid clears the payment; editing only the amount decides the status (full = Paid, less = not Paid). A receipt auto-created from an invoice is linked to it, so un-paying or deleting the invoice moves that receipt to the Trash too (and restoring the invoice brings it back); receipts created before this link existed aren't linked and are deleted separately
 - **Deleted means deleted everywhere** - anything in the Trash is excluded from dashboard totals, client history and statements, and can't be paid, converted, downloaded or emailed; overdue reminders and recurring-invoice runs skip it too. Invoice and receipt numbers still count deleted items so a number is never reused
 
 ### Lifecycle Emails & Engagement

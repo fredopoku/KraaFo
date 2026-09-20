@@ -10,6 +10,9 @@ Your dashboard now tells you what's actually happening with your business. See w
 ### Deleted Means Deleted
 Anything you delete now disappears everywhere, not just from your lists. It no longer counts in your dashboard totals, appears in a client's history, or triggers a payment reminder to your client. You can still restore it from the Trash.
 
+### Mark Invoices Unpaid Properly
+Changing a paid invoice back to unpaid now takes the payment off your totals, and deleting or un-paying an invoice moves the receipt that was created for it to the Trash instead of leaving it counted. Restore the invoice and its receipt comes back with it.
+
 ### Currency Fixes
 Your own currency is now used everywhere. Invoices created from a quote or on a recurring schedule keep your currency instead of switching to dollars, and amounts show the right local symbol (₦, GH₵, R). When you sign up, picking your country pre-selects its currency, and a currency you chose in the free demo carries over to your new account.
 

@@ -29,11 +29,24 @@ router.get('/count', (req: Request, res: Response) => {
 
 // POST /api/trash/invoices/:id/restore
 router.post('/invoices/:id/restore', (req: Request, res: Response) => {
-  const r = db.prepare(
-    "UPDATE invoices SET deleted_at = NULL, deleted_by = NULL WHERE id = ? AND org_id = ? AND deleted_at IS NOT NULL"
-  ).run(req.params.id, req.auth!.orgId);
-  if (r.changes === 0) return res.status(404).json({ error: 'Not found in trash' });
-  res.json({ success: true });
+  const orgId = req.auth!.orgId;
+  const before = db.prepare(
+    'SELECT status, type, deleted_at FROM invoices WHERE id = ? AND org_id = ? AND deleted_at IS NOT NULL'
+  ).get(req.params.id, orgId) as any;
+  if (!before) return res.status(404).json({ error: 'Not found in trash' });
+
+  db.prepare("UPDATE invoices SET deleted_at = NULL, deleted_by = NULL WHERE id = ? AND org_id = ?").run(req.params.id, orgId);
+
+  // A paid invoice's receipt went to the Trash with it - bring it back too, but only
+  // the ones trashed by that same delete (identical timestamp), not receipts voided
+  // earlier by un-paying or deleted on purpose.
+  let receiptsRestored = 0;
+  if (before.type === 'invoice' && before.status === 'paid') {
+    receiptsRestored = db.prepare(
+      "UPDATE invoices SET deleted_at = NULL, deleted_by = NULL WHERE source_invoice_id = ? AND org_id = ? AND type = 'receipt' AND deleted_at = ?"
+    ).run(req.params.id, orgId, before.deleted_at).changes;
+  }
+  res.json({ success: true, receiptsRestored });
 });
 
 // POST /api/trash/quotes/:id/restore

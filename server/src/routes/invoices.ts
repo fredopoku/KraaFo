@@ -5,6 +5,24 @@ import { sendActivationEmail, sendAdminEventAlert } from '../services/emailServi
 
 const router = Router();
 
+// A receipt created from an invoice records money received against it. When
+// that invoice is un-paid or deleted the receipt no longer reflects reality
+// (and would keep inflating the receipt totals), so it goes to the Trash with
+// it - recoverable, and restored together if the invoice is restored.
+function trashLinkedReceipts(invoiceId: string, orgId: string, byEmail: string, at?: string): string[] {
+  const rows = db.prepare(
+    "SELECT number FROM invoices WHERE source_invoice_id = ? AND org_id = ? AND type = 'receipt' AND deleted_at IS NULL"
+  ).all(invoiceId, orgId) as { number: string }[];
+  if (rows.length) {
+    // `at` lets a delete cascade share the invoice's exact timestamp, so restoring the
+    // invoice can bring back only those receipts (not ones voided earlier by un-paying).
+    db.prepare(
+      "UPDATE invoices SET deleted_at = COALESCE(?, datetime('now')), deleted_by = ? WHERE source_invoice_id = ? AND org_id = ? AND type = 'receipt' AND deleted_at IS NULL"
+    ).run(at ?? null, byEmail, invoiceId, orgId);
+  }
+  return rows.map(r => r.number);
+}
+
 router.get('/', (req: Request, res: Response) => {
   const { type, status, client_id, limit = 50, offset = 0 } = req.query;
   const org_id = req.auth!.orgId;
@@ -180,6 +198,43 @@ router.put('/:id', (req: Request, res: Response) => {
     Object.assign(updateFields, { subtotal, discount_amount: discountAmount, tax_amount: taxAmount, total, balance_due: balanceDue });
   }
 
+  // Status and money must agree, otherwise the dashboard totals drift: flipping
+  // Paid -> Sent used to leave the full amount "collected", and choosing Paid
+  // without an amount never counted it. Invoices only - a receipt's amount is
+  // whatever the user entered. If the status is changed it decides; if only the
+  // amount is edited, the amount decides (paying in full = Paid, less = not Paid).
+  let unpaid = false;
+  if (existing.type === 'invoice') {
+    const newTotal = updateFields.total ?? existing.total ?? 0;
+    const wasPaid = existing.status === 'paid';
+    const sentAmount: number | undefined = updateFields.amount_paid;
+    const amountEdited = sentAmount !== undefined && sentAmount !== (existing.amount_paid ?? 0);
+    let nextStatus: string | undefined = updateFields.status;
+
+    if ((nextStatus === undefined || nextStatus === existing.status) && amountEdited) {
+      if (sentAmount! >= newTotal && newTotal > 0) nextStatus = 'paid';
+      else if (wasPaid) nextStatus = 'sent';
+    }
+
+    if (nextStatus === 'paid') {
+      const paidSoFar = sentAmount ?? existing.amount_paid ?? 0;
+      updateFields.status = 'paid';
+      updateFields.amount_paid = paidSoFar < newTotal ? newTotal : paidSoFar;
+      updateFields.paid_date = updateFields.paid_date || existing.paid_date || new Date().toISOString().slice(0, 10);
+      updateFields.balance_due = Math.max(0, newTotal - updateFields.amount_paid);
+    } else if (wasPaid && nextStatus !== undefined && ['draft', 'sent', 'overdue'].includes(nextStatus)) {
+      const partial = amountEdited && sentAmount! > 0 && sentAmount! < newTotal;
+      updateFields.status = nextStatus;
+      updateFields.amount_paid = partial ? sentAmount : 0;
+      updateFields.paid_date = null;
+      updateFields.balance_due = Math.max(0, newTotal - updateFields.amount_paid);
+      unpaid = true;
+    } else if (sentAmount !== undefined && updateFields.balance_due === undefined) {
+      // An edited amount must move the stored balance with it
+      updateFields.balance_due = Math.max(0, newTotal - sentAmount);
+    }
+  }
+
   // Recompute recurring_next_date if is_recurring or recurring_interval changed
   if (updateFields.is_recurring !== undefined || updateFields.recurring_interval !== undefined) {
     const isRec = updateFields.is_recurring !== undefined ? !!updateFields.is_recurring : !!existing.is_recurring;
@@ -210,17 +265,21 @@ router.put('/:id', (req: Request, res: Response) => {
     db.prepare(`UPDATE invoices SET ${setClauses} WHERE id = ?`).run(...values);
   }
 
+  const receiptsTrashed = unpaid ? trashLinkedReceipts(req.params.id, req.auth!.orgId, req.auth!.email) : [];
+
   const invoice = db.prepare('SELECT * FROM invoices WHERE id = ?').get(req.params.id);
   const savedItems = db.prepare('SELECT * FROM invoice_items WHERE invoice_id = ? ORDER BY sort_order').all(req.params.id);
-  res.json({ ...(invoice as object), items: savedItems });
+  res.json({ ...(invoice as object), items: savedItems, ...(receiptsTrashed.length ? { receiptsTrashed } : {}) });
 });
 
 router.delete('/:id', (req: Request, res: Response) => {
+  const at = (db.prepare("SELECT datetime('now') as t").get() as { t: string }).t;
   const r = db.prepare(
-    "UPDATE invoices SET deleted_at = datetime('now'), deleted_by = ? WHERE id = ? AND org_id = ? AND deleted_at IS NULL"
-  ).run(req.auth!.email, req.params.id, req.auth!.orgId);
+    "UPDATE invoices SET deleted_at = ?, deleted_by = ? WHERE id = ? AND org_id = ? AND deleted_at IS NULL"
+  ).run(at, req.auth!.email, req.params.id, req.auth!.orgId);
   if (r.changes === 0) return res.status(404).json({ error: 'Invoice not found' });
-  res.json({ success: true });
+  const receiptsTrashed = trashLinkedReceipts(req.params.id, req.auth!.orgId, req.auth!.email, at);
+  res.json({ success: true, receiptsTrashed });
 });
 
 // Create a receipt from a fully-paid invoice - copies all client/item data
@@ -228,6 +287,15 @@ router.post('/:id/receipt', (req: Request, res: Response) => {
   const invoice = db.prepare('SELECT * FROM invoices WHERE id = ? AND org_id = ? AND deleted_at IS NULL').get(req.params.id, req.auth!.orgId) as any;
   if (!invoice) return res.status(404).json({ error: 'Invoice not found' });
   if (invoice.type !== 'invoice') return res.status(400).json({ error: 'Can only create a receipt from an invoice' });
+
+  // Recording the same payment twice must not issue a second receipt
+  const already = db.prepare(
+    "SELECT * FROM invoices WHERE source_invoice_id = ? AND org_id = ? AND type = 'receipt' AND deleted_at IS NULL LIMIT 1"
+  ).get(invoice.id, invoice.org_id) as any;
+  if (already) {
+    const alreadyItems = db.prepare('SELECT * FROM invoice_items WHERE invoice_id = ? ORDER BY sort_order').all(already.id);
+    return res.json({ ...already, items: alreadyItems });
+  }
 
   const org = db.prepare('SELECT * FROM organizations WHERE id = ?').get(invoice.org_id) as any;
   const items = db.prepare('SELECT * FROM invoice_items WHERE invoice_id = ? ORDER BY sort_order').all(invoice.id) as any[];
@@ -247,15 +315,15 @@ router.post('/:id/receipt', (req: Request, res: Response) => {
       client_state, client_zip, client_company,
       subtotal, discount_type, discount_value, discount_amount,
       tax_rate, tax_amount, total, amount_paid, balance_due,
-      currency, currency_symbol, notes, terms, footer_text
-    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+      currency, currency_symbol, notes, terms, footer_text, source_invoice_id
+    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
   `).run(
     receiptId, invoice.org_id, invoice.client_id || null, 'receipt', number, 'paid', todayStr, paidDate,
     invoice.client_name, invoice.client_email, invoice.client_phone, invoice.client_address,
     invoice.client_city, invoice.client_state, invoice.client_zip, invoice.client_company,
     invoice.subtotal, invoice.discount_type || 'none', invoice.discount_value || 0, invoice.discount_amount || 0,
     invoice.tax_rate || 0, invoice.tax_amount || 0, invoice.total, invoice.total, 0,
-    invoice.currency, invoice.currency_symbol, invoice.notes, invoice.terms, invoice.footer_text
+    invoice.currency, invoice.currency_symbol, invoice.notes, invoice.terms, invoice.footer_text, invoice.id
   );
 
   items.forEach((item: any, idx: number) => {
@@ -278,20 +346,27 @@ router.patch('/:id/payment', (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Valid amount_paid required' });
   }
 
-  const newStatus = amount_paid >= invoice.total ? 'paid' : amount_paid > 0 ? 'sent' : invoice.status;
+  // Lowering the amount on a paid invoice (even to 0) makes it unpaid again
+  const newStatus = amount_paid >= invoice.total ? 'paid'
+    : amount_paid > 0 ? 'sent'
+    : (invoice.status === 'paid' ? 'sent' : invoice.status);
   const newPaidDate = amount_paid >= invoice.total ? (paid_date || new Date().toISOString().slice(0, 10)) : null;
+  const newBalance = Math.max(0, invoice.total - amount_paid);
 
   db.prepare(`
-    UPDATE invoices SET amount_paid = ?, status = ?, paid_date = ?, updated_at = datetime('now')
+    UPDATE invoices SET amount_paid = ?, status = ?, paid_date = ?, balance_due = ?, updated_at = datetime('now')
     WHERE id = ?
-  `).run(amount_paid, newStatus, newPaidDate, invoice.id);
+  `).run(amount_paid, newStatus, newPaidDate, newBalance, invoice.id);
+
+  const receiptsTrashed = invoice.status === 'paid' && newStatus !== 'paid'
+    ? trashLinkedReceipts(invoice.id, req.auth!.orgId, req.auth!.email) : [];
 
   if (payment_method) {
     db.prepare("UPDATE invoices SET footer_text = ? WHERE id = ?").run(payment_method, invoice.id);
   }
 
   const updated = db.prepare('SELECT * FROM invoices WHERE id = ?').get(invoice.id);
-  res.json(updated);
+  res.json({ ...(updated as object), ...(receiptsTrashed.length ? { receiptsTrashed } : {}) });
 });
 
 export default router;

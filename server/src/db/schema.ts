@@ -357,6 +357,10 @@ db.exec('CREATE INDEX IF NOT EXISTS idx_invoices_recurring ON invoices(is_recurr
 // Recycle bin / soft delete
 addCol('invoices', 'deleted_at', 'TEXT');
 addCol('invoices', 'deleted_by', 'TEXT');
+// A receipt auto-created from an invoice points back at it, so un-paying or
+// deleting the invoice can take its receipt with it (see routes/invoices.ts).
+addCol('invoices', 'source_invoice_id', 'TEXT');
+db.exec('CREATE INDEX IF NOT EXISTS idx_invoices_source ON invoices(source_invoice_id)');
 addCol('quotes', 'deleted_at', 'TEXT');
 addCol('quotes', 'deleted_by', 'TEXT');
 addCol('clients', 'deleted_at', 'TEXT');

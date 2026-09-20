@@ -164,11 +164,13 @@ export default function Generator() {
 
   const handleDeleteDoc = async (inv: Invoice) => {
     setDeleting(true);
+    let receiptsTrashedNote = '';
     try {
       if (inv.type === 'quote') {
         await api.quotes.delete(inv.id);
       } else {
-        await api.invoices.delete(inv.id);
+        const res = await api.invoices.delete(inv.id);
+        if (res.receiptsTrashed?.length) receiptsTrashedNote = ` (with its receipt ${res.receiptsTrashed.join(', ')})`;
       }
       if (savedInvoice?.id === inv.id) {
         newDocument();
@@ -176,7 +178,7 @@ export default function Generator() {
       setDeleteTarget(null);
       setTrashCount(c => c + 1);
       await loadInvoices();
-      showToast(`${inv.type === 'receipt' ? 'Receipt' : inv.type === 'quote' ? 'Quote' : 'Invoice'} ${inv.number} moved to Trash`, 'success');
+      showToast(`${inv.type === 'receipt' ? 'Receipt' : inv.type === 'quote' ? 'Quote' : 'Invoice'} ${inv.number} moved to Trash${receiptsTrashedNote}`, 'success');
     } catch (err: any) {
       showToast(err.message || 'Delete failed', 'error');
     } finally {
@@ -243,6 +245,20 @@ export default function Generator() {
   };
 
   const setField = (key: keyof FormState, val: string | number) => setForm(f => ({ ...f, [key]: val }));
+
+  // Paid <-> unpaid on an invoice has to move the money with it, or the totals
+  // keep counting (or never count) the payment. The server enforces the same
+  // rule; this just makes the form show it straight away.
+  const handleStatusChange = (value: string) => {
+    if (form.type !== 'invoice') { setField('status', value); return; }
+    if (value === 'paid') {
+      setForm(f => ({ ...f, status: 'paid', amount_paid: total, paid_date: f.paid_date || today() }));
+    } else if (form.status === 'paid' && ['draft', 'sent', 'overdue'].includes(value)) {
+      setForm(f => ({ ...f, status: value as FormState['status'], amount_paid: 0, paid_date: '' }));
+    } else {
+      setField('status', value);
+    }
+  };
 
   const updateItem = (idx: number, key: keyof InvoiceItem, val: string | number) => {
     setItems(prev => prev.map((item, i) => {
@@ -326,9 +342,13 @@ export default function Generator() {
       }
       const isFirstSave = !savedInvoice;
       setSavedInvoice(saved);
+      // The server keeps status and payment consistent - show what it settled on
+      if (!isQuote && form.type === 'invoice') {
+        setForm(f => ({ ...f, status: saved.status ?? f.status, amount_paid: saved.amount_paid ?? f.amount_paid, paid_date: saved.paid_date || '' }));
+      }
       loadInvoices();
       const label = form.type === 'invoice' ? 'Invoice' : form.type === 'receipt' ? 'Receipt' : 'Quote';
-      showToast(`${label} ${saved.number} saved`, 'success');
+      showToast(`${label} ${saved.number} saved${saved.receiptsTrashed?.length ? ` - its receipt ${saved.receiptsTrashed.join(', ')} moved to Trash` : ''}`, 'success');
       if (isFirstSave) {
         setShowShareNudge(true);
       } else if (!localStorage.getItem('krafo_rated') && !sessionStorage.getItem('krafo_feedback_shown')) {
@@ -648,6 +668,10 @@ export default function Generator() {
       setSavedInvoice(updated);
       setForm(f => ({ ...f, status: updated.status, amount_paid: updated.amount_paid, paid_date: updated.paid_date || '' }));
       setInvoiceList(prev => prev.map(i => i.id === updated.id ? { ...i, ...updated } : i));
+      if (updated.receiptsTrashed?.length) {
+        loadInvoices();
+        showToast(`Marked unpaid - receipt ${updated.receiptsTrashed.join(', ')} moved to Trash`, 'success');
+      }
       if (updated.status === 'paid') {
         fireConfetti();
         // Auto-create a receipt and offer to send it
@@ -1445,7 +1469,7 @@ export default function Generator() {
               </div>
               <div>
                 <label className={LABEL}>Status</label>
-                <select value={form.status} onChange={e => setField('status', e.target.value)} className={INPUT}>
+                <select value={form.status} onChange={e => handleStatusChange(e.target.value)} className={INPUT}>
                   {form.type !== 'quote' && <option value="none">No Status (Hidden)</option>}
                   {(form.type === 'quote'
                     ? ['draft', 'sent', 'accepted', 'declined', 'expired']

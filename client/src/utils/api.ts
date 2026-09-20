@@ -88,7 +88,7 @@ export const api = {
     get: (id: string) => request<Invoice>(`/invoices/${id}`),
     create: (data: Partial<Invoice> & { items: object[] }) => request<Invoice>('/invoices', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: Partial<Invoice> & { items?: object[] }) => request<Invoice>(`/invoices/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-    delete: (id: string) => request<{ success: boolean }>(`/invoices/${id}`, { method: 'DELETE' }),
+    delete: (id: string) => request<{ success: boolean; receiptsTrashed?: string[] }>(`/invoices/${id}`, { method: 'DELETE' }),
   },
 
   upload: {
