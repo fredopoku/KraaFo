@@ -344,7 +344,7 @@ if (isProd && fs.existsSync(clientDist)) {
 
 // Sentry error handler (must be before the generic one, no-op if not configured)
 if (process.env.SENTRY_DSN) {
-  app.use(Sentry.expressErrorHandler());
+  Sentry.setupExpressErrorHandler(app);
 }
 
 // Global error handler
