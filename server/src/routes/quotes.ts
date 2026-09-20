@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import db from '../db/schema';
+import { symbolForCurrency } from '../utils/currencySymbol';
 
 const router = Router();
 
@@ -111,14 +112,15 @@ router.post('/:id/convert', (req: Request, res: Response) => {
       client_name, client_email, client_phone, client_address, client_city,
       client_state, client_zip, client_company, subtotal, discount_type,
       discount_value, discount_amount, tax_rate, tax_amount, total, amount_paid,
-      balance_due, notes, terms, footer_text, quote_id)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+      balance_due, notes, terms, footer_text, quote_id, currency, currency_symbol)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
   `).run(invoiceId, quote.org_id, 'invoice', number, 'draft', quote.issue_date,
     quote.expiry_date, quote.client_name, quote.client_email, quote.client_phone,
     quote.client_address, quote.client_city, quote.client_state, quote.client_zip,
     quote.client_company, quote.subtotal, quote.discount_type, quote.discount_value,
     quote.discount_amount, quote.tax_rate, quote.tax_amount, quote.total, 0,
-    quote.total, quote.notes, quote.terms, quote.footer_text, quote.id);
+    quote.total, quote.notes, quote.terms, quote.footer_text, quote.id,
+    org.currency || 'USD', org.currency_symbol || symbolForCurrency(org.currency || 'USD'));
 
   items.forEach((item, idx) => {
     db.prepare(`INSERT INTO invoice_items (id, invoice_id, description, quantity, unit, unit_price, amount, sort_order)

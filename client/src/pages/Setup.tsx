@@ -8,8 +8,8 @@ import { cn } from '../utils/cn';
 import { useOrg } from '../hooks/useOrg';
 import { TurnstileWidget, TURNSTILE_ENABLED } from '../components/Turnstile';
 import FingerprintJS from '@fingerprintjs/fingerprintjs';
-import { COUNTRIES } from '../utils/countries';
-import { getAllCurrencies } from '../utils/currencies';
+import { COUNTRIES, COUNTRY_CURRENCY } from '../utils/countries';
+import { getAllCurrencies, getCurrencySymbol } from '../utils/currencies';
 
 const CURRENCIES = getAllCurrencies();
 
@@ -56,10 +56,22 @@ export default function Setup() {
   const [testEmailResult, setTestEmailResult] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // A guest who already picked a currency in the demo generator shouldn't be
+  // dropped back on USD when they sign up - carry that choice over.
+  const demoCurrency = (() => {
+    try {
+      const c = localStorage.getItem('krafo_demo_currency');
+      return c && CURRENCIES.some(x => x.code === c) ? c : null;
+    } catch { return null; }
+  })();
+  // Once the user has chosen (or inherited) a currency, changing the country
+  // must not overwrite it.
+  const currencyTouched = useRef(!!demoCurrency);
+
   const [form, setForm] = useState({
     name: '', email: '', phone: '', address: '', city: '', state: '', zip: '', country: 'US', website: '',
     logo_url: '', primary_color: '#2563EB', secondary_color: '#1E40AF', accent_color: '#DBEAFE',
-    tax_name: 'Tax', tax_rate: 0, currency: 'USD', currency_symbol: '$',
+    tax_name: 'Tax', tax_rate: 0, currency: demoCurrency || 'USD', currency_symbol: demoCurrency ? getCurrencySymbol(demoCurrency) : '$',
     invoice_prefix: 'INV', receipt_prefix: 'REC', quote_prefix: 'QUO', payment_terms: 'Net 30', notes: '',
     bank_name: '', bank_account: '', bank_routing: '',
     paypal_email: '', mpesa_number: '', mtn_number: '', airtel_number: '', telecel_number: '',
@@ -468,7 +480,16 @@ export default function Setup() {
               {!org && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Country *</label>
-                  <select value={form.country} onChange={e => set('country', e.target.value)} required className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                  <select value={form.country} onChange={e => {
+                    const code = e.target.value;
+                    set('country', code);
+                    // New account only: suggest that country's currency until the user picks one themselves
+                    const suggested = COUNTRY_CURRENCY[code];
+                    if (!org && !currencyTouched.current && suggested && CURRENCIES.some(c => c.code === suggested)) {
+                      set('currency', suggested);
+                      set('currency_symbol', getCurrencySymbol(suggested));
+                    }
+                  }} required className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
                     {COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
                   </select>
                 </div>
@@ -619,6 +640,7 @@ export default function Setup() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
                 <select value={form.currency} onChange={e => {
+                  currencyTouched.current = true;
                   const c = CURRENCIES.find(x => x.code === e.target.value);
                   set('currency', e.target.value);
                   if (c) set('currency_symbol', c.symbol);

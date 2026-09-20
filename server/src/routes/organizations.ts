@@ -8,6 +8,7 @@ import { isValidEmailSyntax, domainAcceptsMail, getEmailDomain, normalizeEmailFo
 import { isDisposableEmailDomain, isDisposableEmailDomainLive } from '../utils/disposableEmail';
 import { checkPhoneForCountry } from '../utils/phoneValidation';
 import { geolocate } from '../utils/geo';
+import { symbolForCurrency } from '../utils/currencySymbol';
 import { calculateRiskScore, RiskSignals } from '../services/riskScoring';
 
 const router = Router();
@@ -167,7 +168,7 @@ router.post('/', signupIpLimiter, signupSubnetLimiter, async (req: Request, res:
     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
   `).run(id, name, trimmedEmail, phone, address, city, state, zip, signupCountry, website,
     logo_url, primary_color || '#2563EB', secondary_color || '#1E40AF', accent_color || '#DBEAFE',
-    tax_name || 'Tax', tax_rate || 0, currency || 'USD', currency_symbol || '$',
+    tax_name || 'Tax', tax_rate || 0, currency || 'USD', currency_symbol || symbolForCurrency(currency || 'USD'),
     invoice_prefix || 'INV', receipt_prefix || 'REC', quote_prefix || 'QUO',
     payment_terms || 'Net 30', notes,
     bank_name, bank_account, bank_routing, signature_url || null,
@@ -202,6 +203,9 @@ router.put('/:id', (req: Request, res: Response) => {
     'whatsapp_number','mpesa_number','mtn_number','airtel_number','telecel_number','paypal_email',
     'dkim_domain','dkim_selector','dkim_private_key',
   ];
+
+  // Changing the currency without sending its symbol must not leave the old one behind
+  if (req.body.currency && !req.body.currency_symbol) req.body.currency_symbol = symbolForCurrency(req.body.currency);
 
   const updates = fields.filter(f => req.body[f] !== undefined);
   if (updates.length === 0) return res.status(400).json({ error: 'No fields to update' });

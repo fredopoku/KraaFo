@@ -110,3 +110,22 @@ export const COUNTRIES: { code: string; name: string }[] = [
   { code: 'TT', name: 'Trinidad and Tobago' },
   { code: 'NZ', name: 'New Zealand' },
 ];
+
+// Currency most businesses in each country invoice in, used to pre-select the
+// currency at signup so it isn't left on USD for someone who just picked Ghana.
+// A suggestion only - the user can still change it.
+export const COUNTRY_CURRENCY: Record<string, string> = {
+  US: 'USD', GB: 'GBP', CA: 'CAD', AU: 'AUD', NZ: 'NZD',
+  GH: 'GHS', NG: 'NGN', KE: 'KES', ZA: 'ZAR', UG: 'UGX', TZ: 'TZS', RW: 'RWF', ZM: 'ZMW',
+  ET: 'ETB', EG: 'EGP', MA: 'MAD', DZ: 'DZD', TN: 'TND', GN: 'GNF', SL: 'SLE', LR: 'LRD',
+  MW: 'MWK', MZ: 'MZN', BW: 'BWP', NA: 'NAD', ZW: 'USD', AO: 'AOA', CD: 'CDF', SD: 'SDG',
+  SS: 'SSP', SO: 'SOS', DJ: 'DJF', ER: 'ERN', GM: 'GMD', MR: 'MRU', LY: 'LYD', BI: 'BIF',
+  LS: 'LSL', SZ: 'SZL', MG: 'MGA', MU: 'MUR', SC: 'SCR', CV: 'CVE',
+  CI: 'XOF', SN: 'XOF', BJ: 'XOF', TG: 'XOF', BF: 'XOF', ML: 'XOF', NE: 'XOF', GW: 'XOF',
+  CM: 'XAF', CG: 'XAF', GA: 'XAF', GQ: 'XAF', CF: 'XAF', TD: 'XAF',
+  IE: 'EUR', FR: 'EUR', DE: 'EUR', ES: 'EUR', PT: 'EUR', IT: 'EUR', NL: 'EUR', BE: 'EUR', AT: 'EUR', FI: 'EUR', GR: 'EUR',
+  CH: 'CHF', SE: 'SEK', NO: 'NOK', DK: 'DKK', PL: 'PLN', RO: 'RON', CZ: 'CZK', HU: 'HUF', UA: 'UAH', TR: 'TRY', RU: 'RUB',
+  IN: 'INR', PK: 'PKR', BD: 'BDT', CN: 'CNY', JP: 'JPY', KR: 'KRW', SG: 'SGD', MY: 'MYR', ID: 'IDR', PH: 'PHP', VN: 'VND', TH: 'THB',
+  AE: 'AED', SA: 'SAR', QA: 'QAR', IL: 'ILS', JO: 'JOD', LB: 'LBP',
+  BR: 'BRL', MX: 'MXN', AR: 'ARS', CO: 'COP', CL: 'CLP', PE: 'PEN', JM: 'JMD', TT: 'TTD',
+};

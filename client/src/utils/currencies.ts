@@ -19,6 +19,22 @@ const FALLBACK_CURRENCIES: CurrencyOption[] = [
 
 let cached: CurrencyOption[] | null = null;
 
+// The 'en' locale only knows a bare 3-letter code for many currencies people
+// actually invoice in (NGN, GHS, ZAR, ZMW...), which would print as
+// "NGN1,000.00" instead of "₦1,000.00". narrowSymbol has the local one, so
+// prefer it whenever the normal symbol is just the code. Dollar-family
+// currencies keep their disambiguated form (CA$, A$).
+export function getCurrencySymbol(code: string): string {
+  const part = (display: 'symbol' | 'narrowSymbol') => {
+    try {
+      const parts = new Intl.NumberFormat('en', { style: 'currency', currency: code, currencyDisplay: display }).formatToParts(1);
+      return parts.find(p => p.type === 'currency')?.value || code;
+    } catch { return code; }
+  };
+  const symbol = part('symbol');
+  return symbol !== code ? symbol : part('narrowSymbol');
+}
+
 // Every ISO 4217 currency the browser knows about, with its real symbol and
 // display name derived from the same ICU data Intl.NumberFormat itself
 // uses - no hand-maintained list to go stale or mistype a symbol on.
@@ -31,14 +47,9 @@ export function getAllCurrencies(): CurrencyOption[] {
     const displayNames = new Intl.DisplayNames(['en'], { type: 'currency' });
     cached = codes
       .map(code => {
-        let symbol = code;
-        try {
-          const parts = new Intl.NumberFormat('en', { style: 'currency', currency: code, currencyDisplay: 'symbol' }).formatToParts(1);
-          symbol = parts.find(p => p.type === 'currency')?.value || code;
-        } catch { /* some codes (e.g. fund/precious-metal codes) can't format - keep code as symbol */ }
         let name = code;
         try { name = displayNames.of(code) || code; } catch {}
-        return { code, symbol, name };
+        return { code, symbol: getCurrencySymbol(code), name };
       })
       .sort((a, b) => a.name.localeCompare(b.name));
   } catch {

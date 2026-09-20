@@ -1,4 +1,5 @@
 import Database from 'better-sqlite3';
+import { symbolForCurrency, isKnownSymbol } from '../utils/currencySymbol';
 import path from 'path';
 import fs from 'fs';
 
@@ -360,6 +361,21 @@ addCol('quotes', 'deleted_at', 'TEXT');
 addCol('quotes', 'deleted_by', 'TEXT');
 addCol('clients', 'deleted_at', 'TEXT');
 addCol('clients', 'deleted_by', 'TEXT');
+
+// Repair organisations whose currency symbol was saved wrong: the bare code
+// ("NGN") from the old picker, or "$" left behind on a non-dollar currency.
+// Idempotent - only rows that are actually wrong are touched.
+try {
+  const orgs = db.prepare("SELECT id, currency, currency_symbol FROM organizations WHERE currency IS NOT NULL AND currency != ''").all() as any[];
+  const fix = db.prepare('UPDATE organizations SET currency_symbol = ? WHERE id = ?');
+  for (const o of orgs) {
+    const wanted = symbolForCurrency(o.currency);
+    const wrong = o.currency_symbol === o.currency || (o.currency_symbol === '$' && !isKnownSymbol(o.currency, '$'));
+    if (wrong && wanted !== o.currency_symbol) fix.run(wanted, o.id);
+  }
+} catch (e) {
+  console.error('[schema] currency symbol repair skipped:', (e as Error).message);
+}
 
 // Seed initial changelog entries (INSERT OR IGNORE - safe to run on every boot)
 db.exec(`

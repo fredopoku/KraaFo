@@ -194,9 +194,9 @@ async function runRecurringInvoices(): Promise<void> {
         client_id, client_name, client_email, client_phone, client_address, client_city,
         client_state, client_zip, client_company,
         subtotal, discount_type, discount_value, discount_amount, tax_rate, tax_amount, total,
-        amount_paid, balance_due, notes, terms, footer_text, currency_symbol,
+        amount_paid, balance_due, notes, terms, footer_text, currency_symbol, currency,
         is_recurring, recurring_parent_id, created_at, updated_at)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,?,?,?,?,0,?,datetime('now'),datetime('now'))
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,?,?,?,?,?,0,?,datetime('now'),datetime('now'))
     `).run(
       newId, tmpl.org_id, 'invoice', num, 'sent', issueDate, dueDate,
       tmpl.client_id, tmpl.client_name, tmpl.client_email, tmpl.client_phone, tmpl.client_address,
@@ -204,7 +204,7 @@ async function runRecurringInvoices(): Promise<void> {
       tmpl.subtotal, tmpl.discount_type, tmpl.discount_value, tmpl.discount_amount,
       tmpl.tax_rate, tmpl.tax_amount, tmpl.total,
       tmpl.total,
-      tmpl.notes, tmpl.terms, tmpl.footer_text, tmpl.currency_symbol, tmpl.id,
+      tmpl.notes, tmpl.terms, tmpl.footer_text, org.currency_symbol || tmpl.currency_symbol, org.currency || tmpl.currency || 'USD', tmpl.id,
     );
 
     // Copy line items

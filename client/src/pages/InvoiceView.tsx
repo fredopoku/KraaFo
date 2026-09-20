@@ -153,10 +153,10 @@ export default function InvoiceView() {
                   <span className="text-emerald-600 font-bold">{inv.paid_date}</span>
                 </div>
               )}
-              {inv.currency && (
+              {(org?.currency || inv.currency) && (
                 <div className="flex gap-6 text-xs">
                   <span className="font-bold text-slate-400 w-20">Currency</span>
-                  <span className="text-slate-700 font-medium">{inv.currency}</span>
+                  <span className="text-slate-700 font-medium">{org?.currency || inv.currency}</span>
                 </div>
               )}
             </div>

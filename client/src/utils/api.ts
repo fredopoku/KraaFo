@@ -298,11 +298,13 @@ export const api = {
 };
 
 export function formatCurrency(amount: number, symbol = '$', short = false): string {
+  // Symbols that are letters ("KES", "FCFA") read as "KES1,000.00" without a gap
+  const sp = /[A-Za-z]{2,}$/.test(symbol) ? `${symbol} ` : symbol;
   if (short) {
-    if (amount >= 1_000_000) return `${symbol}${(amount / 1_000_000).toFixed(1)}M`;
-    if (amount >= 1_000) return `${symbol}${(amount / 1_000).toFixed(1)}k`;
+    if (amount >= 1_000_000) return `${sp}${(amount / 1_000_000).toFixed(1)}M`;
+    if (amount >= 1_000) return `${sp}${(amount / 1_000).toFixed(1)}k`;
   }
-  return `${symbol}${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${sp}${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 export function generateInvoiceNumber(prefix: string, existingCount: number): string {
