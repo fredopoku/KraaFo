@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock, AlertCircle, FileText, Receipt, Users, Quote, Plus, Settings, ArrowRight, ArrowLeft, CheckCircle, Zap, X, DollarSign, BarChart2, Trash2, Circle, Mail } from 'lucide-react';
+import { Clock, AlertCircle, FileText, Receipt, Users, Quote, Plus, Settings, ArrowRight, ArrowLeft, CheckCircle, Zap, X, DollarSign, BarChart2, Trash2, Circle, Mail, TrendingUp, TrendingDown } from 'lucide-react';
 import { useOrg } from '../hooks/useOrg';
 import { api, formatCurrency } from '../utils/api';
 import { LogoMark, Logo } from '../components/Logo';
@@ -73,7 +73,34 @@ export default function Dashboard() {
   ];
 
   const chartData = data?.chartData || data?.monthly || [];
-  const maxRevenue = Math.max(...chartData.map((m: any) => m.revenue || 0), 1);
+  const maxRevenue = Math.max(...chartData.map((m: any) => Math.max(m.revenue || 0, m.invoiced || 0)), 1);
+
+  // This month vs last month
+  const cmp = data?.comparison || { thisMonth: { collected: 0, invoiced: 0 }, lastMonth: { collected: 0, invoiced: 0 } };
+  const pctChange = (cur: number, prev: number) => (prev > 0 ? Math.round(((cur - prev) / prev) * 100) : null);
+  const monthCards = [
+    { label: 'Collected this month', cur: cmp.thisMonth.collected, prev: cmp.lastMonth.collected },
+    { label: 'Billed this month',    cur: cmp.thisMonth.invoiced,  prev: cmp.lastMonth.invoiced },
+  ];
+
+  // Invoice status breakdown + receivables aging + payment behaviour
+  const STATUS_ORDER = ['paid', 'sent', 'overdue', 'draft', 'cancelled'];
+  const STATUS_BAR: Record<string, string> = { paid: 'bg-emerald-500', sent: 'bg-blue-500', overdue: 'bg-red-500', draft: 'bg-slate-300', cancelled: 'bg-slate-200' };
+  const statusRows = STATUS_ORDER
+    .map(st => ({ status: st, ...(data?.statusBreakdown || []).find((r: any) => r.status === st) }))
+    .filter((r: any) => r.count > 0);
+  const statusTotal = statusRows.reduce((n: number, r: any) => n + r.count, 0);
+  const AGING_META: Record<string, { label: string; bar: string }> = {
+    current:  { label: 'Not yet due', bar: 'bg-indigo-400' },
+    d1_30:    { label: '1-30 days late', bar: 'bg-amber-400' },
+    d31_60:   { label: '31-60 days late', bar: 'bg-orange-500' },
+    d61_90:   { label: '61-90 days late', bar: 'bg-red-400' },
+    d90_plus: { label: '90+ days late', bar: 'bg-red-600' },
+  };
+  const agingRows: any[] = data?.aging || [];
+  const maxAging = Math.max(...agingRows.map(a => a.balance || 0), 1);
+  const agingTotal = agingRows.reduce((n, a) => n + (a.balance || 0), 0);
+  const pay = data?.paymentStats || { paidCount: 0, avgDaysToPay: null, onTimeRate: null };
 
   const formatChartLabel = (period: string) => {
     if (granularity === 'yearly') return period;
@@ -88,10 +115,10 @@ export default function Dashboard() {
   };
 
   const chartTitle = granularity === 'daily'
-    ? 'Revenue · Daily (Last 90 Days)'
+    ? 'Billed vs Collected · Daily (Last 90 Days)'
     : granularity === 'yearly'
-    ? 'Revenue · Yearly (All Time)'
-    : 'Revenue · Monthly (All Time)';
+    ? 'Billed vs Collected · Yearly'
+    : 'Billed vs Collected · Monthly';
 
   const STATUS_COLOR: Record<string, string> = {
     paid:      'bg-emerald-50 text-emerald-700',
@@ -268,6 +295,31 @@ export default function Dashboard() {
           ))}
         </div>
 
+        {/* This month vs last month */}
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6">
+          {monthCards.map((c, i) => {
+            const pct = pctChange(c.cur, c.prev);
+            const up = pct !== null && pct >= 0;
+            return (
+              <div key={c.label} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 animate-fade-up" style={{ animationDelay: `${i * 60}ms` }}>
+                <div className="text-[11px] text-slate-400 font-medium">{c.label}</div>
+                <div className="text-lg sm:text-xl font-black text-slate-900 tracking-tight truncate mt-0.5">{formatCurrency(c.cur, sym)}</div>
+                <div className="flex items-center gap-1 mt-1 text-[10px] font-bold">
+                  {pct === null ? (
+                    <span className="text-slate-300">{c.prev === 0 ? 'Nothing to compare yet' : ''}</span>
+                  ) : (
+                    <>
+                      {up ? <TrendingUp className="w-3 h-3 text-emerald-600" /> : <TrendingDown className="w-3 h-3 text-red-500" />}
+                      <span className={up ? 'text-emerald-600' : 'text-red-500'}>{up ? '+' : ''}{pct}%</span>
+                      <span className="text-slate-300 font-medium">vs {formatCurrency(c.prev, sym)} last month</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
         {/* Chart + Top Clients */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
           {/* Revenue chart */}
@@ -289,18 +341,29 @@ export default function Dashboard() {
                 ))}
               </div>
             </div>
+            <div className="flex items-center gap-4 mb-3 text-[10px] font-bold text-slate-400">
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: primary, opacity: 0.25 }} />Billed</span>
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: primary }} />Collected</span>
+            </div>
             {chartData.length > 0 ? (
               <div className="overflow-x-auto">
-                <div className="flex items-end gap-1 sm:gap-2 h-32" style={{ minWidth: chartData.length > 20 ? `${chartData.length * 28}px` : undefined }}>
+                <div className="flex items-end gap-1 sm:gap-2" style={{ minWidth: chartData.length > 12 ? `${chartData.length * 40}px` : undefined }}>
                   {chartData.map((m: any) => {
                     const period = m.period || m.month || '';
-                    const height = Math.max(8, (m.revenue / maxRevenue) * 100);
+                    const barH = (v: number) => (v > 0 ? Math.max(4, Math.round((v / maxRevenue) * 96)) : 2);
                     return (
-                      <div key={period} className="flex-1 flex flex-col items-center gap-1 min-w-[24px]">
+                      <div
+                        key={period}
+                        className="flex-1 flex flex-col items-center gap-1 min-w-[34px]"
+                        title={`${formatChartLabel(period)} · Billed ${formatCurrency(m.invoiced || 0, sym)} · Collected ${formatCurrency(m.revenue || 0, sym)}`}
+                      >
                         <div className="text-[9px] font-bold text-slate-500 truncate w-full text-center">
-                          {formatCurrency(m.revenue, sym, true)}
+                          {(m.revenue || 0) > 0 ? formatCurrency(m.revenue, sym, true) : '\u00a0'}
                         </div>
-                        <div className="w-full rounded-t-lg transition-all" style={{ height: `${height}%`, background: primary, opacity: 0.85 }} />
+                        <div className="flex items-end justify-center gap-0.5 w-full" style={{ height: 96 }}>
+                          <div className="flex-1 max-w-[14px] rounded-t-md" style={{ height: barH(m.invoiced || 0), background: primary, opacity: 0.25 }} />
+                          <div className="flex-1 max-w-[14px] rounded-t-md" style={{ height: barH(m.revenue || 0), background: primary, opacity: 0.9 }} />
+                        </div>
                         <div className="text-[9px] text-slate-400 truncate w-full text-center">{formatChartLabel(period)}</div>
                       </div>
                     );
@@ -308,7 +371,7 @@ export default function Dashboard() {
                 </div>
               </div>
             ) : (
-              <div className="h-32 flex items-center justify-center text-sm text-slate-300">No paid invoices yet - start billing!</div>
+              <div className="h-32 flex items-center justify-center text-sm text-slate-300">No invoices yet - start billing!</div>
             )}
           </div>
 
@@ -328,12 +391,86 @@ export default function Dashboard() {
                       <div className="text-xs font-bold text-slate-800 truncate">{c.client_name}</div>
                       {c.company && <div className="text-[10px] text-slate-400 truncate">{c.company}</div>}
                     </div>
-                    <div className="text-xs font-black text-slate-700 shrink-0">{formatCurrency(c.total_revenue, sym)}</div>
+                    <div className="text-right shrink-0">
+                      <div className="text-xs font-black text-slate-700">{formatCurrency(c.total_revenue, sym)}</div>
+                      {c.outstanding > 0 && <div className="text-[10px] font-bold text-amber-600">owes {formatCurrency(c.outstanding, sym)}</div>}
+                    </div>
                   </div>
                 ))}
               </div>
             ) : (
               <div className="text-sm text-slate-300 text-center py-4">No data yet</div>
+            )}
+          </div>
+        </div>
+
+        {/* Invoice status / receivables aging / how clients pay */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 animate-fade-up delay-100">
+            <h2 className="text-sm font-black text-slate-700 tracking-tight mb-4">Invoice Status</h2>
+            {statusRows.length > 0 ? (
+              <>
+                <div className="flex h-2.5 rounded-full overflow-hidden bg-slate-100 mb-4">
+                  {statusRows.map((r: any) => (
+                    <div key={r.status} className={STATUS_BAR[r.status]} style={{ width: `${(r.count / statusTotal) * 100}%` }} />
+                  ))}
+                </div>
+                <div className="space-y-2.5">
+                  {statusRows.map((r: any) => (
+                    <div key={r.status} className="flex items-center justify-between gap-2 text-xs">
+                      <span className="flex items-center gap-2 font-bold text-slate-600 capitalize">
+                        <span className={cn('w-2 h-2 rounded-full', STATUS_BAR[r.status])} />{r.status}
+                      </span>
+                      <span className="text-slate-400">{r.count} · <span className="font-black text-slate-700">{formatCurrency(r.amount, sym)}</span></span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="text-sm text-slate-300 text-center py-6">No invoices yet</div>
+            )}
+          </div>
+
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 animate-fade-up delay-150">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-black text-slate-700 tracking-tight">Who Owes You</h2>
+              <span className="text-xs font-black text-slate-700">{formatCurrency(agingTotal, sym)}</span>
+            </div>
+            {agingTotal > 0 ? (
+              <div className="space-y-3">
+                {agingRows.map(a => (
+                  <div key={a.bucket}>
+                    <div className="flex items-center justify-between text-[11px] mb-1">
+                      <span className="font-bold text-slate-500">{AGING_META[a.bucket].label}{a.count > 0 && <span className="text-slate-300 font-medium"> · {a.count}</span>}</span>
+                      <span className="font-black text-slate-700">{formatCurrency(a.balance, sym)}</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                      <div className={cn('h-full rounded-full', AGING_META[a.bucket].bar)} style={{ width: `${(a.balance / maxAging) * 100}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-sm text-slate-300 text-center py-6">Nothing outstanding</div>
+            )}
+          </div>
+
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 animate-fade-up delay-200">
+            <h2 className="text-sm font-black text-slate-700 tracking-tight mb-4">How Clients Pay</h2>
+            {pay.paidCount > 0 ? (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <div className="text-2xl font-black text-slate-900 tracking-tight">{pay.avgDaysToPay ?? '-'}<span className="text-xs font-bold text-slate-400"> days</span></div>
+                  <div className="text-[11px] text-slate-400 font-medium mt-0.5">Average time to pay</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-black text-slate-900 tracking-tight">{pay.onTimeRate === null ? '-' : `${pay.onTimeRate}%`}</div>
+                  <div className="text-[11px] text-slate-400 font-medium mt-0.5">Paid on time</div>
+                </div>
+                <div className="col-span-2 text-[10px] text-slate-300">Based on {pay.paidCount} paid invoice{pay.paidCount !== 1 ? 's' : ''}</div>
+              </div>
+            ) : (
+              <div className="text-sm text-slate-300 text-center py-6">Shows up once an invoice is paid</div>
             )}
           </div>
         </div>
