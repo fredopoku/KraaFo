@@ -200,7 +200,7 @@
 
 ### Prerequisites
 
-- Node.js 20.9+ (22 recommended - see `.node-version`)
+- Node.js 20.9+ (production runs the version in `.node-version`)
 - npm
 
 ### Installation
