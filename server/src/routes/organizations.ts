@@ -9,6 +9,7 @@ import { isDisposableEmailDomain, isDisposableEmailDomainLive } from '../utils/d
 import { checkPhoneForCountry } from '../utils/phoneValidation';
 import { geolocate } from '../utils/geo';
 import { symbolForCurrency } from '../utils/currencySymbol';
+import { logEvent } from '../services/activityLog';
 import { calculateRiskScore, RiskSignals } from '../services/riskScoring';
 
 const router = Router();
@@ -183,6 +184,7 @@ router.post('/', signupIpLimiter, signupSubnetLimiter, async (req: Request, res:
   }
 
   const org = db.prepare('SELECT * FROM organizations WHERE id = ?').get(id) as any;
+  logEvent({ orgId: id, actorId: id, actorEmail: trimmedEmail, actorRole: 'owner', ip: signupIp, type: 'org.signup', refType: 'organization', refId: id, meta: { country: signupCountry, risk_score: risk.score, action: risk.action, signals: risk.firedSignals.join(','), status: verificationStatus } });
   res.status(201).json(stripSensitive(org));
   sendOrgWelcome(org).catch(console.error);
   sendVerificationEmail(org).catch(console.error);
@@ -215,6 +217,7 @@ router.put('/:id', (req: Request, res: Response) => {
 
   db.prepare(`UPDATE organizations SET ${setClauses} WHERE id = ?`).run(...values);
   const org = db.prepare('SELECT * FROM organizations WHERE id = ?').get(req.params.id);
+  logEvent({ req, type: 'org.update', refType: 'organization', refId: req.params.id, meta: { fields: updates.join(',') } });
   res.json(stripSensitive(org));
 });
 

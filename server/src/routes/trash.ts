@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import db from '../db/schema';
+import { logEvent } from '../services/activityLog';
 
 const router = Router();
 
@@ -46,6 +47,7 @@ router.post('/invoices/:id/restore', (req: Request, res: Response) => {
       "UPDATE invoices SET deleted_at = NULL, deleted_by = NULL WHERE source_invoice_id = ? AND org_id = ? AND type = 'receipt' AND deleted_at = ?"
     ).run(req.params.id, orgId, before.deleted_at).changes;
   }
+  logEvent({ req, type: 'trash.restore', refType: 'invoice', refId: req.params.id, meta: { receiptsRestored } });
   res.json({ success: true, receiptsRestored });
 });
 
@@ -55,6 +57,7 @@ router.post('/quotes/:id/restore', (req: Request, res: Response) => {
     "UPDATE quotes SET deleted_at = NULL, deleted_by = NULL WHERE id = ? AND org_id = ? AND deleted_at IS NOT NULL"
   ).run(req.params.id, req.auth!.orgId);
   if (r.changes === 0) return res.status(404).json({ error: 'Not found in trash' });
+  logEvent({ req, type: 'trash.restore', refType: 'quote', refId: req.params.id });
   res.json({ success: true });
 });
 
@@ -64,6 +67,7 @@ router.post('/clients/:id/restore', (req: Request, res: Response) => {
     "UPDATE clients SET deleted_at = NULL, deleted_by = NULL WHERE id = ? AND org_id = ? AND deleted_at IS NOT NULL"
   ).run(req.params.id, req.auth!.orgId);
   if (r.changes === 0) return res.status(404).json({ error: 'Not found in trash' });
+  logEvent({ req, type: 'trash.restore', refType: 'client', refId: req.params.id });
   res.json({ success: true });
 });
 
@@ -75,6 +79,7 @@ router.delete('/invoices/:id', (req: Request, res: Response) => {
   if (!existing) return res.status(404).json({ error: 'Not found in trash' });
   // invoice_items cascade via FK
   db.prepare('DELETE FROM invoices WHERE id = ?').run(req.params.id);
+  logEvent({ req, type: 'trash.purge', refType: 'invoice', refId: req.params.id });
   res.json({ success: true });
 });
 
@@ -86,6 +91,7 @@ router.delete('/quotes/:id', (req: Request, res: Response) => {
   if (!existing) return res.status(404).json({ error: 'Not found in trash' });
   // quote_items cascade via FK
   db.prepare('DELETE FROM quotes WHERE id = ?').run(req.params.id);
+  logEvent({ req, type: 'trash.purge', refType: 'quote', refId: req.params.id });
   res.json({ success: true });
 });
 
@@ -97,6 +103,7 @@ router.delete('/clients/:id', (req: Request, res: Response) => {
   if (!existing) return res.status(404).json({ error: 'Not found in trash' });
   db.prepare('UPDATE invoices SET client_id = NULL WHERE client_id = ?').run(req.params.id);
   db.prepare('DELETE FROM clients WHERE id = ?').run(req.params.id);
+  logEvent({ req, type: 'trash.purge', refType: 'client', refId: req.params.id });
   res.json({ success: true });
 });
 

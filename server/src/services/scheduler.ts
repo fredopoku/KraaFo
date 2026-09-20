@@ -1,6 +1,19 @@
 import db from '../db/schema';
+import { logEvent, pruneActivityEvents } from './activityLog';
 import { v4 as uuidv4 } from 'uuid';
 import { sendDay2Email, sendDay4Email, sendDay7Email, sendDay14Email, sendPaymentReminder, sendInvoiceEmail } from './emailService';
+
+// Runs a send and records whether it worked - these were fire-and-forget with only
+// console.error, so a failing reminder or lifecycle email was invisible.
+async function tracked(orgId: string, type: string, meta: Record<string, unknown>, refId: string | undefined, send: () => Promise<unknown>): Promise<void> {
+  try {
+    await send();
+    logEvent({ orgId, actorRole: 'system', actorEmail: 'system', type, refType: refId ? 'invoice' : undefined, refId, meta });
+  } catch (err) {
+    console.error(err);
+    logEvent({ orgId, actorRole: 'system', actorEmail: 'system', type, refType: refId ? 'invoice' : undefined, refId, ok: false, meta: { ...meta, error: (err as Error).message } });
+  }
+}
 
 async function runOnboardingSequence(): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
@@ -17,7 +30,7 @@ async function runOnboardingSequence(): Promise<void> {
       AND NOT EXISTS (SELECT 1 FROM invoices WHERE org_id = o.id)
       AND NOT EXISTS (SELECT 1 FROM quotes WHERE org_id = o.id)
   `).all() as any[];
-  for (const org of day2Orgs) await sendDay2Email(org).catch(console.error);
+  for (const org of day2Orgs) await tracked(org.id, 'system.lifecycle', { email: 'day2' }, undefined, () => sendDay2Email(org));
 
   const day4Orgs = db.prepare(`
     SELECT o.* FROM organizations o
@@ -28,7 +41,7 @@ async function runOnboardingSequence(): Promise<void> {
       AND o.created_at <= datetime('now', '-4 days')
       AND o.created_at >= datetime('now', '-7 days')
   `).all() as any[];
-  for (const org of day4Orgs) await sendDay4Email(org).catch(console.error);
+  for (const org of day4Orgs) await tracked(org.id, 'system.lifecycle', { email: 'day4' }, undefined, () => sendDay4Email(org));
 
   const day7Orgs = db.prepare(`
     SELECT o.* FROM organizations o
@@ -39,7 +52,7 @@ async function runOnboardingSequence(): Promise<void> {
       AND o.created_at <= datetime('now', '-7 days')
       AND o.created_at >= datetime('now', '-14 days')
   `).all() as any[];
-  for (const org of day7Orgs) await sendDay7Email(org).catch(console.error);
+  for (const org of day7Orgs) await tracked(org.id, 'system.lifecycle', { email: 'day7' }, undefined, () => sendDay7Email(org));
 
   // Day 14 re-engagement: zero invoices or quotes after 2 weeks
   const day14Orgs = db.prepare(`
@@ -52,12 +65,13 @@ async function runOnboardingSequence(): Promise<void> {
       AND NOT EXISTS (SELECT 1 FROM invoices WHERE org_id = o.id)
       AND NOT EXISTS (SELECT 1 FROM quotes WHERE org_id = o.id)
   `).all() as any[];
-  for (const org of day14Orgs) await sendDay14Email(org).catch(console.error);
+  for (const org of day14Orgs) await tracked(org.id, 'system.lifecycle', { email: 'day14' }, undefined, () => sendDay14Email(org));
 }
 
 async function runOverdueAndReminders(): Promise<void> {
+  pruneActivityEvents(); // hourly housekeeping: keep the activity log to its retention window
   // Mark sent invoices as overdue when due_date has passed
-  db.prepare(`
+  const flipped = db.prepare(`
     UPDATE invoices
     SET status = 'overdue', updated_at = datetime('now')
     WHERE status = 'sent'
@@ -65,6 +79,7 @@ async function runOverdueAndReminders(): Promise<void> {
       AND due_date < date('now')
       AND amount_paid < total
   `).run();
+  if (flipped.changes) logEvent({ actorRole: 'system', actorEmail: 'system', type: 'system.overdue_flip', meta: { count: flipped.changes } });
 
   // Mark sent/draft quotes as expired when expiry_date has passed
   db.prepare(`
@@ -93,7 +108,7 @@ async function runOverdueAndReminders(): Promise<void> {
 
   for (const inv of day1) {
     const org = { name: inv.org_name, email: inv.org_email, currency_symbol: inv.currency_symbol, primary_color: inv.primary_color, logo_url: inv.logo_url };
-    await sendPaymentReminder(inv, org, 1).catch(console.error);
+    await tracked(inv.org_id, 'system.reminder', { number: inv.number, days_overdue: 1 }, inv.id, () => sendPaymentReminder(inv, org, 1));
     db.prepare('UPDATE invoices SET reminder_1_sent = 1 WHERE id = ?').run(inv.id);
   }
 
@@ -114,7 +129,7 @@ async function runOverdueAndReminders(): Promise<void> {
   for (const inv of day7) {
     const org = { name: inv.org_name, email: inv.org_email, currency_symbol: inv.currency_symbol, primary_color: inv.primary_color, logo_url: inv.logo_url };
     const days = Math.floor((Date.now() - new Date(inv.due_date).getTime()) / 86400000);
-    await sendPaymentReminder(inv, org, days).catch(console.error);
+    await tracked(inv.org_id, 'system.reminder', { number: inv.number, days_overdue: days }, inv.id, () => sendPaymentReminder(inv, org, days));
     db.prepare('UPDATE invoices SET reminder_7_sent = 1 WHERE id = ?').run(inv.id);
   }
 
@@ -135,7 +150,7 @@ async function runOverdueAndReminders(): Promise<void> {
   for (const inv of day14) {
     const org = { name: inv.org_name, email: inv.org_email, currency_symbol: inv.currency_symbol, primary_color: inv.primary_color, logo_url: inv.logo_url };
     const days = Math.floor((Date.now() - new Date(inv.due_date).getTime()) / 86400000);
-    await sendPaymentReminder(inv, org, days).catch(console.error);
+    await tracked(inv.org_id, 'system.reminder', { number: inv.number, days_overdue: days }, inv.id, () => sendPaymentReminder(inv, org, days));
     db.prepare('UPDATE invoices SET reminder_14_sent = 1 WHERE id = ?').run(inv.id);
   }
 }
@@ -216,9 +231,11 @@ async function runRecurringInvoices(): Promise<void> {
     // Bump org invoice counter
     db.prepare('UPDATE organizations SET next_invoice_number = COALESCE(next_invoice_number, 1) + 1 WHERE id = ?').run(tmpl.org_id);
 
+    logEvent({ orgId: tmpl.org_id, actorRole: 'system', actorEmail: 'system', type: 'system.recurring', refType: 'invoice', refId: newId, meta: { number: num, template: tmpl.number } });
+
     // Auto-send email to client if they have an address
     if (tmpl.client_email) {
-      sendInvoiceEmail(newId, tmpl.client_email).catch(console.error);
+      void tracked(tmpl.org_id, 'system.recurring_email', { number: num }, newId, () => sendInvoiceEmail(newId, tmpl.client_email));
     }
 
     // Advance recurring_next_date on the template

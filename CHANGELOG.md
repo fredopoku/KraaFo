@@ -13,6 +13,9 @@ Anything you delete now disappears everywhere, not just from your lists. It no l
 ### Mark Invoices Unpaid Properly
 Changing a paid invoice back to unpaid now takes the payment off your totals, and deleting or un-paying an invoice moves the receipt that was created for it to the Trash instead of leaving it counted. Restore the invoice and its receipt comes back with it.
 
+### A Fair-Use Limit on Smart Fill and Import
+Smart Fill and document import are now capped at 50 requests per account per day so they stay available for everyone. If you reach it you'll see a message, and it resets at midnight UTC.
+
 ### Currency Fixes
 Your own currency is now used everywhere. Invoices created from a quote or on a recurring schedule keep your currency instead of switching to dollars, and amounts show the right local symbol (₦, GH₵, R). When you sign up, picking your country pre-selects its currency, and a currency you chose in the free demo carries over to your new account.
 

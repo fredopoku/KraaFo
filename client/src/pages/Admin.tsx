@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Star, Mail, Send, Megaphone, ChevronDown, ChevronUp, LogOut, Shield, Building2, Users, FileText, Receipt, Quote, TrendingUp, TrendingDown, Activity, Trash2, Zap, Plus, X, ArrowRight, CheckCircle, AlertCircle, Globe, Monitor, Smartphone, Tablet, Eye, ChevronRight, Phone, ExternalLink, UserCheck, Clock, BarChart2, MousePointerClick, UserPlus, PenSquare, Search, Flame } from 'lucide-react';
 import { LogoMark } from '../components/Logo';
+import ActivityPanel from '../components/admin/ActivityPanel';
 import { cn } from '../utils/cn';
 
 const STORAGE_KEY = 'krafo_admin_token';
@@ -122,7 +123,9 @@ export default function Admin() {
   const [viewsModal, setViewsModal] = useState<{ open: boolean; page?: string }>({ open: false });
   const [viewsData, setViewsData] = useState<{ views: any[]; total: number } | null>(null);
   const [viewsLoading, setViewsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'traffic' | 'users' | 'financials' | 'comms' | 'security'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'traffic' | 'users' | 'activity' | 'financials' | 'comms' | 'security'>('overview');
+  // Set when jumping to the Activity tab from an account, to show only that account's events
+  const [activityOrg, setActivityOrg] = useState<{ id: string; name: string } | null>(null);
   const [flaggedSignups, setFlaggedSignups] = useState<any[]>([]);
   const [riskConfig, setRiskConfig] = useState<{ weights: Record<string, number>; thresholds: Record<string, number> } | null>(null);
   const [riskConfigDraft, setRiskConfigDraft] = useState<{ weights: Record<string, number>; thresholds: Record<string, number> } | null>(null);
@@ -269,6 +272,8 @@ export default function Admin() {
       setOrgActivity(data);
     } catch {} finally { setOrgActivityLoading(false); }
   };
+
+  const activityApi = useCallback(<T,>(path: string, options?: RequestInit) => adminFetch<T>(path, token, options), [token]);
 
   const closeOrgDetail = () => { setSelectedOrgId(null); setOrgDetail(null); setOrgActivity(null); };
 
@@ -496,6 +501,7 @@ export default function Admin() {
             { key: 'overview', label: 'Overview', icon: BarChart2 },
             { key: 'traffic', label: 'Traffic', icon: Globe },
             { key: 'users', label: 'Users', icon: Users },
+            { key: 'activity', label: 'Activity', icon: Activity },
             { key: 'financials', label: 'Financials', icon: TrendingUp },
             { key: 'comms', label: 'Comms', icon: Megaphone },
             { key: 'security', label: 'Security', icon: Shield },
@@ -1402,6 +1408,11 @@ export default function Admin() {
         </>)}
 
         {/* ══ SECURITY TAB ═════════════════════════════════════ */}
+        {/* ══ ACTIVITY TAB ══════════════════════════════════════ */}
+        {activeTab === 'activity' && (
+          <ActivityPanel api={activityApi} orgFilter={activityOrg} onFilterOrg={setActivityOrg} />
+        )}
+
         {activeTab === 'security' && (<>
 
         {/* ── Maintenance mode ─────────────────────────────────── */}
@@ -2608,6 +2619,17 @@ export default function Admin() {
               {/* ── Activity Tab ─────────────────────────────────── */}
               {orgDetailTab === 'activity' && (
                 <div>
+                  {orgDetail && (
+                    <div className="px-6 pt-4">
+                      <button
+                        onClick={() => { setActivityOrg({ id: orgDetail.org.id, name: orgDetail.org.name }); closeOrgDetail(); setActiveTab('activity'); }}
+                        className="w-full flex items-center justify-between gap-2 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl px-4 py-3 transition-colors"
+                      >
+                        <span className="flex items-center gap-2"><Activity className="w-3.5 h-3.5" /> See everything this account has done</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
                   {orgActivityLoading && (
                     <div className="flex items-center justify-center h-48">
                       <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />

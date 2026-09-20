@@ -118,6 +118,10 @@
 - **Live presence** - see which organisations are active right now and what page they're on
 - **Org detail & activity drill-down** - click into any organisation for its full profile and activity trail
 - **Signup risk scoring controls** - tune risk weights/thresholds and review flagged signups (see [Account Verification & Anti-Fraud](#account-verification--anti-fraud))
+- **Activity log** - the **Activity** tab shows everything users, the system and the admin do, as a live-refreshing feed you can filter by type, account, failures only, or search by email / IP / invoice number: sign-ins and failed sign-ins, password resets, document create / edit / delete / payment / receipt, emails sent **and whether they worked**, quotes, clients, Trash restores, team changes, business-settings changes, AI calls, overdue reminders and other scheduled jobs, and admin actions. Actions and metadata only - never document contents, passwords or message bodies; recipient emails are reduced to their domain. Rows older than 90 days are pruned automatically
+- **Sign-ins & security view** - failed sign-ins grouped by IP address and by email, with *Suspicious* / *Repeated* flags for the guessing patterns (one IP trying many emails, one account hit from many addresses), plus a per-day chart
+- **AI usage & limits** - requests per account for today / 7 / 30 days and how many were blocked; every account gets a daily cap on Smart Fill and document import (default 50, resets at midnight UTC) that you can raise, lower, or set to 0 per account, with the change recorded in the log
+- **Account drill-down** - from any account's drawer, jump straight to everything that account has done
 - **Maintenance mode toggle** - see [Maintenance Mode](#maintenance-mode)
 - **Admin event alerts** - instant email notification when a new organisation signs up or creates their first invoice, including org details and a direct link to the admin panel
 - **Protected by `ADMIN_TOKEN`** - all admin endpoints require `x-admin-token` header; the frontend stores the token in `sessionStorage`
@@ -244,6 +248,10 @@ JWT_SECRET=your_long_random_jwt_secret_here
 # the Maintenance Mode section below.
 MAINTENANCE_MODE=false
 
+# Optional - AI cap and activity log retention
+AI_DAILY_LIMIT=50               # Smart Fill / import requests per account per day (override per account in the admin Activity tab)
+ACTIVITY_RETENTION_DAYS=90      # how long the admin activity log is kept (minimum 7)
+
 # AI - Smart Fill (optional, falls back to built-in templates)
 # Primary: get a key at console.anthropic.com
 ANTHROPIC_API_KEY=your_anthropic_key_here
@@ -322,6 +330,7 @@ KraaFo/
 │       ├── components/
 │       │   ├── Logo.tsx             # KraaFo logo component (supports dark prop for inverted logo)
 │       │   ├── SignaturePad.tsx     # Draw / upload signature modal
+│       │   ├── admin/ActivityPanel.tsx # Admin Activity tab: feed, AI usage, sign-ins & security
 │       │   ├── StoryPlayer.tsx      # WhatsApp-Status style story player for the landing page
 │       │   └── Turnstile.tsx        # Cloudflare Turnstile widget (reusable)
 │       ├── pages/
@@ -399,7 +408,8 @@ KraaFo/
 │   │   │   ├── aiService.ts         # Claude / Groq / OCR logic
 │   │   │   ├── pdfService.ts        # Puppeteer PDF rendering
 │   │   │   ├── imageService.ts      # Logo processing + colour extraction
-│   │   │   └── riskScoring.ts       # Weighted signup risk score → allow / friction / hold
+│   │   │   ├── riskScoring.ts       # Weighted signup risk score → allow / friction / hold
+│   │   │   └── activityLog.ts       # logEvent() + 90-day pruning + the per-account daily AI cap
 │   │   ├── utils/
 │   │   │   ├── turnstile.ts         # Cloudflare Turnstile server-side verification helper
 │   │   │   ├── emailValidation.ts   # Syntax + MX check + Gmail dot/plus-alias normalisation
@@ -529,6 +539,10 @@ KraaFo/
 | POST | `/api/admin/signups/:id/review` | Clear, verify, or reject a flagged signup |
 | GET | `/api/admin/maintenance` | Current maintenance mode state |
 | PUT | `/api/admin/maintenance` | Turn maintenance mode on/off and/or update its message |
+| GET | `/api/admin/events` | Activity log, newest first. Filters: `days` (1-90), `type` (exact, or a family ending in a dot like `auth.`), `org_id`, `ok=0` (failures only), `q` (email / IP / account / metadata), `limit`, `offset` |
+| GET | `/api/admin/events/summary` | Totals, failed sign-ins by IP and by email, events per day, busiest accounts, counts by type |
+| GET | `/api/admin/ai-usage` | AI requests per account (today / 7d / 30d / blocked) and their daily limits |
+| PUT | `/api/admin/orgs/:id/ai-limit` | Set one account's daily AI limit (`{"limit": 100}`; `0` switches AI off for it; `null` returns to the default) |
 
 ### Community
 
@@ -641,6 +655,7 @@ The `{ enabled, message }` config is persisted to a JSON file next to the SQLite
 - [x] Maintenance mode (admin toggle + env var override, branded self-contained page)
 - [x] Dashboard analytics that reflect real money (billed vs collected, month-on-month, aging, payment behaviour)
 - [x] Soft-deleted documents excluded everywhere (analytics, reminders, recurring runs, by-ID actions)
+- [x] Admin activity log, sign-in security view, and per-account AI usage with daily limits
 - [x] Currency fixes (country-based default, demo choice carried into signup, quote/recurring conversions keep currency, proper symbols)
 - [ ] Stripe / PayPal payment link integration
 - [ ] Client portal (view & pay invoices online)

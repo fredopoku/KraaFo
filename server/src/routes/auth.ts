@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import db from '../db/schema';
+import { logEvent } from '../services/activityLog';
 import { signToken, UserRole, JWT_SECRET } from '../middleware/auth';
 import { sendPasswordReset, sendVerificationEmail } from '../services/emailService';
 
@@ -19,9 +20,13 @@ router.post('/login', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'This account was created before passwords were required. Use "Forgot password" to set one.' });
     }
     const valid = await bcrypt.compare(password, org.password_hash);
-    if (!valid) return res.status(401).json({ error: 'Incorrect password' });
+    if (!valid) {
+      logEvent({ req, orgId: org.id, actorEmail: email.trim(), type: 'auth.login_failed', ok: false, meta: { reason: 'bad_password' } });
+      return res.status(401).json({ error: 'Incorrect password' });
+    }
 
     db.prepare(`UPDATE organizations SET total_logins = COALESCE(total_logins, 0) + 1 WHERE id = ?`).run(org.id);
+    logEvent({ req, orgId: org.id, actorId: org.id, actorEmail: org.email, actorRole: 'owner', type: 'auth.login' });
     const token = signToken({ orgId: org.id, userId: org.id, role: 'owner', email: org.email });
     const { password_hash: _, ...safeOrg } = org;
     return res.json({ org: safeOrg, token, role: 'owner' });
@@ -29,17 +34,24 @@ router.post('/login', async (req: Request, res: Response) => {
 
   // Check team members
   const member = db.prepare('SELECT * FROM team_members WHERE LOWER(email) = LOWER(?) AND invite_accepted = 1 LIMIT 1').get(email.trim()) as any;
-  if (!member) return res.status(401).json({ error: 'No account found with that email address' });
+  if (!member) {
+    logEvent({ req, orgId: null, actorEmail: email.trim(), type: 'auth.login_failed', ok: false, meta: { reason: 'no_account' } });
+    return res.status(401).json({ error: 'No account found with that email address' });
+  }
   if (!member.password_hash) return res.status(401).json({ error: 'Account not fully set up. Check your invite email.' });
 
   const valid = await bcrypt.compare(password, member.password_hash);
-  if (!valid) return res.status(401).json({ error: 'Incorrect password' });
+  if (!valid) {
+    logEvent({ req, orgId: member.org_id, actorId: member.id, actorEmail: member.email, actorRole: member.role, type: 'auth.login_failed', ok: false, meta: { reason: 'bad_password' } });
+    return res.status(401).json({ error: 'Incorrect password' });
+  }
 
   const parentOrg = db.prepare('SELECT * FROM organizations WHERE id = ?').get(member.org_id) as any;
   if (!parentOrg) return res.status(401).json({ error: 'Organisation not found' });
 
   const token = signToken({ orgId: member.org_id, userId: member.id, role: member.role as UserRole, email: member.email });
   const { password_hash: _p, ...safeOrg } = parentOrg;
+  logEvent({ req, orgId: member.org_id, actorId: member.id, actorEmail: member.email, actorRole: member.role, type: 'auth.login' });
   res.json({ org: safeOrg, token, role: member.role, memberName: member.name });
 });
 
@@ -58,6 +70,7 @@ router.post('/set-password', async (req: Request, res: Response) => {
 
   const token = signToken({ orgId: org.id, userId: org.id, role: 'owner', email: org.email });
   const { password_hash: _, ...safeOrg } = { ...org, password_hash: hash };
+  logEvent({ req, orgId: org.id, actorId: org.id, actorEmail: org.email, actorRole: 'owner', type: 'auth.password_set' });
   res.json({ org: safeOrg, token, role: 'owner' });
 });
 
@@ -68,7 +81,10 @@ router.post('/forgot', async (req: Request, res: Response) => {
 
   const org = db.prepare('SELECT * FROM organizations WHERE LOWER(email) = LOWER(?) LIMIT 1').get(email.trim()) as any;
   // Always return success - don't reveal whether account exists
-  if (!org) return res.json({ sent: true });
+  if (!org) {
+    logEvent({ req, orgId: null, actorEmail: email.trim(), type: 'auth.password_reset_requested', ok: false, meta: { reason: 'no_account' } });
+    return res.json({ sent: true });
+  }
 
   const code = String(Math.floor(100000 + Math.random() * 900000));
   const hash = await bcrypt.hash(code, 10);
@@ -77,6 +93,7 @@ router.post('/forgot', async (req: Request, res: Response) => {
   db.prepare('UPDATE organizations SET reset_token = ?, reset_token_expires = ? WHERE id = ?').run(hash, expires, org.id);
 
   await sendPasswordReset(org, code).catch(() => {}); // fire-and-forget; don't expose send errors
+  logEvent({ req, orgId: org.id, actorEmail: org.email, type: 'auth.password_reset_requested' });
   res.json({ sent: true });
 });
 
@@ -96,13 +113,17 @@ router.post('/reset', async (req: Request, res: Response) => {
   }
 
   const codeValid = await bcrypt.compare(String(code).trim(), org.reset_token);
-  if (!codeValid) return res.status(400).json({ error: 'Incorrect reset code. Please check your email.' });
+  if (!codeValid) {
+    logEvent({ req, orgId: org.id, actorEmail: org.email, type: 'auth.password_reset_failed', ok: false, meta: { reason: 'bad_code' } });
+    return res.status(400).json({ error: 'Incorrect reset code. Please check your email.' });
+  }
 
   const hash = await bcrypt.hash(password, 12);
   db.prepare('UPDATE organizations SET password_hash = ?, reset_token = NULL, reset_token_expires = NULL WHERE id = ?').run(hash, org.id);
 
   const token = signToken({ orgId: org.id, userId: org.id, role: 'owner', email: org.email });
   const { password_hash: _, reset_token: _r, reset_token_expires: _e, ...safeOrg } = { ...org, password_hash: hash };
+  logEvent({ req, orgId: org.id, actorId: org.id, actorEmail: org.email, actorRole: 'owner', type: 'auth.password_reset' });
   res.json({ org: safeOrg, token, role: 'owner' });
 });
 
@@ -128,6 +149,7 @@ router.post('/join/:token', async (req: Request, res: Response) => {
   const org = db.prepare('SELECT * FROM organizations WHERE id = ?').get(member.org_id) as any;
   const token = signToken({ orgId: member.org_id, userId: member.id, role: member.role as UserRole, email: member.email });
   const { password_hash: _, ...safeOrg } = org;
+  logEvent({ req, orgId: member.org_id, actorId: member.id, actorEmail: member.email, actorRole: member.role, type: 'team.join' });
   res.json({ org: safeOrg, token, role: member.role });
 });
 
@@ -145,6 +167,7 @@ router.get('/verify-email', (req: Request, res: Response) => {
   const org = db.prepare('SELECT * FROM organizations WHERE email_verify_token_hash = ?').get(tokenHash) as any;
 
   if (!org || !org.email_verify_expires || new Date(org.email_verify_expires) < new Date()) {
+    logEvent({ req, orgId: org?.id ?? null, actorEmail: org?.email ?? null, type: 'auth.email_verify_failed', ok: false });
     return res.status(400).json({ success: false, error: 'This verification link is invalid or has expired.' });
   }
 
@@ -157,6 +180,7 @@ router.get('/verify-email', (req: Request, res: Response) => {
     WHERE id = ?
   `).run(org.id);
 
+  logEvent({ req, orgId: org.id, actorId: org.id, actorEmail: org.email, actorRole: 'owner', type: 'auth.email_verified', meta: { held: org.verification_status === 'held_for_review' } });
   res.json({ success: true, held: org.verification_status === 'held_for_review' });
 });
 
@@ -185,6 +209,7 @@ router.post('/resend-verification', async (req: Request, res: Response) => {
   }
 
   await sendVerificationEmail(org).catch(() => {});
+  logEvent({ req, orgId: org.id, actorId: org.id, actorEmail: org.email, type: 'auth.verification_resent' });
   res.json({ sent: true });
 });
 

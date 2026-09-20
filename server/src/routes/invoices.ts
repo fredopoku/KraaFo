@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import db from '../db/schema';
+import { logEvent } from '../services/activityLog';
 import { sendActivationEmail, sendAdminEventAlert } from '../services/emailService';
 
 const router = Router();
@@ -150,6 +151,7 @@ router.post('/', (req: Request, res: Response) => {
 
   const invoice = db.prepare('SELECT * FROM invoices WHERE id = ?').get(id);
   const savedItems = db.prepare('SELECT * FROM invoice_items WHERE invoice_id = ? ORDER BY sort_order').all(id);
+  logEvent({ req, type: 'doc.create', refType: 'invoice', refId: id, meta: { docType: type, number, total, status: safeStatus } });
   res.status(201).json({ ...(invoice as object), items: savedItems });
 
   // Fire activation emails on first-ever invoice for this org (non-blocking)
@@ -269,6 +271,7 @@ router.put('/:id', (req: Request, res: Response) => {
 
   const invoice = db.prepare('SELECT * FROM invoices WHERE id = ?').get(req.params.id);
   const savedItems = db.prepare('SELECT * FROM invoice_items WHERE invoice_id = ? ORDER BY sort_order').all(req.params.id);
+  logEvent({ req, type: 'doc.update', refType: 'invoice', refId: req.params.id, meta: { docType: existing.type, number: existing.number, from: existing.status, to: (invoice as any).status, receiptsTrashed: receiptsTrashed.length || undefined } });
   res.json({ ...(invoice as object), items: savedItems, ...(receiptsTrashed.length ? { receiptsTrashed } : {}) });
 });
 
@@ -279,6 +282,7 @@ router.delete('/:id', (req: Request, res: Response) => {
   ).run(at, req.auth!.email, req.params.id, req.auth!.orgId);
   if (r.changes === 0) return res.status(404).json({ error: 'Invoice not found' });
   const receiptsTrashed = trashLinkedReceipts(req.params.id, req.auth!.orgId, req.auth!.email, at);
+  logEvent({ req, type: 'doc.delete', refType: 'invoice', refId: req.params.id, meta: { receiptsTrashed: receiptsTrashed.length || undefined } });
   res.json({ success: true, receiptsTrashed });
 });
 
@@ -333,6 +337,7 @@ router.post('/:id/receipt', (req: Request, res: Response) => {
 
   const receipt = db.prepare('SELECT * FROM invoices WHERE id = ?').get(receiptId) as any;
   const receiptItems = db.prepare('SELECT * FROM invoice_items WHERE invoice_id = ? ORDER BY sort_order').all(receiptId);
+  logEvent({ req, type: 'doc.receipt', refType: 'invoice', refId: receiptId, meta: { number: receipt.number, from: invoice.number } });
   res.status(201).json({ ...receipt, items: receiptItems });
 });
 
@@ -366,6 +371,7 @@ router.patch('/:id/payment', (req: Request, res: Response) => {
   }
 
   const updated = db.prepare('SELECT * FROM invoices WHERE id = ?').get(invoice.id);
+  logEvent({ req, type: 'doc.payment', refType: 'invoice', refId: invoice.id, meta: { number: invoice.number, amount_paid, status: newStatus, receiptsTrashed: receiptsTrashed.length || undefined } });
   res.json({ ...(updated as object), ...(receiptsTrashed.length ? { receiptsTrashed } : {}) });
 });
 

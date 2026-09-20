@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { generateKeyPairSync } from 'crypto';
 import rateLimit from 'express-rate-limit';
 import db from '../db/schema';
+import { logEvent } from '../services/activityLog';
 import { sendInvoiceEmail } from '../services/emailService';
 import { formatMoney } from '../utils/formatMoney';
 
@@ -47,8 +48,10 @@ router.post('/email/:invoiceId', emailHourlyLimiter, emailDailyLimiter, async (r
       db.prepare("UPDATE quotes SET status = 'sent', updated_at = datetime('now') WHERE id = ? AND status = 'draft'")
         .run(req.params.invoiceId);
     }
+    logEvent({ req, type: 'doc.email', refType: 'invoice', refId: req.params.invoiceId, meta: { to_domain: String(to).split('@')[1] || '' } });
     res.json({ success: true });
   } catch (err) {
+    logEvent({ req, type: 'doc.email', refType: 'invoice', refId: req.params.invoiceId, ok: false, meta: { to_domain: String(to).split('@')[1] || '', error: (err as Error).message } });
     res.status(500).json({ error: (err as Error).message });
   }
 });
@@ -87,6 +90,7 @@ router.get('/whatsapp/:invoiceId', (req: Request, res: Response) => {
     ? `https://wa.me/${phone}?text=${message}`
     : `https://wa.me/?text=${message}`;
 
+  logEvent({ req, type: 'doc.whatsapp_link', refType: 'invoice', refId: invoice.id, meta: { number: invoice.number } });
   res.json({ url, message: decodeURIComponent(message) });
 });
 
@@ -179,8 +183,10 @@ router.post('/test-email', async (req: Request, res: Response) => {
     }
 
     await transporter.sendMail(mailOptions);
+    logEvent({ req, type: 'org.test_email', meta: { dkim: !!mailOptions.dkim } });
     res.json({ success: true });
   } catch (err) {
+    logEvent({ req, type: 'org.test_email', ok: false, meta: { error: (err as Error).message } });
     res.status(500).json({ error: (err as Error).message });
   }
 });

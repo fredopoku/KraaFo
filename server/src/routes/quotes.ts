@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import db from '../db/schema';
+import { logEvent } from '../services/activityLog';
 import { symbolForCurrency } from '../utils/currencySymbol';
 
 const router = Router();
@@ -52,6 +53,7 @@ router.post('/', (req: Request, res: Response) => {
 
   const quote = db.prepare('SELECT * FROM quotes WHERE id = ?').get(id) as any;
   const savedItems = db.prepare('SELECT * FROM quote_items WHERE quote_id = ? ORDER BY sort_order').all(id);
+  logEvent({ req, type: 'quote.create', refType: 'quote', refId: id, meta: { number: quote.number, total: quote.total } });
   res.status(201).json({ ...quote, items: savedItems });
 });
 
@@ -90,6 +92,7 @@ router.put('/:id', (req: Request, res: Response) => {
 
   const quote = db.prepare('SELECT * FROM quotes WHERE id = ?').get(req.params.id) as any;
   const savedItems = db.prepare('SELECT * FROM quote_items WHERE quote_id = ? ORDER BY sort_order').all(req.params.id);
+  logEvent({ req, type: 'quote.update', refType: 'quote', refId: req.params.id, meta: { number: quote.number, status: quote.status } });
   res.json({ ...quote, items: savedItems });
 });
 
@@ -130,6 +133,7 @@ router.post('/:id/convert', (req: Request, res: Response) => {
   db.prepare("UPDATE quotes SET status = 'invoiced', converted_invoice_id = ?, updated_at = datetime('now') WHERE id = ?")
     .run(invoiceId, req.params.id);
 
+  logEvent({ req, type: 'quote.convert', refType: 'quote', refId: req.params.id, meta: { quote: quote.number, invoice: number } });
   res.json({ invoice_id: invoiceId, number });
 });
 
@@ -138,6 +142,7 @@ router.delete('/:id', (req: Request, res: Response) => {
     "UPDATE quotes SET deleted_at = datetime('now'), deleted_by = ? WHERE id = ? AND org_id = ? AND deleted_at IS NULL"
   ).run(req.auth!.email, req.params.id, req.auth!.orgId);
   if (r.changes === 0) return res.status(404).json({ error: 'Quote not found' });
+  logEvent({ req, type: 'quote.delete', refType: 'quote', refId: req.params.id });
   res.json({ success: true });
 });
 
@@ -149,6 +154,7 @@ router.patch('/:id/status', (req: Request, res: Response) => {
   const { status } = req.body;
   if (!allowed.includes(status)) return res.status(400).json({ error: 'Invalid status' });
   db.prepare("UPDATE quotes SET status = ?, updated_at = datetime('now') WHERE id = ?").run(status, quote.id);
+  logEvent({ req, type: 'quote.status', refType: 'quote', refId: quote.id, meta: { number: quote.number, status } });
   res.json({ ...quote, status });
 });
 

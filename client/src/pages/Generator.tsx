@@ -310,7 +310,7 @@ export default function Generator() {
       showToast(`Smart filled - ${industryLabel} · ${clientLabel}`, 'success');
     } catch (err) {
       const code = err instanceof ApiError ? err.code : undefined;
-      if (code === 'verification_required' || code === 'account_held') {
+      if (code === 'verification_required' || code === 'account_held' || code === 'ai_limit') {
         showToast((err as Error).message, 'info');
       } else {
         showToast('Could not load suggestions. Try again.', 'error');

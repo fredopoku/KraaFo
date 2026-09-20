@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import { suggestLineItems, smartDescriptionEnhance, parseReceiptFromImage } from '../services/aiService';
+import { aiQuota } from '../services/activityLog';
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
 
@@ -12,7 +13,7 @@ router.get('/status', (_req: Request, res: Response) => {
   res.json({ ai_enabled: hasKey });
 });
 
-router.post('/suggest', async (req: Request, res: Response) => {
+router.post('/suggest', aiQuota('suggest'), async (req: Request, res: Response) => {
   const { industry = 'cleaning', existing_items = [], client_type = 'residential', notes = '' } = req.body;
 
   try {
@@ -23,7 +24,7 @@ router.post('/suggest', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/enhance', async (req: Request, res: Response) => {
+router.post('/enhance', aiQuota('enhance'), async (req: Request, res: Response) => {
   const { description } = req.body;
   if (!description) return res.status(400).json({ error: 'description is required' });
 
@@ -35,7 +36,7 @@ router.post('/enhance', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/parse-receipt', upload.single('image'), async (req: Request, res: Response) => {
+router.post('/parse-receipt', aiQuota('parse_receipt'), upload.single('image'), async (req: Request, res: Response) => {
   if (!req.file) return res.status(400).json({ error: 'No file provided' });
 
   const { mimetype, buffer } = req.file;

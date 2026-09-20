@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import db from '../db/schema';
+import { logEvent } from '../services/activityLog';
 
 const router = Router();
 
@@ -30,6 +31,7 @@ router.post('/', (req: Request, res: Response) => {
     INSERT INTO clients (id, org_id, name, email, phone, address, city, state, zip, country, company, notes)
     VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
   `).run(id, org_id, name, email, phone, address, city, state, zip, country, company, notes);
+  logEvent({ req, type: 'client.create', refType: 'client', refId: id });
   res.status(201).json(db.prepare('SELECT * FROM clients WHERE id = ?').get(id));
 });
 
@@ -41,6 +43,7 @@ router.put('/:id', (req: Request, res: Response) => {
   if (!updates.length) return res.status(400).json({ error: 'No fields to update' });
   const set = updates.map(f => `${f} = ?`).join(', ');
   db.prepare(`UPDATE clients SET ${set} WHERE id = ?`).run(...updates.map(f => req.body[f]), req.params.id);
+  logEvent({ req, type: 'client.update', refType: 'client', refId: req.params.id, meta: { fields: updates.join(',') } });
   res.json(db.prepare('SELECT * FROM clients WHERE id = ?').get(req.params.id));
 });
 
@@ -84,6 +87,7 @@ router.delete('/:id', (req: Request, res: Response) => {
     "UPDATE clients SET deleted_at = datetime('now'), deleted_by = ? WHERE id = ? AND org_id = ? AND deleted_at IS NULL"
   ).run(req.auth!.email, req.params.id, req.auth!.orgId);
   if (r.changes === 0) return res.status(404).json({ error: 'Client not found' });
+  logEvent({ req, type: 'client.delete', refType: 'client', refId: req.params.id });
   res.json({ success: true });
 });
 

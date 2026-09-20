@@ -366,6 +366,32 @@ addCol('quotes', 'deleted_by', 'TEXT');
 addCol('clients', 'deleted_at', 'TEXT');
 addCol('clients', 'deleted_by', 'TEXT');
 
+// Activity log: one row per meaningful thing a user (or the system/admin) does -
+// logins and failed logins, document actions, sends and whether they worked, AI
+// calls, team changes, admin actions. Metadata only, never document contents.
+// Pruned after ACTIVITY_RETENTION_DAYS (default 90) - see services/activityLog.ts.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS activity_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    org_id TEXT,
+    actor_id TEXT,
+    actor_email TEXT,
+    actor_role TEXT,
+    type TEXT NOT NULL,
+    ref_type TEXT,
+    ref_id TEXT,
+    ok INTEGER NOT NULL DEFAULT 1,
+    ip TEXT,
+    meta TEXT
+  );
+  CREATE INDEX IF NOT EXISTS idx_activity_created ON activity_events(created_at);
+  CREATE INDEX IF NOT EXISTS idx_activity_org ON activity_events(org_id, created_at);
+  CREATE INDEX IF NOT EXISTS idx_activity_type ON activity_events(type, created_at);
+`);
+// Per-organisation override of the daily AI call limit (NULL = use the default)
+addCol('organizations', 'ai_daily_limit', 'INTEGER');
+
 // Repair organisations whose currency symbol was saved wrong: the bare code
 // ("NGN") from the old picker, or "$" left behind on a non-dollar currency.
 // Idempotent - only rows that are actually wrong are touched.

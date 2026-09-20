@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { v4 as uuid } from 'uuid';
 import db from '../db/schema';
+import { logEvent } from '../services/activityLog';
 import { canManageTeam } from '../middleware/auth';
 import { sendTeamInvite } from '../services/emailService';
 
@@ -54,6 +55,7 @@ router.post('/invite', async (req: Request, res: Response) => {
   const member = db.prepare('SELECT * FROM team_members WHERE id = ?').get(memberId) as any;
   sendTeamInvite(member, org, inviteToken).catch(console.error);
 
+  logEvent({ req, type: 'team.invite', refType: 'team_member', refId: memberId, meta: { invitee: member.email, role } });
   res.json({ id: memberId, email: member.email, role, invite_accepted: 0 });
 });
 
@@ -69,6 +71,7 @@ router.patch('/:memberId/role', (req: Request, res: Response) => {
   if (!member) return res.status(404).json({ error: 'Team member not found' });
 
   db.prepare("UPDATE team_members SET role = ?, updated_at = datetime('now') WHERE id = ?").run(role, member.id);
+  logEvent({ req, type: 'team.role', refType: 'team_member', refId: member.id, meta: { member: member.email, from: member.role, to: role } });
   res.json({ success: true });
 });
 
@@ -83,6 +86,7 @@ router.delete('/:memberId', (req: Request, res: Response) => {
   }
 
   db.prepare('DELETE FROM team_members WHERE id = ?').run(member.id);
+  logEvent({ req, type: 'team.remove', refType: 'team_member', refId: member.id, meta: { member: member.email, role: member.role } });
   res.json({ success: true });
 });
 
@@ -98,6 +102,7 @@ router.post('/:memberId/resend', async (req: Request, res: Response) => {
   const org = db.prepare('SELECT email FROM organizations WHERE id = ?').get(auth.orgId) as any;
   sendTeamInvite({ ...member, invite_token: newToken }, org, newToken).catch(console.error);
 
+  logEvent({ req, type: 'team.resend', refType: 'team_member', refId: member.id, meta: { member: member.email } });
   res.json({ success: true });
 });
 

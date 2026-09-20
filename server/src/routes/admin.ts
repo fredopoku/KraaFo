@@ -1,10 +1,17 @@
 import { Router, Request, Response } from 'express';
 import db from '../db/schema';
+import { logEvent, requestIp, defaultAiLimit } from '../services/activityLog';
 import { adminAuth } from '../middleware/adminAuth';
 import { getRiskConfig, saveRiskConfig, reloadRiskConfig } from '../config/riskConfig';
 import { getMaintenanceConfig, setMaintenanceConfig } from '../config/maintenanceConfig';
 
 const router = Router();
+
+// The admin token isn't tied to a person or an organisation, so admin actions are
+// recorded as actor 'admin' (the IP is what tells two operators apart).
+function adminLog(req: Request, type: string, orgId: string | null, meta?: Record<string, unknown>): void {
+  logEvent({ orgId, actorEmail: 'admin', actorRole: 'admin', ip: requestIp(req), type, meta });
+}
 
 router.get('/users', adminAuth, (_req: Request, res: Response) => {
   const orgs = db.prepare(`
@@ -544,6 +551,7 @@ router.put('/risk-config', adminAuth, (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Provide weights and/or thresholds to update' });
   }
   const updated = saveRiskConfig({ weights, thresholds });
+  adminLog(req, 'admin.risk_config', null, { weights, thresholds });
   res.json(updated);
 });
 
@@ -595,6 +603,7 @@ router.post('/signups/:id/review', adminAuth, (req: Request, res: Response) => {
   // is for an admin who has independently confirmed the account is real.
   const nextStatus = decision === 'reject' ? 'rejected' : decision === 'verify' ? 'verified' : 'pending_verification';
   db.prepare('UPDATE organizations SET verification_status = ? WHERE id = ?').run(nextStatus, req.params.id);
+  adminLog(req, 'admin.signup_review', req.params.id, { decision, status: nextStatus });
   res.json({ id: req.params.id, verification_status: nextStatus });
 });
 
@@ -625,7 +634,157 @@ router.put('/maintenance', adminAuth, (req: Request, res: Response) => {
     ...(typeof enabled === 'boolean' ? { enabled } : {}),
     ...(typeof message === 'string' && message.trim() ? { message: message.trim() } : {}),
   });
+  adminLog(req, 'admin.maintenance', null, { enabled: typeof enabled === 'boolean' ? enabled : undefined, message_changed: typeof message === 'string' && !!message.trim() });
   res.json(maintenanceStatus());
+});
+
+// ── Activity log ─────────────────────────────────────────────────
+// Everything users, the system and the admin do (see services/activityLog.ts).
+
+const SEND_TYPES = ['doc.email', 'org.test_email', 'system.reminder', 'system.lifecycle', 'system.recurring_email'];
+const AI_EVENT_TYPES = ['ai.suggest', 'ai.enhance', 'ai.parse_receipt'];
+const daysParam = (v: unknown, def: number) => Math.min(Math.max(Number(v) || def, 1), 90);
+
+router.get('/events', adminAuth, (req: Request, res: Response) => {
+  const days = daysParam(req.query.days, 7);
+  const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 200);
+  const offset = Math.max(Number(req.query.offset) || 0, 0);
+
+  const where: string[] = ["e.created_at >= datetime('now', ?)"];
+  const params: any[] = [`-${days} days`];
+  if (req.query.org_id) { where.push('e.org_id = ?'); params.push(String(req.query.org_id)); }
+  if (req.query.type) {
+    const t = String(req.query.type);
+    // a trailing dot selects a whole family, e.g. "auth." or "ai."
+    if (t.endsWith('.')) { where.push('e.type LIKE ?'); params.push(`${t}%`); }
+    else { where.push('e.type = ?'); params.push(t); }
+  }
+  if (req.query.ok === '0') where.push('e.ok = 0');
+  if (req.query.q) {
+    const q = `%${String(req.query.q).slice(0, 100)}%`;
+    where.push('(e.actor_email LIKE ? OR e.ip LIKE ? OR e.meta LIKE ? OR o.name LIKE ?)');
+    params.push(q, q, q, q);
+  }
+  const clause = where.join(' AND ');
+  const from = 'FROM activity_events e LEFT JOIN organizations o ON o.id = e.org_id';
+
+  const rows = db.prepare(`
+    SELECT e.id, e.created_at, e.org_id, o.name AS org_name, e.actor_email, e.actor_role,
+           e.type, e.ref_type, e.ref_id, e.ok, e.ip, e.meta
+    ${from} WHERE ${clause} ORDER BY e.created_at DESC, e.id DESC LIMIT ? OFFSET ?
+  `).all(...params, limit, offset) as any[];
+  const { total } = db.prepare(`SELECT COUNT(*) AS total ${from} WHERE ${clause}`).get(...params) as any;
+
+  res.json({
+    total, limit, offset,
+    events: rows.map(r => {
+      let meta: unknown = null;
+      try { meta = r.meta ? JSON.parse(r.meta) : null; } catch { /* keep null */ }
+      return { ...r, ok: !!r.ok, meta };
+    }),
+  });
+});
+
+router.get('/events/summary', adminAuth, (req: Request, res: Response) => {
+  const days = daysParam(req.query.days, 7);
+  const since = `-${days} days`;
+  const count = (sql: string, ...p: any[]) => (db.prepare(sql).get(since, ...p) as any).c as number;
+  const inList = (a: string[]) => a.map(() => '?').join(',');
+
+  const totals = {
+    events: count("SELECT COUNT(*) c FROM activity_events WHERE created_at >= datetime('now', ?)"),
+    logins: count("SELECT COUNT(*) c FROM activity_events WHERE created_at >= datetime('now', ?) AND type = 'auth.login'"),
+    failedLogins: count("SELECT COUNT(*) c FROM activity_events WHERE created_at >= datetime('now', ?) AND type = 'auth.login_failed'"),
+    sendFailures: count(`SELECT COUNT(*) c FROM activity_events WHERE created_at >= datetime('now', ?) AND ok = 0 AND type IN (${inList(SEND_TYPES)})`, ...SEND_TYPES),
+    aiCalls: count(`SELECT COUNT(*) c FROM activity_events WHERE created_at >= datetime('now', ?) AND type IN (${inList(AI_EVENT_TYPES)})`, ...AI_EVENT_TYPES),
+    aiBlocked: count("SELECT COUNT(*) c FROM activity_events WHERE created_at >= datetime('now', ?) AND type = 'ai.blocked'"),
+    activeOrgs: count("SELECT COUNT(DISTINCT org_id) c FROM activity_events WHERE created_at >= datetime('now', ?) AND org_id IS NOT NULL AND actor_role != 'admin' AND actor_role != 'system'"),
+  };
+
+  const byType = db.prepare(`
+    SELECT type, COUNT(*) AS count, SUM(CASE WHEN ok = 0 THEN 1 ELSE 0 END) AS failed
+    FROM activity_events WHERE created_at >= datetime('now', ?) GROUP BY type ORDER BY count DESC
+  `).all(since);
+
+  const failedLoginsByIp = db.prepare(`
+    SELECT ip, COUNT(*) AS attempts, COUNT(DISTINCT actor_email) AS emails, MAX(created_at) AS last_at
+    FROM activity_events WHERE created_at >= datetime('now', ?) AND type = 'auth.login_failed' AND ip != ''
+    GROUP BY ip ORDER BY attempts DESC, last_at DESC LIMIT 10
+  `).all(since);
+  const failedLoginsByEmail = db.prepare(`
+    SELECT actor_email AS email, COUNT(*) AS attempts, COUNT(DISTINCT ip) AS ips, MAX(created_at) AS last_at
+    FROM activity_events WHERE created_at >= datetime('now', ?) AND type = 'auth.login_failed' AND actor_email IS NOT NULL
+    GROUP BY actor_email ORDER BY attempts DESC, last_at DESC LIMIT 10
+  `).all(since);
+
+  const daily = db.prepare(`
+    SELECT date(created_at) AS date, COUNT(*) AS events,
+           SUM(CASE WHEN type = 'auth.login_failed' THEN 1 ELSE 0 END) AS failed_logins
+    FROM activity_events WHERE created_at >= datetime('now', ?) GROUP BY date ORDER BY date
+  `).all(since);
+
+  const topOrgs = db.prepare(`
+    SELECT e.org_id, o.name, COUNT(*) AS events, MAX(e.created_at) AS last_at
+    FROM activity_events e JOIN organizations o ON o.id = e.org_id
+    WHERE e.created_at >= datetime('now', ?) AND e.actor_role NOT IN ('admin', 'system')
+    GROUP BY e.org_id ORDER BY events DESC LIMIT 8
+  `).all(since);
+
+  res.json({ days, totals, byType, failedLoginsByIp, failedLoginsByEmail, daily, topOrgs });
+});
+
+router.get('/ai-usage', adminAuth, (_req: Request, res: Response) => {
+  const inList = AI_EVENT_TYPES.map(() => '?').join(',');
+  const fallback = defaultAiLimit();
+
+  const rows = db.prepare(`
+    SELECT o.id, o.name, o.email, o.ai_daily_limit,
+           SUM(CASE WHEN date(e.created_at) = date('now') THEN 1 ELSE 0 END) AS today,
+           SUM(CASE WHEN e.created_at >= datetime('now', '-7 days') THEN 1 ELSE 0 END) AS last7,
+           COUNT(*) AS last30
+    FROM activity_events e JOIN organizations o ON o.id = e.org_id
+    WHERE e.type IN (${inList}) AND e.created_at >= datetime('now', '-30 days')
+    GROUP BY o.id ORDER BY last30 DESC LIMIT 50
+  `).all(...AI_EVENT_TYPES) as any[];
+
+  const blocked = new Map<string, number>(
+    (db.prepare(`
+      SELECT org_id, COUNT(*) AS n FROM activity_events
+      WHERE type = 'ai.blocked' AND created_at >= datetime('now', '-30 days') GROUP BY org_id
+    `).all() as any[]).map(r => [r.org_id, r.n]),
+  );
+
+  const daily = db.prepare(`
+    SELECT date(created_at) AS date, COUNT(*) AS calls
+    FROM activity_events WHERE type IN (${inList}) AND created_at >= datetime('now', '-30 days')
+    GROUP BY date ORDER BY date
+  `).all(...AI_EVENT_TYPES);
+
+  res.json({
+    defaultLimit: fallback,
+    todayTotal: rows.reduce((n, r) => n + r.today, 0),
+    orgs: rows.map(r => ({
+      id: r.id, name: r.name, email: r.email,
+      today: r.today, last7: r.last7, last30: r.last30,
+      blocked30: blocked.get(r.id) || 0,
+      limit: r.ai_daily_limit ?? fallback,
+      customLimit: r.ai_daily_limit !== null,
+    })),
+    daily,
+  });
+});
+
+// Set (or clear with null) one organisation's daily AI call limit. 0 switches AI off for it.
+router.put('/orgs/:id/ai-limit', adminAuth, (req: Request, res: Response) => {
+  const { limit } = req.body || {};
+  if (limit !== null && (!Number.isInteger(limit) || limit < 0 || limit > 100000)) {
+    return res.status(400).json({ error: 'limit must be a whole number from 0 to 100000, or null for the default' });
+  }
+  const org = db.prepare('SELECT id FROM organizations WHERE id = ?').get(req.params.id);
+  if (!org) return res.status(404).json({ error: 'Organisation not found' });
+  db.prepare('UPDATE organizations SET ai_daily_limit = ? WHERE id = ?').run(limit, req.params.id);
+  adminLog(req, 'admin.ai_limit', req.params.id, { limit });
+  res.json({ id: req.params.id, limit: limit ?? defaultAiLimit(), customLimit: limit !== null });
 });
 
 export default router;
