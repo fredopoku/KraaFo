@@ -84,7 +84,8 @@ async function runOverdueAndReminders(): Promise<void> {
            o.primary_color, o.logo_url
     FROM invoices i
     JOIN organizations o ON o.id = i.org_id
-    WHERE i.status = 'overdue'
+    WHERE i.deleted_at IS NULL
+      AND i.status = 'overdue'
       AND i.client_email IS NOT NULL AND i.client_email != ''
       AND i.reminder_1_sent = 0
       AND date(i.due_date) = date('now', '-1 day')
@@ -102,7 +103,8 @@ async function runOverdueAndReminders(): Promise<void> {
            o.primary_color, o.logo_url
     FROM invoices i
     JOIN organizations o ON o.id = i.org_id
-    WHERE i.status = 'overdue'
+    WHERE i.deleted_at IS NULL
+      AND i.status = 'overdue'
       AND i.client_email IS NOT NULL AND i.client_email != ''
       AND i.reminder_1_sent = 1
       AND i.reminder_7_sent = 0
@@ -122,7 +124,8 @@ async function runOverdueAndReminders(): Promise<void> {
            o.primary_color, o.logo_url
     FROM invoices i
     JOIN organizations o ON o.id = i.org_id
-    WHERE i.status = 'overdue'
+    WHERE i.deleted_at IS NULL
+      AND i.status = 'overdue'
       AND i.client_email IS NOT NULL AND i.client_email != ''
       AND i.reminder_7_sent = 1
       AND i.reminder_14_sent = 0
@@ -162,7 +165,8 @@ async function runRecurringInvoices(): Promise<void> {
     SELECT i.*, o.invoice_prefix, o.next_invoice_number
     FROM invoices i
     JOIN organizations o ON o.id = i.org_id
-    WHERE i.is_recurring = 1
+    WHERE i.deleted_at IS NULL
+      AND i.is_recurring = 1
       AND i.type = 'invoice'
       AND i.recurring_next_date IS NOT NULL
       AND i.recurring_next_date <= ?

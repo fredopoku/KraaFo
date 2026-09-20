@@ -49,7 +49,7 @@ router.get('/:id/public', (req: Request, res: Response) => {
 });
 
 router.get('/:id', (req: Request, res: Response) => {
-  const invoice = db.prepare('SELECT * FROM invoices WHERE id = ? AND org_id = ?').get(req.params.id, req.auth!.orgId);
+  const invoice = db.prepare('SELECT * FROM invoices WHERE id = ? AND org_id = ? AND deleted_at IS NULL').get(req.params.id, req.auth!.orgId);
   if (!invoice) return res.status(404).json({ error: 'Invoice not found' });
 
   const items = db.prepare('SELECT * FROM invoice_items WHERE invoice_id = ? ORDER BY sort_order').all(req.params.id);
@@ -146,7 +146,7 @@ router.post('/', (req: Request, res: Response) => {
 });
 
 router.put('/:id', (req: Request, res: Response) => {
-  const existing = db.prepare('SELECT * FROM invoices WHERE id = ? AND org_id = ?').get(req.params.id, req.auth!.orgId) as any;
+  const existing = db.prepare('SELECT * FROM invoices WHERE id = ? AND org_id = ? AND deleted_at IS NULL').get(req.params.id, req.auth!.orgId) as any;
   if (!existing) return res.status(404).json({ error: 'Invoice not found' });
 
   const { items, ...updateFields } = req.body;
@@ -225,7 +225,7 @@ router.delete('/:id', (req: Request, res: Response) => {
 
 // Create a receipt from a fully-paid invoice - copies all client/item data
 router.post('/:id/receipt', (req: Request, res: Response) => {
-  const invoice = db.prepare('SELECT * FROM invoices WHERE id = ? AND org_id = ?').get(req.params.id, req.auth!.orgId) as any;
+  const invoice = db.prepare('SELECT * FROM invoices WHERE id = ? AND org_id = ? AND deleted_at IS NULL').get(req.params.id, req.auth!.orgId) as any;
   if (!invoice) return res.status(404).json({ error: 'Invoice not found' });
   if (invoice.type !== 'invoice') return res.status(400).json({ error: 'Can only create a receipt from an invoice' });
 
@@ -270,7 +270,7 @@ router.post('/:id/receipt', (req: Request, res: Response) => {
 
 // Record a payment against an invoice (full or partial)
 router.patch('/:id/payment', (req: Request, res: Response) => {
-  const invoice = db.prepare('SELECT * FROM invoices WHERE id = ? AND org_id = ?').get(req.params.id, req.auth!.orgId) as any;
+  const invoice = db.prepare('SELECT * FROM invoices WHERE id = ? AND org_id = ? AND deleted_at IS NULL').get(req.params.id, req.auth!.orgId) as any;
   if (!invoice) return res.status(404).json({ error: 'Invoice not found' });
 
   const { amount_paid, paid_date, payment_method } = req.body;

@@ -34,8 +34,8 @@ router.post('/email/:invoiceId', emailHourlyLimiter, emailDailyLimiter, async (r
   const { to, message } = req.body;
   if (!to) return res.status(400).json({ error: 'Recipient email required' });
 
-  const doc = (db.prepare('SELECT org_id FROM invoices WHERE id = ?').get(req.params.invoiceId)
-    ?? db.prepare('SELECT org_id FROM quotes WHERE id = ?').get(req.params.invoiceId)) as any;
+  const doc = (db.prepare('SELECT org_id FROM invoices WHERE id = ? AND deleted_at IS NULL').get(req.params.invoiceId)
+    ?? db.prepare('SELECT org_id FROM quotes WHERE id = ? AND deleted_at IS NULL').get(req.params.invoiceId)) as any;
   if (!doc || doc.org_id !== req.auth!.orgId) return res.status(404).json({ error: 'Document not found' });
 
   try {
@@ -55,8 +55,8 @@ router.post('/email/:invoiceId', emailHourlyLimiter, emailDailyLimiter, async (r
 
 // Generate WhatsApp link for invoice
 router.get('/whatsapp/:invoiceId', (req: Request, res: Response) => {
-  const invoice = (db.prepare('SELECT * FROM invoices WHERE id = ?').get(req.params.invoiceId)
-    ?? db.prepare('SELECT * FROM quotes WHERE id = ?').get(req.params.invoiceId)) as any;
+  const invoice = (db.prepare('SELECT * FROM invoices WHERE id = ? AND deleted_at IS NULL').get(req.params.invoiceId)
+    ?? db.prepare('SELECT * FROM quotes WHERE id = ? AND deleted_at IS NULL').get(req.params.invoiceId)) as any;
   if (!invoice || invoice.org_id !== req.auth!.orgId) return res.status(404).json({ error: 'Document not found' });
 
   const isQuote = !invoice.type || invoice.type === 'quote';
@@ -92,8 +92,8 @@ router.get('/whatsapp/:invoiceId', (req: Request, res: Response) => {
 
 // Get mobile money payment details for an invoice or quote
 router.get('/payment-links/:invoiceId', (req: Request, res: Response) => {
-  const invoice = (db.prepare('SELECT * FROM invoices WHERE id = ?').get(req.params.invoiceId)
-    ?? db.prepare('SELECT * FROM quotes WHERE id = ?').get(req.params.invoiceId)) as any;
+  const invoice = (db.prepare('SELECT * FROM invoices WHERE id = ? AND deleted_at IS NULL').get(req.params.invoiceId)
+    ?? db.prepare('SELECT * FROM quotes WHERE id = ? AND deleted_at IS NULL').get(req.params.invoiceId)) as any;
   if (!invoice || invoice.org_id !== req.auth!.orgId) return res.status(404).json({ error: 'Document not found' });
 
   const org = db.prepare('SELECT * FROM organizations WHERE id = ?').get(invoice.org_id) as any;

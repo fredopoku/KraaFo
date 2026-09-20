@@ -13,61 +13,61 @@ router.get('/', (req: Request, res: Response) => {
 
   // Invoice financials — all-time, no date cap
   const totalInvoiced = (db.prepare(
-    "SELECT COALESCE(SUM(total),0) as val FROM invoices WHERE org_id = ? AND type = 'invoice'"
+    "SELECT COALESCE(SUM(total),0) as val FROM invoices WHERE org_id = ? AND deleted_at IS NULL AND type = 'invoice'"
   ).get(org_id) as any).val;
 
   const totalCollected = (db.prepare(
-    "SELECT COALESCE(SUM(amount_paid),0) as val FROM invoices WHERE org_id = ? AND type = 'invoice'"
+    "SELECT COALESCE(SUM(amount_paid),0) as val FROM invoices WHERE org_id = ? AND deleted_at IS NULL AND type = 'invoice'"
   ).get(org_id) as any).val;
 
   const totalRevenue = (db.prepare(
-    "SELECT COALESCE(SUM(total),0) as val FROM invoices WHERE org_id = ? AND type = 'invoice' AND status = 'paid'"
+    "SELECT COALESCE(SUM(total),0) as val FROM invoices WHERE org_id = ? AND deleted_at IS NULL AND type = 'invoice' AND status = 'paid'"
   ).get(org_id) as any).val;
 
   const outstanding = (db.prepare(
-    "SELECT COALESCE(SUM(total - amount_paid),0) as val FROM invoices WHERE org_id = ? AND type = 'invoice' AND status IN ('sent','overdue')"
+    "SELECT COALESCE(SUM(total - amount_paid),0) as val FROM invoices WHERE org_id = ? AND deleted_at IS NULL AND type = 'invoice' AND status IN ('sent','overdue')"
   ).get(org_id) as any).val;
 
   const overdue = (db.prepare(
-    "SELECT COALESCE(SUM(total - amount_paid),0) as val FROM invoices WHERE org_id = ? AND type = 'invoice' AND status = 'overdue'"
+    "SELECT COALESCE(SUM(total - amount_paid),0) as val FROM invoices WHERE org_id = ? AND deleted_at IS NULL AND type = 'invoice' AND status = 'overdue'"
   ).get(org_id) as any).val;
 
   const overdueCount = (db.prepare(
-    "SELECT COUNT(*) as c FROM invoices WHERE org_id = ? AND type = 'invoice' AND status = 'overdue'"
+    "SELECT COUNT(*) as c FROM invoices WHERE org_id = ? AND deleted_at IS NULL AND type = 'invoice' AND status = 'overdue'"
   ).get(org_id) as any).c;
 
   const totalInvoices = (db.prepare(
-    "SELECT COUNT(*) as c FROM invoices WHERE org_id = ? AND type = 'invoice'"
+    "SELECT COUNT(*) as c FROM invoices WHERE org_id = ? AND deleted_at IS NULL AND type = 'invoice'"
   ).get(org_id) as any).c;
 
   const paidInvoices = (db.prepare(
-    "SELECT COUNT(*) as c FROM invoices WHERE org_id = ? AND type = 'invoice' AND status = 'paid'"
+    "SELECT COUNT(*) as c FROM invoices WHERE org_id = ? AND deleted_at IS NULL AND type = 'invoice' AND status = 'paid'"
   ).get(org_id) as any).c;
 
   // Receipt financials
   const totalReceipts = (db.prepare(
-    "SELECT COUNT(*) as c FROM invoices WHERE org_id = ? AND type = 'receipt'"
+    "SELECT COUNT(*) as c FROM invoices WHERE org_id = ? AND deleted_at IS NULL AND type = 'receipt'"
   ).get(org_id) as any).c;
 
   const receiptRevenue = (db.prepare(
-    "SELECT COALESCE(SUM(total),0) as val FROM invoices WHERE org_id = ? AND type = 'receipt'"
+    "SELECT COALESCE(SUM(total),0) as val FROM invoices WHERE org_id = ? AND deleted_at IS NULL AND type = 'receipt'"
   ).get(org_id) as any).val;
 
   // Quote stats
   const totalQuotes = (db.prepare(
-    "SELECT COUNT(*) as c FROM quotes WHERE org_id = ?"
+    "SELECT COUNT(*) as c FROM quotes WHERE org_id = ? AND deleted_at IS NULL"
   ).get(org_id) as any).c;
 
   const acceptedQuotes = (db.prepare(
-    "SELECT COUNT(*) as c FROM quotes WHERE org_id = ? AND status IN ('accepted','invoiced')"
+    "SELECT COUNT(*) as c FROM quotes WHERE org_id = ? AND deleted_at IS NULL AND status IN ('accepted','invoiced')"
   ).get(org_id) as any).c;
 
   const declinedQuotes = (db.prepare(
-    "SELECT COUNT(*) as c FROM quotes WHERE org_id = ? AND status = 'declined'"
+    "SELECT COUNT(*) as c FROM quotes WHERE org_id = ? AND deleted_at IS NULL AND status = 'declined'"
   ).get(org_id) as any).c;
 
   const pendingQuotes = (db.prepare(
-    "SELECT COUNT(*) as c FROM quotes WHERE org_id = ? AND status IN ('draft','sent')"
+    "SELECT COUNT(*) as c FROM quotes WHERE org_id = ? AND deleted_at IS NULL AND status IN ('draft','sent')"
   ).get(org_id) as any).c;
 
   // Revenue chart — granularity-aware, always all-time except daily (last 90d for readability)
@@ -78,7 +78,7 @@ router.get('/', (req: Request, res: Response) => {
              COALESCE(SUM(total),0) as revenue,
              COUNT(*) as count
       FROM invoices
-      WHERE org_id = ? AND type = 'invoice' AND status = 'paid'
+      WHERE org_id = ? AND deleted_at IS NULL AND type = 'invoice' AND status = 'paid'
         AND issue_date >= date('now', '-90 days')
       GROUP BY period ORDER BY period ASC
     `).all(org_id);
@@ -88,7 +88,7 @@ router.get('/', (req: Request, res: Response) => {
              COALESCE(SUM(total),0) as revenue,
              COUNT(*) as count
       FROM invoices
-      WHERE org_id = ? AND type = 'invoice' AND status = 'paid'
+      WHERE org_id = ? AND deleted_at IS NULL AND type = 'invoice' AND status = 'paid'
       GROUP BY period ORDER BY period ASC
     `).all(org_id);
   } else {
@@ -98,7 +98,7 @@ router.get('/', (req: Request, res: Response) => {
              COALESCE(SUM(total),0) as revenue,
              COUNT(*) as count
       FROM invoices
-      WHERE org_id = ? AND type = 'invoice' AND status = 'paid'
+      WHERE org_id = ? AND deleted_at IS NULL AND type = 'invoice' AND status = 'paid'
       GROUP BY period ORDER BY period ASC
     `).all(org_id);
   }
@@ -109,7 +109,7 @@ router.get('/', (req: Request, res: Response) => {
            COALESCE(SUM(amount_paid),0) as total_revenue,
            COUNT(*) as invoice_count
     FROM invoices
-    WHERE org_id = ? AND type = 'invoice' AND client_name IS NOT NULL
+    WHERE org_id = ? AND deleted_at IS NULL AND type = 'invoice' AND client_name IS NOT NULL
     GROUP BY client_name ORDER BY total_revenue DESC LIMIT 5
   `).all(org_id);
 
@@ -117,21 +117,21 @@ router.get('/', (req: Request, res: Response) => {
   const overdueList = db.prepare(`
     SELECT id, number, client_name, total, amount_paid, due_date, status
     FROM invoices
-    WHERE org_id = ? AND type = 'invoice' AND status = 'overdue'
+    WHERE org_id = ? AND deleted_at IS NULL AND type = 'invoice' AND status = 'overdue'
     ORDER BY due_date ASC LIMIT 10
   `).all(org_id);
 
   const totalClients = (db.prepare(
-    'SELECT COUNT(*) as c FROM clients WHERE org_id = ?'
+    'SELECT COUNT(*) as c FROM clients WHERE org_id = ? AND deleted_at IS NULL'
   ).get(org_id) as any).c;
 
   // Recent activity (all doc types)
   const recent = db.prepare(`
     SELECT id, type, number, client_name, total, amount_paid, status, issue_date
-    FROM invoices WHERE org_id = ?
+    FROM invoices WHERE org_id = ? AND deleted_at IS NULL
     UNION ALL
     SELECT id, 'quote' as type, number, client_name, total, 0 as amount_paid, status, issue_date
-    FROM quotes WHERE org_id = ?
+    FROM quotes WHERE org_id = ? AND deleted_at IS NULL
     ORDER BY issue_date DESC LIMIT 10
   `).all(org_id, org_id);
 

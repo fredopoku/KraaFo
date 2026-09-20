@@ -35,7 +35,7 @@ async function buildPaymentQR(org: any, invoiceTotal: number, currencySymbol: st
 }
 
 router.get('/:invoiceId', async (req: Request, res: Response) => {
-  const invoice = db.prepare('SELECT * FROM invoices WHERE id = ?').get(req.params.invoiceId) as any;
+  const invoice = db.prepare('SELECT * FROM invoices WHERE id = ? AND deleted_at IS NULL').get(req.params.invoiceId) as any;
   if (!invoice) return res.status(404).json({ error: 'Invoice not found' });
 
   const org = db.prepare('SELECT * FROM organizations WHERE id = ?').get(invoice.org_id) as any;
@@ -137,7 +137,7 @@ router.get('/:invoiceId', async (req: Request, res: Response) => {
 
 // Quote PDF
 router.get('/quote/:quoteId', async (req: Request, res: Response) => {
-  const quote = db.prepare('SELECT * FROM quotes WHERE id = ?').get(req.params.quoteId) as any;
+  const quote = db.prepare('SELECT * FROM quotes WHERE id = ? AND deleted_at IS NULL').get(req.params.quoteId) as any;
   if (!quote) return res.status(404).json({ error: 'Quote not found' });
 
   const org = db.prepare('SELECT * FROM organizations WHERE id = ?').get(quote.org_id) as any;
@@ -201,7 +201,7 @@ router.get('/statement/:clientId', async (req: Request, res: Response) => {
   if (!req.auth) return res.status(401).json({ error: 'Authentication required' });
   const org_id = req.auth.orgId;
 
-  const client = db.prepare('SELECT * FROM clients WHERE id = ? AND org_id = ?').get(req.params.clientId, org_id) as any;
+  const client = db.prepare('SELECT * FROM clients WHERE id = ? AND org_id = ? AND deleted_at IS NULL').get(req.params.clientId, org_id) as any;
   if (!client) return res.status(404).json({ error: 'Client not found' });
 
   const org = db.prepare('SELECT * FROM organizations WHERE id = ?').get(org_id) as any;
@@ -210,14 +210,14 @@ router.get('/statement/:clientId', async (req: Request, res: Response) => {
   const invoices = db.prepare(`
     SELECT id, number, type, status, issue_date, due_date, total, amount_paid, paid_date
     FROM invoices
-    WHERE org_id = ? AND (client_id = ? OR (client_name = ? AND client_id IS NULL))
+    WHERE org_id = ? AND deleted_at IS NULL AND (client_id = ? OR (client_name = ? AND client_id IS NULL))
     ORDER BY issue_date ASC
   `).all(org_id, req.params.clientId, client.name) as any[];
 
   const quotes = db.prepare(`
     SELECT id, number, status, issue_date, total
     FROM quotes
-    WHERE org_id = ? AND (client_id = ? OR (client_name = ? AND client_id IS NULL))
+    WHERE org_id = ? AND deleted_at IS NULL AND (client_id = ? OR (client_name = ? AND client_id IS NULL))
     ORDER BY issue_date ASC
   `).all(org_id, req.params.clientId, client.name) as any[];
 

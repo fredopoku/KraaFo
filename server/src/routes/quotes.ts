@@ -11,7 +11,7 @@ router.get('/', (req: Request, res: Response) => {
 });
 
 router.get('/:id', (req: Request, res: Response) => {
-  const quote = db.prepare('SELECT * FROM quotes WHERE id = ? AND org_id = ?').get(req.params.id, req.auth!.orgId) as any;
+  const quote = db.prepare('SELECT * FROM quotes WHERE id = ? AND org_id = ? AND deleted_at IS NULL').get(req.params.id, req.auth!.orgId) as any;
   if (!quote) return res.status(404).json({ error: 'Quote not found' });
   const items = db.prepare('SELECT * FROM quote_items WHERE quote_id = ? ORDER BY sort_order').all(req.params.id);
   res.json({ ...quote, items });
@@ -56,7 +56,7 @@ router.post('/', (req: Request, res: Response) => {
 
 router.put('/:id', (req: Request, res: Response) => {
   const { items, ...data } = req.body;
-  const existing = db.prepare('SELECT id, org_id FROM quotes WHERE id = ? AND org_id = ?').get(req.params.id, req.auth!.orgId) as any;
+  const existing = db.prepare('SELECT id, org_id FROM quotes WHERE id = ? AND org_id = ? AND deleted_at IS NULL').get(req.params.id, req.auth!.orgId) as any;
   if (!existing) return res.status(404).json({ error: 'Quote not found' });
   if (data.status && !VALID_QUOTE_STATUSES.includes(data.status)) data.status = 'draft';
 
@@ -94,7 +94,7 @@ router.put('/:id', (req: Request, res: Response) => {
 
 // Convert quote to invoice
 router.post('/:id/convert', (req: Request, res: Response) => {
-  const quote = db.prepare('SELECT * FROM quotes WHERE id = ? AND org_id = ?').get(req.params.id, req.auth!.orgId) as any;
+  const quote = db.prepare('SELECT * FROM quotes WHERE id = ? AND org_id = ? AND deleted_at IS NULL').get(req.params.id, req.auth!.orgId) as any;
   if (!quote) return res.status(404).json({ error: 'Quote not found' });
 
   const org = db.prepare('SELECT * FROM organizations WHERE id = ?').get(quote.org_id) as any;
@@ -141,7 +141,7 @@ router.delete('/:id', (req: Request, res: Response) => {
 
 // Update quote status (accept / decline)
 router.patch('/:id/status', (req: Request, res: Response) => {
-  const quote = db.prepare('SELECT * FROM quotes WHERE id = ? AND org_id = ?').get(req.params.id, req.auth!.orgId) as any;
+  const quote = db.prepare('SELECT * FROM quotes WHERE id = ? AND org_id = ? AND deleted_at IS NULL').get(req.params.id, req.auth!.orgId) as any;
   if (!quote) return res.status(404).json({ error: 'Quote not found' });
   const allowed = ['draft', 'sent', 'accepted', 'declined', 'expired'];
   const { status } = req.body;
