@@ -127,6 +127,7 @@ export default function Admin() {
   // Set when jumping to the Activity tab from an account, to show only that account's events
   const [activityOrg, setActivityOrg] = useState<{ id: string; name: string } | null>(null);
   const [flaggedSignups, setFlaggedSignups] = useState<any[]>([]);
+  const [awaitingReverify, setAwaitingReverify] = useState(0);
   const [riskConfig, setRiskConfig] = useState<{ weights: Record<string, number>; thresholds: Record<string, number> } | null>(null);
   const [riskConfigDraft, setRiskConfigDraft] = useState<{ weights: Record<string, number>; thresholds: Record<string, number> } | null>(null);
   const [savingRiskConfig, setSavingRiskConfig] = useState(false);
@@ -173,6 +174,7 @@ export default function Admin() {
     if (analytics) setAnalyticsData(analytics);
     setActivityData(activity?.events || []);
     setFlaggedSignups(flagged?.signups || []);
+    setAwaitingReverify(flagged?.awaiting_reverify ?? 0);
     if (risk) { setRiskConfig(risk); setRiskConfigDraft(risk); }
     if (maint) { setMaintenance(maint); setMaintenanceMessageDraft(maint.message); }
     await loadPresence(t);
@@ -183,6 +185,7 @@ export default function Admin() {
     const qs = status ? `?status=${encodeURIComponent(status)}` : '';
     const data = await adminFetch<any>(`/admin/signups/flagged${qs}`, token).catch(() => ({ signups: [] }));
     setFlaggedSignups(data?.signups || []);
+    setAwaitingReverify(data?.awaiting_reverify ?? 0);
   }, [token]);
 
   const handleReviewSignup = async (id: string, decision: 'clear' | 'verify' | 'reject') => {
@@ -1537,6 +1540,11 @@ export default function Admin() {
               <AlertCircle className="w-4 h-4 text-amber-500" />
               <h2 className="text-sm font-black text-slate-700">Flagged Signups</h2>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">{flaggedSignups.length}</span>
+              {awaitingReverify > 0 && (
+                <span className="text-[10px] font-semibold text-slate-400" title="Existing accounts that haven't entered their one-time email code yet. Not shown in the default view.">
+                  {awaitingReverify} existing {awaitingReverify === 1 ? 'account' : 'accounts'} still to re-verify
+                </span>
+              )}
             </div>
             <select
               value={signupStatusFilter}

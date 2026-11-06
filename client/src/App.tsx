@@ -18,6 +18,7 @@ const Join = lazy(() => import('./pages/Join'));
 const Team = lazy(() => import('./pages/Team'));
 const Trash = lazy(() => import('./pages/Trash'));
 const EmailVerify = lazy(() => import('./pages/EmailVerify'));
+const VerifyCode = lazy(() => import('./pages/VerifyCode'));
 const InvoiceGeneratorPage = lazy(() => import('./pages/InvoiceGeneratorPage'));
 const ReceiptGeneratorPage = lazy(() => import('./pages/ReceiptGeneratorPage'));
 const QuoteGeneratorPage = lazy(() => import('./pages/QuoteGeneratorPage'));
@@ -78,11 +79,27 @@ function PageLoader() {
   return <div style={{ minHeight: '100vh', background: '#fff' }} />;
 }
 
-// Gate for the real dashboard/clients/quotes/team/trash pages - unverified
-// accounts are redirected to the demo generator instead of seeing these at
-// all. This is UX only; the actual enforcement is server-side (see
-// CORE_FEATURE_PREFIXES in middleware/auth.ts), so this just avoids showing
-// an unverified visitor a dashboard shell full of buttons that would 403.
+// Signed-in pages that need a verified account. Anyone whose account still
+// has to confirm its email (or is held for review) goes to /verify instead.
+// UX only - middleware/auth.ts is what actually enforces it.
+const APP_PATHS = ['/setup', '/generator', '/dashboard', '/clients', '/quotes', '/trash', '/team'];
+
+function VerificationGate() {
+  const { org, loading } = useOrg();
+  const location = useLocation();
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (loading || !org || !localStorage.getItem('krafo_token')) return;
+    if (org.verification_status === 'verified') return;
+    if (APP_PATHS.some(p => location.pathname === p || location.pathname.startsWith(p + '/'))) {
+      navigate('/verify', { replace: true });
+    }
+  }, [org, loading, location.pathname, navigate]);
+  return null;
+}
+
+// Dashboard/clients/quotes/team/trash need an account; without one, go set
+// one up. Unverified accounts are sent to /verify by VerificationGate.
 function RequireVerified({ children }: { children: ReactNode }) {
   const { org, loading } = useOrg();
   const navigate = useNavigate();
@@ -90,12 +107,10 @@ function RequireVerified({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (loading) return;
     if (!org) { navigate('/setup'); return; }
-    if (org.verification_status && org.verification_status !== 'verified') {
-      navigate('/generator?demo=true&verify=1');
-    }
+    if (org.verification_status !== 'verified') navigate('/verify', { replace: true });
   }, [org, loading, navigate]);
 
-  if (loading || !org || (org.verification_status && org.verification_status !== 'verified')) {
+  if (loading || !org || org.verification_status !== 'verified') {
     return <PageLoader />;
   }
   return <>{children}</>;
@@ -107,6 +122,7 @@ export default function App() {
     <BrowserRouter>
       <RouterTracker />
       <PresenceTracker />
+      <VerificationGate />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<Landing />} />
@@ -130,6 +146,7 @@ export default function App() {
           <Route path="/join/:token" element={<Join />} />
           <Route path="/team" element={<RequireVerified><Team /></RequireVerified>} />
           <Route path="/verify-email" element={<EmailVerify />} />
+          <Route path="/verify" element={<VerifyCode />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>

@@ -608,50 +608,39 @@ export async function sendPasswordReset(org: any, code: string): Promise<void> {
   });
 }
 
-// ── Signup email verification ─────────────────────────────────────
-// Generates a fresh single-use token on every call (so a resend simply
-// invalidates whatever link was sent before it), hashes it before storing
-// (mirrors the bcrypt-hashed password-reset code above - a DB leak shouldn't
-// hand out live verification links), and emails only the plain token as a
-// clickable link. Called once right after signup (routes/organizations.ts)
-// and again on resend (routes/auth.ts), which is rate-limited separately so
-// this function itself doesn't need to guard against being called too often.
-const VERIFY_TOKEN_TTL_MS = 24 * 60 * 60 * 1000; // 24h
-
-export async function sendVerificationEmail(org: any): Promise<void> {
+// ── Email verification code ───────────────────────────────────────
+// Sends the 6-digit code issued by services/emailCode.ts, which owns the
+// code's generation, storage (HMAC only), expiry and send limits. The
+// wording depends on why the account is being asked to verify.
+export async function sendVerificationCodeEmail(org: any, code: string, reason: 'signup' | 'reverify' | 'email_change'): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey || !org.email) return;
-
-  const token = crypto.randomBytes(32).toString('hex');
-  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-  const expires = new Date(Date.now() + VERIFY_TOKEN_TTL_MS).toISOString();
-
-  db.prepare(`
-    UPDATE organizations
-    SET email_verify_token_hash = ?, email_verify_expires = ?, email_verify_sent_at = datetime('now'),
-        email_verify_resend_count = COALESCE(email_verify_resend_count, 0) + 1
-    WHERE id = ?
-  `).run(tokenHash, expires, org.id);
-
   const resend = new Resend(apiKey);
-  // Points at the EmailVerify frontend page, which calls GET /api/auth/verify-email
-  // itself so it can show a proper loading/success/error state instead of
-  // depending on a server-side redirect.
-  const verifyUrl = `${FRONTEND_URL}/verify-email?token=${token}`;
+
+  const intro = {
+    signup: 'Welcome to KraaFo! Enter this code to confirm your email and activate your account.',
+    reverify: "We've added an extra security step to KraaFo to keep fake accounts out. Enter this code to confirm this is still your email - it's a one-time check and your invoices, clients and settings are all exactly where you left them.",
+    email_change: 'You changed the email address on your KraaFo account. Enter this code to confirm the new address.',
+  }[reason];
+
   const body = `
     <p style="margin:0 0 16px;color:#374151;font-size:15px">Hi ${org.name || 'there'},</p>
-    <p style="margin:0 0 24px;color:#374151;font-size:15px;line-height:1.7">
-      Confirm your email address to activate your KraaFo account. This link expires in 24 hours and can only be used once.
-    </p>
-    ${cta(verifyUrl, 'Verify my email')}
-    <p style="margin:24px 0 0;color:#9ca3af;font-size:12px;text-align:center">If you didn't create a KraaFo account, you can safely ignore this email.</p>
+    <p style="margin:0 0 20px;color:#374151;font-size:15px;line-height:1.7">${intro}</p>
+    <div style="text-align:center;margin:28px 0">
+      <div style="display:inline-block;background:#f3f4f6;border:2px dashed #d1d5db;border-radius:12px;padding:20px 36px">
+        <p style="margin:0 0 4px;color:#6b7280;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase">Your verification code</p>
+        <p style="margin:0;color:#111827;font-size:36px;font-weight:900;letter-spacing:8px">${code}</p>
+      </div>
+    </div>
+    <p style="margin:0 0 8px;color:#6b7280;font-size:13px;text-align:center">It expires in <strong>10 minutes</strong> and can only be used once.</p>
+    <p style="margin:24px 0 0;color:#9ca3af;font-size:12px;text-align:center">If you didn't try to sign in to KraaFo, you can ignore this email. Never share this code with anyone - KraaFo will never ask you for it.</p>
   `;
   await resend.emails.send({
     from: `KraaFo <${FROM_ADDRESS}>`,
     to: [org.email],
-    subject: 'Confirm your email to activate your KraaFo account',
-    html: emailShell('#4f46e5', 'Confirm your email', 'One click to activate your account', body,
-      `This email was sent to ${org.email} because a KraaFo account was created with this address.`),
+    subject: `${code} is your KraaFo verification code`,
+    html: emailShell('#4f46e5', 'Confirm your email', 'KraaFo · Account Security', body,
+      `This email was sent to ${org.email} because it is the email on a KraaFo account.`),
   });
 }
 

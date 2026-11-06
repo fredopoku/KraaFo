@@ -30,6 +30,11 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     const err = await res.json().catch(() => ({ error: res.statusText }));
     // Token expired - clear it so the app redirects to login
     if (res.status === 401) localStorage.removeItem('krafo_token');
+    // A tab left open from before the account was asked to confirm its email
+    // (or after the email was changed elsewhere) - send it to the code screen.
+    if (err.code === 'verification_required' && window.location.pathname !== '/verify') {
+      window.location.assign('/verify');
+    }
     throw new ApiError(err.error || 'Request failed', err.code);
   }
   return res.json();
@@ -251,6 +256,10 @@ export const api = {
       request<{ success: boolean; held: boolean }>(`/auth/verify-email?token=${encodeURIComponent(token)}`),
     resendVerification: () =>
       request<{ sent: boolean; alreadyVerified?: boolean }>('/auth/resend-verification', { method: 'POST' }),
+    sendCode: () =>
+      request<{ sent: boolean; alreadyVerified?: boolean; cooldownSeconds?: number; email?: string }>('/auth/send-code', { method: 'POST' }),
+    verifyCode: (code: string) =>
+      request<{ success: boolean; held: boolean; org?: any }>('/auth/verify-code', { method: 'POST', body: JSON.stringify({ code }) }),
   },
 
   team: {

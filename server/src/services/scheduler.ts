@@ -15,6 +15,22 @@ async function tracked(orgId: string, type: string, meta: Record<string, unknown
   }
 }
 
+// Automated mail an account sends to its own clients (payment reminders,
+// recurring invoices) only goes out for verified accounts - or existing
+// customers still inside the 14-day grace the reverify migration gave them
+// (db/schema.ts), so a real business doesn't silently stop billing while it
+// hasn't logged in yet. Expects the organizations table aliased as "o".
+const AUTOSEND_ALLOWED_SQL = `(o.verification_status = 'verified'
+  OR (o.verification_status = 'pending_verification' AND o.automation_grace_until > datetime('now')))`;
+
+function orgCanAutoSend(org: any): boolean {
+  if (!org) return false;
+  if (org.verification_status === 'verified') return true;
+  return org.verification_status === 'pending_verification'
+    && !!org.automation_grace_until
+    && new Date(org.automation_grace_until.replace(' ', 'T') + (org.automation_grace_until.includes('Z') ? '' : 'Z')).getTime() > Date.now();
+}
+
 async function runOnboardingSequence(): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return;
@@ -22,6 +38,7 @@ async function runOnboardingSequence(): Promise<void> {
   const day2Orgs = db.prepare(`
     SELECT o.* FROM organizations o
     WHERE o.email IS NOT NULL
+      AND o.verification_status = 'verified'
       AND o.email_unsubscribed = 0
       AND o.welcome_email_sent = 1
       AND o.day2_email_sent = 0
@@ -35,6 +52,7 @@ async function runOnboardingSequence(): Promise<void> {
   const day4Orgs = db.prepare(`
     SELECT o.* FROM organizations o
     WHERE o.email IS NOT NULL
+      AND o.verification_status = 'verified'
       AND o.email_unsubscribed = 0
       AND o.welcome_email_sent = 1
       AND o.day4_email_sent = 0
@@ -46,6 +64,7 @@ async function runOnboardingSequence(): Promise<void> {
   const day7Orgs = db.prepare(`
     SELECT o.* FROM organizations o
     WHERE o.email IS NOT NULL
+      AND o.verification_status = 'verified'
       AND o.email_unsubscribed = 0
       AND o.welcome_email_sent = 1
       AND o.day7_email_sent = 0
@@ -58,6 +77,7 @@ async function runOnboardingSequence(): Promise<void> {
   const day14Orgs = db.prepare(`
     SELECT o.* FROM organizations o
     WHERE o.email IS NOT NULL
+      AND o.verification_status = 'verified'
       AND o.email_unsubscribed = 0
       AND o.welcome_email_sent = 1
       AND o.day14_email_sent = 0
@@ -100,6 +120,7 @@ async function runOverdueAndReminders(): Promise<void> {
     FROM invoices i
     JOIN organizations o ON o.id = i.org_id
     WHERE i.deleted_at IS NULL
+      AND ${AUTOSEND_ALLOWED_SQL}
       AND i.status = 'overdue'
       AND i.client_email IS NOT NULL AND i.client_email != ''
       AND i.reminder_1_sent = 0
@@ -119,6 +140,7 @@ async function runOverdueAndReminders(): Promise<void> {
     FROM invoices i
     JOIN organizations o ON o.id = i.org_id
     WHERE i.deleted_at IS NULL
+      AND ${AUTOSEND_ALLOWED_SQL}
       AND i.status = 'overdue'
       AND i.client_email IS NOT NULL AND i.client_email != ''
       AND i.reminder_1_sent = 1
@@ -140,6 +162,7 @@ async function runOverdueAndReminders(): Promise<void> {
     FROM invoices i
     JOIN organizations o ON o.id = i.org_id
     WHERE i.deleted_at IS NULL
+      AND ${AUTOSEND_ALLOWED_SQL}
       AND i.status = 'overdue'
       AND i.client_email IS NOT NULL AND i.client_email != ''
       AND i.reminder_7_sent = 1
@@ -234,7 +257,9 @@ async function runRecurringInvoices(): Promise<void> {
     logEvent({ orgId: tmpl.org_id, actorRole: 'system', actorEmail: 'system', type: 'system.recurring', refType: 'invoice', refId: newId, meta: { number: num, template: tmpl.number } });
 
     // Auto-send email to client if they have an address
-    if (tmpl.client_email) {
+    // The invoice itself is still created so the account's records stay
+    // complete; only the email to the client waits for verification.
+    if (tmpl.client_email && orgCanAutoSend(org)) {
       void tracked(tmpl.org_id, 'system.recurring_email', { number: num }, newId, () => sendInvoiceEmail(newId, tmpl.client_email));
     }
 

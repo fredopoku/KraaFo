@@ -3,6 +3,9 @@ import { Organization } from '../types';
 import { api } from '../utils/api';
 
 const TOKEN_KEY = 'krafo_token';
+// Where pages/VerifyCode.tsx sends the user once their email is confirmed
+// (Setup sets '/team' for new team accounts). Defaults to the dashboard.
+export const AFTER_VERIFY_KEY = 'krafo_after_verify';
 
 export type UserRole = 'owner' | 'admin' | 'staff' | 'accountant';
 

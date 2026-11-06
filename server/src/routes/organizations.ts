@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import rateLimit from 'express-rate-limit';
 import db from '../db/schema';
-import { sendOrgWelcome, sendAdminSignupAlert, sendVerificationEmail } from '../services/emailService';
+import { issueEmailCode, requireReverification, publicOrg } from '../services/emailCode';
 import { verifyTurnstile } from '../utils/turnstile';
 import { isValidEmailSyntax, domainAcceptsMail, getEmailDomain, normalizeEmailForAbuseCheck } from '../utils/emailValidation';
 import { isDisposableEmailDomain, isDisposableEmailDomainLive } from '../utils/disposableEmail';
@@ -49,12 +49,16 @@ const signupSubnetLimiter = rateLimit({
   skip: () => !isProd,
 });
 
-const SENSITIVE = ['password_hash', 'smtp_pass', 'dkim_private_key'] as const;
-const stripSensitive = (org: any) => {
-  const safe = { ...org };
-  SENSITIVE.forEach(k => delete safe[k]);
-  return safe;
-};
+const stripSensitive = publicOrg;
+
+// Login looks accounts up by email, so two accounts sharing one address
+// would leave one of them unable to sign in - and a bot could squat a real
+// person's address. Checked at signup and on email change.
+function emailInUse(email: string, exceptOrgId?: string): boolean {
+  const org = db.prepare('SELECT id FROM organizations WHERE LOWER(email) = LOWER(?) AND id != ? LIMIT 1').get(email, exceptOrgId || '');
+  if (org) return true;
+  return !!db.prepare('SELECT 1 FROM team_members WHERE LOWER(email) = LOWER(?) LIMIT 1').get(email);
+}
 
 router.get('/:id', (req: Request, res: Response) => {
   if (req.params.id !== req.auth!.orgId) return res.status(403).json({ error: 'Forbidden' });
@@ -101,6 +105,9 @@ router.post('/', signupIpLimiter, signupSubnetLimiter, async (req: Request, res:
   const trimmedEmail = String(email).trim();
   if (!isValidEmailSyntax(trimmedEmail)) {
     return res.status(400).json({ error: 'Please enter a valid email address.' });
+  }
+  if (emailInUse(trimmedEmail)) {
+    return res.status(409).json({ error: 'An account with this email already exists. Sign in instead, or use "Forgot password".', code: 'email_in_use' });
   }
   const emailDomain = getEmailDomain(trimmedEmail);
   // Static npm-package list first (instant, no network dependency), then a
@@ -165,8 +172,9 @@ router.post('/', signupIpLimiter, signupSubnetLimiter, async (req: Request, res:
       smtp_host, smtp_port, smtp_user, smtp_pass, smtp_from,
       whatsapp_number, mpesa_number, mtn_number, airtel_number, telecel_number, paypal_email,
       signup_ip, signup_asn, signup_country, signup_is_proxy, signup_is_hosting, fingerprint_hash,
-      signup_email_normalized, verification_status, risk_score, risk_action)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+      signup_email_normalized, verification_status, risk_score, risk_action,
+      verify_reason, verify_required_since)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'signup',datetime('now'))
   `).run(id, name, trimmedEmail, phone, address, city, state, zip, signupCountry, website,
     logo_url, primary_color || '#2563EB', secondary_color || '#1E40AF', accent_color || '#DBEAFE',
     tax_name || 'Tax', tax_rate || 0, currency || 'USD', currency_symbol || symbolForCurrency(currency || 'USD'),
@@ -186,9 +194,13 @@ router.post('/', signupIpLimiter, signupSubnetLimiter, async (req: Request, res:
   const org = db.prepare('SELECT * FROM organizations WHERE id = ?').get(id) as any;
   logEvent({ orgId: id, actorId: id, actorEmail: trimmedEmail, actorRole: 'owner', ip: signupIp, type: 'org.signup', refType: 'organization', refId: id, meta: { country: signupCountry, risk_score: risk.score, action: risk.action, signals: risk.firedSignals.join(','), status: verificationStatus } });
   res.status(201).json(stripSensitive(org));
-  sendOrgWelcome(org).catch(console.error);
-  sendVerificationEmail(org).catch(console.error);
-  sendAdminSignupAlert(org).catch(console.error);
+  // Only the verification code goes out now. The welcome email and the
+  // admin signup alert are sent by routes/auth.ts once the code is entered,
+  // so a bot signup that never verifies costs a single email. Held signups
+  // get nothing until a human clears them.
+  if (verificationStatus === 'pending_verification') {
+    issueEmailCode(id).catch(console.error);
+  }
 });
 
 router.put('/:id', (req: Request, res: Response) => {
@@ -209,6 +221,28 @@ router.put('/:id', (req: Request, res: Response) => {
   // Changing the currency without sending its symbol must not leave the old one behind
   if (req.body.currency && !req.body.currency_symbol) req.body.currency_symbol = symbolForCurrency(req.body.currency);
 
+  // Changing the account email needs the new address confirmed with a code
+  // before the account can be used again - otherwise someone could verify
+  // with their own inbox and then point the account at any address.
+  let emailChanged = false;
+  if (req.body.email !== undefined) {
+    const nextEmail = String(req.body.email || '').trim();
+    const current = (db.prepare('SELECT email FROM organizations WHERE id = ?').get(req.params.id) as any)?.email || '';
+    if (nextEmail.toLowerCase() !== current.toLowerCase()) {
+      if (req.auth!.role !== 'owner') return res.status(403).json({ error: 'Only the account owner can change the account email.' });
+      if (!isValidEmailSyntax(nextEmail)) return res.status(400).json({ error: 'Please enter a valid email address.' });
+      const domain = getEmailDomain(nextEmail);
+      if (isDisposableEmailDomain(domain)) {
+        return res.status(400).json({ error: "Please use a permanent email address - disposable/temporary addresses aren't supported." });
+      }
+      if (emailInUse(nextEmail, req.params.id)) {
+        return res.status(409).json({ error: 'Another account already uses this email address.', code: 'email_in_use' });
+      }
+      emailChanged = true;
+    }
+    req.body.email = nextEmail;
+  }
+
   const updates = fields.filter(f => req.body[f] !== undefined);
   if (updates.length === 0) return res.status(400).json({ error: 'No fields to update' });
 
@@ -216,6 +250,11 @@ router.put('/:id', (req: Request, res: Response) => {
   const values = [...updates.map(f => req.body[f]), req.params.id];
 
   db.prepare(`UPDATE organizations SET ${setClauses} WHERE id = ?`).run(...values);
+  if (emailChanged) {
+    requireReverification(req.params.id, 'email_change');
+    logEvent({ req, type: 'org.email_changed', refType: 'organization', refId: req.params.id });
+    issueEmailCode(req.params.id).catch(console.error);
+  }
   const org = db.prepare('SELECT * FROM organizations WHERE id = ?').get(req.params.id);
   logEvent({ req, type: 'org.update', refType: 'organization', refId: req.params.id, meta: { fields: updates.join(',') } });
   res.json(stripSensitive(org));

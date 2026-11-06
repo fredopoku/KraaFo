@@ -568,7 +568,13 @@ router.get('/signups/flagged', adminAuth, (req: Request, res: Response) => {
 
   const where = status
     ? 'WHERE verification_status = ?'
-    : `WHERE verification_status NOT IN ('verified') OR risk_action != 'allow'`;
+    // Existing customers who simply haven't entered their re-verification
+    // code yet (db/schema.ts reverify migration) aren't suspicious - leave
+    // them out of the default view so real flags aren't buried. They're
+    // still listed under the "Pending verification" filter and counted below.
+    : `WHERE (verification_status NOT IN ('verified') OR risk_action != 'allow')
+         AND NOT (verification_status = 'pending_verification' AND verify_reason = 'reverify'
+                  AND COALESCE(risk_action, 'allow') = 'allow')`;
   const params: any[] = status ? [status, limit, offset] : [limit, offset];
   const countParams: any[] = status ? [status] : [];
 
@@ -576,7 +582,7 @@ router.get('/signups/flagged', adminAuth, (req: Request, res: Response) => {
     SELECT id, name, email, phone, country, created_at,
            verification_status, risk_score, risk_action,
            signup_ip, signup_asn, signup_country, signup_is_proxy, signup_is_hosting,
-           fingerprint_hash, email_verified_at
+           fingerprint_hash, email_verified_at, verify_reason
     FROM organizations
     ${where}
     ORDER BY created_at DESC
@@ -585,7 +591,11 @@ router.get('/signups/flagged', adminAuth, (req: Request, res: Response) => {
 
   const { total } = db.prepare(`SELECT COUNT(*) as total FROM organizations ${where}`).get(...countParams) as any;
 
-  res.json({ signups, total, limit, offset });
+  const { awaiting_reverify } = db.prepare(
+    "SELECT COUNT(*) as awaiting_reverify FROM organizations WHERE verification_status = 'pending_verification' AND verify_reason = 'reverify'"
+  ).get() as any;
+
+  res.json({ signups, total, limit, offset, awaiting_reverify });
 });
 
 // Manual review outcome for a held/flagged signup - keeps a plain audit

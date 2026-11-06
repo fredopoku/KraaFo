@@ -2,6 +2,13 @@
 
 ---
 
+## November 2026
+
+### Confirm Your Email With a Code
+To keep fake accounts off KraaFo, every account now confirms its email with a 6-digit code. If you already use KraaFo, you'll be asked once, the next time you open the app. We email you a code, you type it in, and you carry on. Your invoices, clients and settings are untouched. New accounts get their code during signup, and changing your account email asks you to confirm the new address the same way. Codes expire after 10 minutes and can only be used once. If you can no longer reach the inbox on your account, contact support and we'll sort it out.
+
+---
+
 ## September 2026
 
 ### A Dashboard That Shows Real Money

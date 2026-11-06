@@ -302,6 +302,24 @@ addCol('organizations', 'signup_email_normalized', 'TEXT');
 
 db.exec(`CREATE INDEX IF NOT EXISTS idx_orgs_signup_email_normalized ON organizations(signup_email_normalized);`);
 
+// 6-digit email code verification (services/emailCode.ts). Replaces the old
+// one-click link; the email_verify_* columns above are kept only so links
+// already sitting in inboxes keep working until they expire.
+addCol('organizations', 'email_code_hash', 'TEXT');           // HMAC, never the code
+addCol('organizations', 'email_code_expires', 'TEXT');
+addCol('organizations', 'email_code_attempts', 'INTEGER DEFAULT 0');
+addCol('organizations', 'email_code_sent_at', 'TEXT');
+addCol('organizations', 'email_code_send_count', 'INTEGER DEFAULT 0');
+addCol('organizations', 'email_code_window_start', 'TEXT');
+addCol('organizations', 'verify_reason', 'TEXT');             // signup | reverify | email_change
+addCol('organizations', 'verify_required_since', 'TEXT');
+// While an existing customer hasn't re-verified yet, their automated emails
+// to their own clients (payment reminders, recurring invoices) keep going
+// until this date so a busy real business doesn't silently stop billing.
+addCol('organizations', 'automation_grace_until', 'TEXT');
+addCol('organizations', 'reset_attempts', 'INTEGER DEFAULT 0');  // wrong password-reset codes since the last one was issued
+
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS signup_fingerprints (
     id TEXT PRIMARY KEY,
@@ -561,5 +579,40 @@ db.exec(`
     description = 'The admin panel now tracks every visitor in real time: page views, sessions, city-level location with country flags, device type, browser, and traffic sources. Data updates live as visitors arrive.'
   WHERE title = 'Website Analytics Dashboard';
 `);
+
+// Runs last so every column it touches (e.g. invoices.deleted_at) exists.
+db.exec(`CREATE TABLE IF NOT EXISTS app_migrations (name TEXT PRIMARY KEY, ran_at TEXT DEFAULT (datetime('now')))`);
+
+// One-time: every existing account confirms its email with a code. The old
+// 'verified' default was backfilled into legacy rows that never proved they
+// own their inbox, and an email could be changed after verifying, so
+// 'verified' didn't reliably mean anything. Held/rejected accounts are left
+// alone. Accounts that already email their own clients get 14 days of grace
+// for automated sends (reminders/recurring); everything else is gated now.
+const REVERIFY_MIGRATION = '2026_11_email_code_reverify_all';
+if (!db.prepare('SELECT 1 FROM app_migrations WHERE name = ?').get(REVERIFY_MIGRATION)) {
+  db.transaction(() => {
+    db.prepare(`
+      UPDATE organizations
+      SET verification_status = 'pending_verification',
+          verify_reason = 'reverify',
+          verify_required_since = datetime('now'),
+          automation_grace_until = CASE WHEN EXISTS (
+            SELECT 1 FROM invoices i
+            WHERE i.org_id = organizations.id AND i.deleted_at IS NULL
+              AND i.client_email IS NOT NULL AND i.client_email != ''
+              AND i.status IN ('sent', 'paid', 'overdue')
+          ) THEN datetime('now', '+14 days') ELSE NULL END
+      WHERE verification_status = 'verified'
+    `).run();
+    // Accounts that were already waiting on the old link: same code flow.
+    db.prepare(`
+      UPDATE organizations
+      SET verify_reason = 'signup', verify_required_since = COALESCE(created_at, datetime('now'))
+      WHERE verification_status = 'pending_verification' AND verify_reason IS NULL
+    `).run();
+    db.prepare('INSERT INTO app_migrations (name) VALUES (?)').run(REVERIFY_MIGRATION);
+  })();
+}
 
 export default db;

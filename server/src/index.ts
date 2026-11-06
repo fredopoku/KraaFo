@@ -92,15 +92,33 @@ const forgotLimiter = rateLimit({
   message: { error: 'Too many password reset requests. Please try again in 1 hour.' },
   skip: () => !isProd,
 });
-// Verification-email resend - separate from forgotLimiter since it's a
-// different spam surface (unauthenticated, sends mail to any address).
-const verifyResendLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000,   // 1 hour
-  max: 5,                       // 5 resend requests per hour per IP
+// Email-code endpoints (routes/auth.ts). The per-account cooldown, daily cap
+// and 5-tries-per-code limit live in services/emailCode.ts; these per-IP caps
+// stop one machine cycling through many accounts.
+const codeSendLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 10,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: 'Too many verification email requests. Please try again in 1 hour.' },
+  message: { error: 'Too many code requests from this network. Please try again in an hour.' },
   skip: () => !isProd,
+});
+const codeVerifyLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many attempts. Please try again in 15 minutes.' },
+  skip: () => !isProd,
+});
+// Newsletter signup sends a welcome email to whatever address is entered.
+const subscribeLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many sign-ups from this network. Please try again later.' },
+  skip: (req) => !isProd || req.method !== 'POST',
 });
 // Smart Fill / Smart Import - both require a verified account (see
 // middleware/auth.ts's CORE_FEATURE_PREFIXES), but each call is still a
@@ -135,7 +153,7 @@ app.use('/api/quotes', quotesRouter);
 app.use('/api/deliver', deliverRouter);
 app.use('/api/analytics', analyticsRouter);
 app.use('/api/feedback', feedbackRouter);
-app.use('/api/subscribers', subscribersRouter);
+app.use('/api/subscribers', subscribeLimiter, subscribersRouter);
 app.use('/api/broadcasts', broadcastsRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/changelog', changelogRouter);
@@ -144,7 +162,9 @@ app.use('/api/stats', statsRouter);
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/forgot', forgotLimiter);
 app.use('/api/auth/reset', authLimiter);
-app.use('/api/auth/resend-verification', verifyResendLimiter);
+app.use('/api/auth/resend-verification', codeSendLimiter);
+app.use('/api/auth/send-code', codeSendLimiter);
+app.use('/api/auth/verify-code', codeVerifyLimiter);
 app.use('/api/auth', authRouter);
 app.use('/api/team', teamRouter);
 app.use('/api/trash', trashRouter);

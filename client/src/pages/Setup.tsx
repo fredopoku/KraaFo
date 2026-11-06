@@ -5,7 +5,7 @@ import { LogoMark } from '../components/Logo';
 import { api } from '../utils/api';
 import { Organization, BrandColors } from '../types';
 import { cn } from '../utils/cn';
-import { useOrg } from '../hooks/useOrg';
+import { useOrg, AFTER_VERIFY_KEY } from '../hooks/useOrg';
 import { TurnstileWidget, TURNSTILE_ENABLED } from '../components/Turnstile';
 import FingerprintJS from '@fingerprintjs/fingerprintjs';
 import { COUNTRIES, COUNTRY_CURRENCY } from '../utils/countries';
@@ -210,16 +210,18 @@ export default function Setup() {
       if (org) {
         const saved = await api.organizations.update(org.id, form);
         setOrg(saved);
-        navigate(org ? '/dashboard' : '/generator');
+        // Changing the account email puts it back behind the code screen.
+        navigate(saved.verification_status && saved.verification_status !== 'verified' ? '/verify' : '/dashboard');
       } else {
         const created = await api.organizations.create({ ...form, account_type: accountType, cf_turnstile_response: cfToken, fingerprint_hash: fingerprintHash || undefined, turnstile_unavailable: turnstileUnavailable || undefined });
         const { org: authedOrg, token } = await api.auth.setPassword(created.id, password);
         setOrg(authedOrg, token);
+        // The signup already emailed a 6-digit code; nothing else is usable
+        // until it's entered. Team accounts then continue to inviting people.
         if (accountType === 'team') {
-          setInviteStep(true);
-        } else {
-          navigate(org ? '/dashboard' : '/generator');
+          try { localStorage.setItem(AFTER_VERIFY_KEY, '/team'); } catch {}
         }
+        navigate('/verify');
       }
     } catch (err) {
       console.error('Setup failed:', err);

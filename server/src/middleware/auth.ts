@@ -60,15 +60,15 @@ function isPublic(req: Request): boolean {
   return false;
 }
 
-// Routes gated behind email verification / risk review. Everything else
-// (org settings, presence, analytics reads, etc.) stays reachable so an
-// unverified user isn't locked out of the app entirely - just out of
-// creating/sending real documents and managing a team, which is where
-// bulk-signup abuse actually does damage.
-const CORE_FEATURE_PREFIXES = ['/api/invoices', '/api/quotes', '/api/clients', '/api/deliver', '/api/ai', '/api/team'];
-
-function isCoreFeatureRequest(req: Request): boolean {
-  return CORE_FEATURE_PREFIXES.some(prefix => req.path.startsWith(prefix));
+// Until an account confirms its email with a code (routes/auth.ts
+// send-code/verify-code), or while it's held for review, the only API it can
+// reach is reading its own organization - enough for the client to render
+// the code screen (pages/VerifyCode.tsx) and nothing else. That covers every
+// path that spends Resend credits or AI calls, and also stops changing the
+// account email to someone else's address before verifying.
+function isAllowedWhileUnverified(req: Request, orgId: string): boolean {
+  if (req.method === 'GET' && req.path === `/api/organizations/${orgId}`) return true;
+  return req.method === 'POST' && req.path === '/api/presence/heartbeat'; // admin live view only
 }
 
 export function requireAuth(req: Request, res: Response, next: NextFunction): void {
@@ -91,21 +91,16 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
     req.auth = payload;
 
     const org = db.prepare('SELECT verification_status FROM organizations WHERE id = ?').get(payload.orgId) as { verification_status?: string } | undefined;
-    // Column default is 'verified' (see schema.ts's addCol comment) so
-    // existing accounts get that value automatically; the fallback here is
-    // just defense in depth (e.g. the org row somehow not being found).
-    const status = org?.verification_status || 'verified';
+    if (!org) { res.status(401).json({ error: 'Session expired. Please sign in again.' }); return; }
+    const status = org.verification_status || 'pending_verification';
 
-    // Any status other than these two is a full hold (held_for_review,
-    // or rejected after manual review) - block core features entirely
-    // rather than enumerating every non-good status by name.
-    const isFullyHeld = status !== 'verified' && status !== 'pending_verification';
-    if (isFullyHeld && isCoreFeatureRequest(req)) {
-      res.status(403).json({ error: "This account is under review before it can be used. We'll email you once it's cleared.", code: 'account_held' });
-      return;
-    }
-    if (status === 'pending_verification' && req.method !== 'GET' && isCoreFeatureRequest(req)) {
-      res.status(403).json({ error: 'Please verify your email address to unlock this feature. Check your inbox for the verification link.', code: 'verification_required' });
+    if (status !== 'verified' && !isAllowedWhileUnverified(req, payload.orgId)) {
+      if (status === 'pending_verification') {
+        res.status(403).json({ error: 'Please confirm your email address to continue. Enter the code we emailed you.', code: 'verification_required' });
+      } else {
+        // held_for_review, rejected, or anything unexpected
+        res.status(403).json({ error: "This account is under review before it can be used. We'll email you once it's cleared.", code: 'account_held' });
+      }
       return;
     }
 

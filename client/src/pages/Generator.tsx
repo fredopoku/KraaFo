@@ -142,7 +142,7 @@ export default function Generator() {
   // real dashboard/clients/quotes/team/trash while unverified).
   useEffect(() => {
     if (new URLSearchParams(location.search).get('verify') === '1') {
-      showToast('Verify your email to unlock your dashboard - check your inbox for the link.', 'info');
+      showToast('Confirm your email to unlock your dashboard - enter the code we emailed you.', 'info');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
