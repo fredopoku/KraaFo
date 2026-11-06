@@ -87,6 +87,7 @@
 - **Org Isolation** - every API endpoint that creates or reads documents derives the organisation ID from the verified JWT, not from request body or query parameters; User A cannot read or write User B's data
 - **CORS Allowlist** - origin matching uses exact comparison only; wildcard and prefix patterns are not used
 - **Cloudflare Turnstile** - invisible/managed bot protection on the Setup page (new users), feedback form, and newsletter signup - no CAPTCHA friction for real users
+- **Real client IP for rate limits** - every per-IP limit (sign-in, password reset, email codes, signup, newsletter, guest PDFs) keys on Cloudflare's `CF-Connecting-IP`, which visitors can't forge, rather than the first `X-Forwarded-For` entry, which they can. IPv6 visitors are grouped by network block (/56 per visitor, /48 per network) so rotating addresses doesn't get around the limits
 - **Graceful degradation** - if Turnstile keys are not configured the forms work normally; the verification gate is skipped in development
 - **Error monitoring** - Sentry captures and alerts on unhandled exceptions in both the Node server (`@sentry/node`) and the React frontend (`@sentry/react`); guarded by environment variables so it is a no-op in development unless configured
 - **Frontend error boundary** - `Sentry.ErrorBoundary` wraps the entire React app; if the UI crashes the user sees a friendly "Something went wrong" fallback with a one-click reload instead of a blank screen
@@ -95,11 +96,15 @@
 
 ### Account Verification & Anti-Fraud
 - **Signup risk scoring** - every new signup is scored against weighted signals - repeated device fingerprint, repeated email under Gmail dot/plus-alias normalisation, phone/country mismatch, VPN/proxy IP, hosting/datacenter IP, high signup velocity, and Turnstile being unavailable - and routed to allow / friction / hold accordingly; weights and thresholds are tunable live from the admin Security tab, no redeploy needed
-- **Email verification gate** - every new account must click the link in their verification email before they can send a document (email/WhatsApp/SMS) or invite a team member; the rest of the app (dashboard, generator, saving documents) stays usable while unverified so the product never feels locked out during the wait
+- **Email code verification** - every account confirms its email with a 6-digit one-time code before it can use the app. Until then the only thing it can reach is its own account details, so it can't send email, use AI, invite a team or change the account email. Codes are stored only as a keyed hash, expire after 10 minutes, stop working after 5 wrong tries, and are limited to one a minute and 5 per account per day, plus per-IP limits
+- **One-time re-verification of existing accounts** - every account that existed before email codes is asked once, on its next visit. A copy of the database is taken automatically before the switch. Accounts that already email their own clients keep 14 days of payment reminders and recurring-invoice emails while they haven't re-verified; everything else pauses until they do
+- **Bot signups cost one email** - signup sends only the code; the welcome email, onboarding emails and the admin signup alert wait until the code is entered
+- **Email changes are confirmed** - changing the account email sends a code to the new address and locks the account until it's entered
+- **One account per email** - signup rejects an address another account already uses, and the real owner of a squatted address can take it back with "Forgot password" (a successful reset also counts as confirming the email)
 - **Disposable & fake email blocking** - a maintained blocklist (~3,700 domains, `disposable-email-domains` npm package) plus a live real-time API check (debounce.io, fails open on any outage) reject temporary-inbox signups; the claimed domain's MX records are also checked to catch typos and non-existent domains
 - **Phone number validation** - every signup requires a phone number, validated for correct format against the claimed country via `libphonenumber-js`; a country/phone mismatch (e.g. a US number on a Ghana signup) feeds the risk score rather than auto-blocking, since diaspora-run businesses legitimately trigger this pattern with zero other signals firing
 - **IP reputation & geolocation** - signup IPs are checked against known VPN/proxy and hosting/datacenter ranges and geolocated (country, ASN) via ip-api.com, feeding the risk score
-- **Flagged signup review queue** - the admin panel lists every held or flagged signup with its full signal breakdown; one click to clear, manually verify, or reject
+- **Flagged signup review queue** - the admin panel lists every held or flagged signup with its full signal breakdown; one click to clear, manually verify, or reject. Existing customers who are only waiting on their re-verification code are left out of the default view and shown as a count instead
 
 ### Website Analytics
 - **Privacy-first page tracking** - every page view is recorded server-side via `navigator.sendBeacon`; no cookies, no third-party scripts, no personal data stored
@@ -193,7 +198,7 @@
 | Bot Protection | Cloudflare Turnstile (Managed mode - server-side verification) |
 | Analytics | Custom - `navigator.sendBeacon` + ip-api.com geo + SQLite |
 | Error Monitoring | Sentry (`@sentry/node` on server, `@sentry/react` on frontend) |
-| Lifecycle Emails | Resend API + hourly scheduler (day2/4/7 onboarding, day14 re-engagement, activation milestone) |
+| Lifecycle Emails | Resend API + hourly scheduler (day2/4/7 onboarding, day14 re-engagement, activation milestone); verified accounts only |
 | Signup Anti-Fraud | `libphonenumber-js` (phone/country validation), `disposable-email-domains` + debounce.io (disposable email), ip-api.com (IP reputation/geo) |
 | Auth | JWT (`jsonwebtoken`) + `bcryptjs` password hashing, role-based access (Owner/Admin/Staff/Accountant) |
 | SEO | Post-build pre-renderer (`scripts/prerender.cjs`) - landing page, generator, and changelog rendered to static HTML at build time so search crawlers see full content |
@@ -493,8 +498,10 @@ KraaFo/
 | POST | `/api/auth/reset` | Verify the reset code and set a new password |
 | GET | `/api/auth/join/:token` | Validate a team invite token (public) |
 | POST | `/api/auth/join/:token` | Accept a team invite - set name/password |
-| GET | `/api/auth/verify-email` | Confirm an email address from the verification link |
-| POST | `/api/auth/resend-verification` | Resend the verification email (rate-limited) |
+| POST | `/api/auth/send-code` | Email a 6-digit verification code to the signed-in owner (cooldown + daily cap) |
+| POST | `/api/auth/verify-code` | Check the code and unlock the account |
+| POST | `/api/auth/resend-verification` | Older name for `send-code`, kept for compatibility |
+| GET | `/api/auth/verify-email` | Legacy one-click link from before email codes (only links already sent) |
 | GET | `/api/team` | List team members (owner/admin only) |
 | POST | `/api/team/invite` | Invite a member by email + role |
 | PATCH | `/api/team/:memberId/role` | Change a member's role (owner only) |
@@ -648,7 +655,8 @@ The `{ enabled, message }` config is persisted to a JSON file next to the SQLite
 - [x] Admin real-time alerts (signup, first invoice)
 - [x] Multi-currency expanded to every ISO 4217 currency (via `Intl.supportedValuesOf`)
 - [x] Signup risk scoring (device fingerprint, email/phone signals, IP reputation, velocity)
-- [x] Email verification gate before sending real documents or inviting a team member
+- [x] Email code verification for every account (new signups, one-time re-verification of existing accounts, email changes)
+- [x] Rate limits keyed on the real client IP (Cloudflare), IPv6-aware
 - [x] Disposable email + phone/country validation on signup
 - [x] Team accounts with roles (Owner, Admin, Staff, Accountant)
 - [x] Trash / recycle bin with restore
