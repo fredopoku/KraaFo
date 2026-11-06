@@ -20,7 +20,7 @@ export interface LogInput {
 }
 
 export function requestIp(req: Request): string {
-  return (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() || req.ip || '';
+  return getClientIp(req);
 }
 
 // Never record secrets or free-text bodies, even if a caller passes them by mistake
@@ -38,6 +38,7 @@ function cleanMeta(meta?: Record<string, unknown>): string | null {
 }
 
 import type { Statement } from 'better-sqlite3';
+import { getClientIp } from '../utils/clientIp';
 let insertStmt: Statement<unknown[]> | null = null;
 
 export function logEvent(e: LogInput): void {

@@ -590,7 +590,23 @@ db.exec(`CREATE TABLE IF NOT EXISTS app_migrations (name TEXT PRIMARY KEY, ran_a
 // alone. Accounts that already email their own clients get 14 days of grace
 // for automated sends (reminders/recurring); everything else is gated now.
 const REVERIFY_MIGRATION = '2026_11_email_code_reverify_all';
-if (!db.prepare('SELECT 1 FROM app_migrations WHERE name = ?').get(REVERIFY_MIGRATION)) {
+// Takes a full copy of the database first (on the same disk, next to it) so
+// the pre-migration state can always be restored. If the copy can't be made,
+// the migration is skipped for this boot rather than run without a backup -
+// the app still works, existing accounts just aren't asked to re-verify yet.
+function backupBeforeReverify(): boolean {
+  const backupPath = path.join(dbDir, `krafo-backup-before-${REVERIFY_MIGRATION}.db`);
+  try {
+    if (!fs.existsSync(backupPath)) db.prepare('VACUUM INTO ?').run(backupPath);
+    console.log(`[migration] ${REVERIFY_MIGRATION}: backup at ${backupPath}`);
+    return true;
+  } catch (err) {
+    console.error(`[migration] ${REVERIFY_MIGRATION}: backup failed, skipping migration this boot:`, err);
+    return false;
+  }
+}
+
+if (!db.prepare('SELECT 1 FROM app_migrations WHERE name = ?').get(REVERIFY_MIGRATION) && backupBeforeReverify()) {
   db.transaction(() => {
     db.prepare(`
       UPDATE organizations

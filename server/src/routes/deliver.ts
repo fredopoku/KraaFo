@@ -5,6 +5,7 @@ import db from '../db/schema';
 import { logEvent } from '../services/activityLog';
 import { sendInvoiceEmail } from '../services/emailService';
 import { formatMoney } from '../utils/formatMoney';
+import { clientRateLimitKey } from '../utils/clientIp';
 
 const router = Router();
 
@@ -13,7 +14,7 @@ const router = Router();
 const emailHourlyLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 20,
-  keyGenerator: (req: Request) => (req.auth?.orgId ?? req.ip) as string,
+  keyGenerator: (req: Request) => req.auth?.orgId ?? clientRateLimitKey(req),
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Send limit reached. You can send up to 20 emails per hour. Please wait before sending again.' },
@@ -23,7 +24,7 @@ const emailHourlyLimiter = rateLimit({
 const emailDailyLimiter = rateLimit({
   windowMs: 24 * 60 * 60 * 1000,
   max: 100,
-  keyGenerator: (req: Request) => `day:${req.auth?.orgId ?? req.ip}`,
+  keyGenerator: (req: Request) => `day:${req.auth?.orgId ?? clientRateLimitKey(req)}`,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Daily send limit reached. You can send up to 100 emails per day.' },

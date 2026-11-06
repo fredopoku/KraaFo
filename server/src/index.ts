@@ -30,6 +30,7 @@ import presenceRouter from './routes/presence';
 import { requireAuth } from './middleware/auth';
 import { maintenanceGate } from './middleware/maintenance';
 import { startScheduler } from './services/scheduler';
+import { clientLimiterOptions } from './utils/clientIp';
 
 if (process.env.SENTRY_DSN) {
   Sentry.init({
@@ -77,6 +78,7 @@ app.use(helmet({
 
 // Rate limiting - protect auth endpoints from brute force
 const authLimiter = rateLimit({
+  ...clientLimiterOptions,
   windowMs: 15 * 60 * 1000,   // 15 minutes
   max: 10,                      // 10 attempts per window per IP
   standardHeaders: true,
@@ -85,6 +87,7 @@ const authLimiter = rateLimit({
   skip: () => !isProd,          // disabled in dev
 });
 const forgotLimiter = rateLimit({
+  ...clientLimiterOptions,
   windowMs: 60 * 60 * 1000,   // 1 hour
   max: 5,                       // 5 reset requests per hour per IP
   standardHeaders: true,
@@ -96,6 +99,7 @@ const forgotLimiter = rateLimit({
 // and 5-tries-per-code limit live in services/emailCode.ts; these per-IP caps
 // stop one machine cycling through many accounts.
 const codeSendLimiter = rateLimit({
+  ...clientLimiterOptions,
   windowMs: 60 * 60 * 1000,
   max: 10,
   standardHeaders: true,
@@ -104,6 +108,7 @@ const codeSendLimiter = rateLimit({
   skip: () => !isProd,
 });
 const codeVerifyLimiter = rateLimit({
+  ...clientLimiterOptions,
   windowMs: 15 * 60 * 1000,
   max: 20,
   standardHeaders: true,
@@ -113,6 +118,7 @@ const codeVerifyLimiter = rateLimit({
 });
 // Newsletter signup sends a welcome email to whatever address is entered.
 const subscribeLimiter = rateLimit({
+  ...clientLimiterOptions,
   windowMs: 60 * 60 * 1000,
   max: 5,
   standardHeaders: true,
@@ -125,6 +131,7 @@ const subscribeLimiter = rateLimit({
 // paid Anthropic API request, so this is a baseline per-IP safety net
 // against a compromised or scripted account hammering it.
 const aiLimiter = rateLimit({
+  ...clientLimiterOptions,
   windowMs: 60 * 60 * 1000,   // 1 hour
   max: 15,                      // 15 AI calls per hour per IP
   standardHeaders: true,

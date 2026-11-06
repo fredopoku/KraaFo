@@ -11,14 +11,13 @@ import { geolocate } from '../utils/geo';
 import { symbolForCurrency } from '../utils/currencySymbol';
 import { logEvent } from '../services/activityLog';
 import { calculateRiskScore, RiskSignals } from '../services/riskScoring';
+import { getClientIp, clientNetworkKey, clientLimiterOptions } from '../utils/clientIp';
 
 const router = Router();
 
 const isProd = process.env.NODE_ENV === 'production';
 
-function getIp(req: Request): string {
-  return (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() || req.ip || '';
-}
+const getIp = getClientIp;
 
 // Per-IP signup rate limit - tight, this is a single machine/account.
 // requestPropertyName is set so both limiters' counters survive on the
@@ -27,7 +26,7 @@ function getIp(req: Request): string {
 const signupIpLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 5,
-  keyGenerator: getIp,
+  ...clientLimiterOptions,
   requestPropertyName: 'rateLimitIp',
   standardHeaders: true,
   legacyHeaders: false,
@@ -35,13 +34,14 @@ const signupIpLimiter = rateLimit({
   skip: () => !isProd,
 });
 
-// Per-/24 subnet signup rate limit - looser, catches bulk signups spread
+// Per-network (IPv4 /24, IPv6 /48) signup rate limit - looser, catches bulk signups spread
 // across a small IP range (common with proxy pools) without punishing
 // ordinary shared IPs (offices, campuses, mobile carriers use wider ranges).
 const signupSubnetLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 20,
-  keyGenerator: (req: Request) => getIp(req).split('.').slice(0, 3).join('.') || getIp(req),
+  ...clientLimiterOptions,
+  keyGenerator: clientNetworkKey,
   requestPropertyName: 'rateLimitSubnet',
   standardHeaders: true,
   legacyHeaders: false,

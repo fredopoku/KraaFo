@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import db from '../db/schema';
 import { adminAuth } from '../middleware/adminAuth';
 import { verifyTurnstile } from '../utils/turnstile';
+import { getClientIp } from '../utils/clientIp';
 
 const router = Router();
 
@@ -12,7 +13,7 @@ router.post('/', async (req: Request, res: Response) => {
   const r = Math.round(Number(rating));
   if (r < 1 || r > 5) return res.status(400).json({ error: 'Rating must be 1–5' });
 
-  const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() || req.ip;
+  const ip = getClientIp(req);
   const human = await verifyTurnstile(cf_turnstile_response, ip);
   if (!human) return res.status(403).json({ error: 'Security check failed. Please try again.' });
 

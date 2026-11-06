@@ -7,10 +7,12 @@ import { InvoiceTemplateData } from '../templates/invoiceTemplate';
 import { verifyTurnstile } from '../utils/turnstile';
 import path from 'path';
 import QRCode from 'qrcode';
+import { getClientIp, clientLimiterOptions } from '../utils/clientIp';
 
 // Rate limit for the unauthenticated guest PDF endpoint.
 // Puppeteer rendering is expensive - cap per IP to prevent DoS.
 const guestPdfLimiter = rateLimit({
+  ...clientLimiterOptions,
   windowMs: 60 * 60 * 1000,
   max: 10,
   standardHeaders: true,
@@ -370,7 +372,7 @@ router.post('/guest', guestPdfLimiter, async (req: Request, res: Response) => {
   }
 
   // Verify Turnstile when configured; skip in dev (no secret set)
-  const ip = (req.headers['x-forwarded-for'] as string) || req.ip;
+  const ip = getClientIp(req);
   const human = await verifyTurnstile(cf_turnstile_response, ip);
   if (!human) return res.status(403).json({ error: 'Bot check failed - please try again.' });
 

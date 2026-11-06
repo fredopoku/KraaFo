@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import db from '../db/schema';
+import { getClientIp as getClientIpShared } from '../utils/clientIp';
 
 const router = Router();
 
@@ -14,9 +15,7 @@ const BOT_RE = /googlebot|bingbot|slurp|duckduckbot|baiduspider|yandexbot|appleb
 const PRIVATE_IP_RE = /^(127\.|10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|::1$|fd[0-9a-f]{2}:|fe80:)/i;
 
 function getClientIp(req: Request): string {
-  const fwd = req.headers['x-forwarded-for'];
-  if (fwd) return (Array.isArray(fwd) ? fwd[0] : fwd).split(',')[0].trim();
-  return req.socket?.remoteAddress || req.ip || '';
+  return getClientIpShared(req);
 }
 
 function parseUA(ua: string): { device: string; browser: string } {
