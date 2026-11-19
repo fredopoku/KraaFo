@@ -580,6 +580,11 @@ db.exec(`
   WHERE title = 'Website Analytics Dashboard';
 `);
 
+// Session versions (middleware/auth.ts checkSession). Bumped to sign a login
+// out everywhere; existing tokens carry no version, which matches the 0 default.
+addCol('organizations', 'token_version', 'INTEGER DEFAULT 0');
+addCol('team_members', 'token_version', 'INTEGER DEFAULT 0');
+
 // Runs last so every column it touches (e.g. invoices.deleted_at) exists.
 db.exec(`CREATE TABLE IF NOT EXISTS app_migrations (name TEXT PRIMARY KEY, ran_at TEXT DEFAULT (datetime('now')))`);
 

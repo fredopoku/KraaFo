@@ -1,10 +1,9 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
-import jwt from 'jsonwebtoken';
 import db from '../db/schema';
 import { logEvent } from '../services/activityLog';
-import { signToken, UserRole, JWT_SECRET } from '../middleware/auth';
+import { signToken, UserRole, checkSession, bumpSessionVersion } from '../middleware/auth';
 import { sendPasswordReset, sendOrgWelcome, sendAdminSignupAlert } from '../services/emailService';
 import { issueEmailCode, checkEmailCode, publicOrg, MAX_ATTEMPTS } from '../services/emailCode';
 
@@ -18,12 +17,12 @@ router.post('/login', async (req: Request, res: Response) => {
   const org = db.prepare('SELECT * FROM organizations WHERE LOWER(email) = LOWER(?) LIMIT 1').get(email.trim()) as any;
   if (org) {
     if (!org.password_hash) {
-      return res.status(401).json({ error: 'This account was created before passwords were required. Use "Forgot password" to set one.' });
+      return res.status(401).json({ error: 'Incorrect email or password. If you haven\'t set a password yet, use "Forgot password".' });
     }
     const valid = await bcrypt.compare(password, org.password_hash);
     if (!valid) {
       logEvent({ req, orgId: org.id, actorEmail: email.trim(), type: 'auth.login_failed', ok: false, meta: { reason: 'bad_password' } });
-      return res.status(401).json({ error: 'Incorrect password' });
+      return res.status(401).json({ error: 'Incorrect email or password. If you haven\'t set a password yet, use "Forgot password".' });
     }
 
     db.prepare(`UPDATE organizations SET total_logins = COALESCE(total_logins, 0) + 1 WHERE id = ?`).run(org.id);
@@ -36,14 +35,14 @@ router.post('/login', async (req: Request, res: Response) => {
   const member = db.prepare('SELECT * FROM team_members WHERE LOWER(email) = LOWER(?) AND invite_accepted = 1 LIMIT 1').get(email.trim()) as any;
   if (!member) {
     logEvent({ req, orgId: null, actorEmail: email.trim(), type: 'auth.login_failed', ok: false, meta: { reason: 'no_account' } });
-    return res.status(401).json({ error: 'No account found with that email address' });
+    return res.status(401).json({ error: 'Incorrect email or password. If you haven\'t set a password yet, use "Forgot password".' });
   }
-  if (!member.password_hash) return res.status(401).json({ error: 'Account not fully set up. Check your invite email.' });
+  if (!member.password_hash) return res.status(401).json({ error: 'Incorrect email or password. If you haven\'t set a password yet, use "Forgot password".' });
 
   const valid = await bcrypt.compare(password, member.password_hash);
   if (!valid) {
     logEvent({ req, orgId: member.org_id, actorId: member.id, actorEmail: member.email, actorRole: member.role, type: 'auth.login_failed', ok: false, meta: { reason: 'bad_password' } });
-    return res.status(401).json({ error: 'Incorrect password' });
+    return res.status(401).json({ error: 'Incorrect email or password. If you haven\'t set a password yet, use "Forgot password".' });
   }
 
   const parentOrg = db.prepare('SELECT * FROM organizations WHERE id = ?').get(member.org_id) as any;
@@ -129,6 +128,9 @@ router.post('/reset', async (req: Request, res: Response) => {
     automation_grace_until = NULL, email_code_hash = NULL, email_code_expires = NULL
     WHERE id = ? AND verification_status = 'pending_verification'`).run(org.id);
 
+  // A password reset ends every other session - whoever knew the old
+  // password (or held an old token) is signed out.
+  bumpSessionVersion(org.id, org.id);
   const token = signToken({ orgId: org.id, userId: org.id, role: 'owner', email: org.email });
   const safeOrg = publicOrg(db.prepare('SELECT * FROM organizations WHERE id = ?').get(org.id));
   logEvent({ req, orgId: org.id, actorId: org.id, actorEmail: org.email, actorRole: 'owner', type: 'auth.password_reset' });
@@ -204,14 +206,9 @@ function ownerFromBearer(req: Request, res: Response): any | null {
   const header = req.headers['authorization'];
   const token = header?.startsWith('Bearer ') ? header.slice(7) : null;
   if (!token) { res.status(401).json({ error: 'Authentication required' }); return null; }
-  let payload: { orgId: string; role?: string };
-  try {
-    payload = jwt.verify(token, JWT_SECRET) as any;
-  } catch {
-    res.status(401).json({ error: 'Session expired. Please sign in again.' });
-    return null;
-  }
-  if (payload.role && payload.role !== 'owner') {
+  const payload = checkSession(token);
+  if (!payload) { res.status(401).json({ error: 'Session expired. Please sign in again.' }); return null; }
+  if (payload.role !== 'owner') {
     res.status(403).json({ error: 'Only the account owner can confirm the account email.', code: 'owner_only' });
     return null;
   }
@@ -268,6 +265,19 @@ router.post('/verify-code', async (req: Request, res: Response) => {
 
   const updated = db.prepare('SELECT * FROM organizations WHERE id = ?').get(org.id) as any;
   res.json({ success: true, held: result.held, org: publicOrg(updated) });
+});
+
+// Signs this login out on every device, including this one, by bumping its
+// session version (middleware/auth.ts). Works for owners and team members;
+// each signs out only their own login.
+router.post('/logout-all', (req: Request, res: Response) => {
+  const header = req.headers['authorization'];
+  const token = header?.startsWith('Bearer ') ? header.slice(7) : null;
+  const payload = token ? checkSession(token) : null;
+  if (!payload) return res.status(401).json({ error: 'Session expired. Please sign in again.' });
+  bumpSessionVersion(payload.orgId, payload.userId);
+  logEvent({ req, orgId: payload.orgId, actorId: payload.userId, actorEmail: payload.email, actorRole: payload.role, type: 'auth.logout_all' });
+  res.json({ success: true });
 });
 
 export default router;

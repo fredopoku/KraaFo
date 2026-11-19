@@ -86,6 +86,14 @@
 - **HTTP Security Headers** - `helmet` sets `X-Frame-Options`, `Strict-Transport-Security`, `X-Content-Type-Options`, `X-DNS-Prefetch-Control`, and `Referrer-Policy` on every response; protects against clickjacking, MIME sniffing, and protocol downgrade attacks
 - **Org Isolation** - every API endpoint that creates or reads documents derives the organisation ID from the verified JWT, not from request body or query parameters; User A cannot read or write User B's data
 - **CORS Allowlist** - origin matching uses exact comparison only; wildcard and prefix patterns are not used
+- **Content-Security-Policy** - every page is served with a CSP that allows scripts only from the site itself, Cloudflare Turnstile and Google Analytics - no inline scripts - so injected markup can't run script; `object-src 'none'`, `frame-ancestors 'self'`. API and PDF responses are left without it
+- **Safe document rendering** - everything a user types (names, line items, notes, addresses) is HTML-escaped before it goes into a PDF or an email, colours and images are validated, and the headless Chromium that renders PDFs runs with JavaScript off and every network request blocked except inline images, so document content can't run code or make the server fetch anything
+- **Sessions you can end** - sign-in tokens carry a session version; "Sign out of all devices" and password resets bump it, ending every older session at once. Every request also re-checks that a team member is still on the team and uses their current role, so removing someone or changing their role takes effect immediately
+- **Role permissions enforced on the server** - Accountant is view-only and only the owner or an admin can change business settings (bank details, payment numbers, branding), checked centrally for every request
+- **Secrets encrypted at rest** - a business's SMTP password and DKIM private key are stored encrypted (AES-256-GCM) and only decrypted at the moment they're used; they're never sent back to the browser
+- **Admin access** - the admin secret is compared in constant time, and repeated wrong guesses are rate-limited
+- **Backups** - a consistent copy of the database is written to the data disk every day (last 7 kept, skipped if the disk is short of space), and the admin can download a fresh copy at any time for off-site storage
+- **No account enumeration at sign-in** - a wrong password and an unknown email get the same message
 - **Cloudflare Turnstile** - invisible/managed bot protection on the Setup page (new users), feedback form, and newsletter signup - no CAPTCHA friction for real users
 - **Real client IP for rate limits** - every per-IP limit (sign-in, password reset, email codes, signup, newsletter, guest PDFs) keys on Cloudflare's `CF-Connecting-IP`, which visitors can't forge, rather than the first `X-Forwarded-For` entry, which they can. IPv6 visitors are grouped by network block (/56 per visitor, /48 per network) so rotating addresses doesn't get around the limits
 - **Graceful degradation** - if Turnstile keys are not configured the forms work normally; the verification gate is skipped in development
@@ -100,6 +108,7 @@
 - **One-time re-verification of existing accounts** - every account that existed before email codes is asked once, on its next visit. A copy of the database is taken automatically before the switch. Accounts that already email their own clients keep 14 days of payment reminders and recurring-invoice emails while they haven't re-verified; everything else pauses until they do
 - **Bot signups cost one email** - signup sends only the code; the welcome email, onboarding emails and the admin signup alert wait until the code is entered
 - **Email changes are confirmed** - changing the account email sends a code to the new address and locks the account until it's entered
+- **Abandoned signups cleaned up** - signups that never entered their code within 30 days and never created anything are deleted automatically; existing customers waiting to re-verify are never removed
 - **One account per email** - signup rejects an address another account already uses, and the real owner of a squatted address can take it back with "Forgot password" (a successful reset also counts as confirming the email)
 - **Disposable & fake email blocking** - a maintained blocklist (~3,700 domains, `disposable-email-domains` npm package) plus a live real-time API check (debounce.io, fails open on any outage) reject temporary-inbox signups; the claimed domain's MX records are also checked to catch typos and non-existent domains
 - **Phone number validation** - every signup requires a phone number, validated for correct format against the claimed country via `libphonenumber-js`; a country/phone mismatch (e.g. a US number on a Ghana signup) feeds the risk score rather than auto-blocking, since diaspora-run businesses legitimately trigger this pattern with zero other signals firing
@@ -253,6 +262,15 @@ JWT_SECRET=your_long_random_jwt_secret_here
 # the Maintenance Mode section below.
 MAINTENANCE_MODE=false
 
+# Optional - encryption key for stored SMTP passwords / DKIM keys. If unset,
+# a key is derived from JWT_SECRET. Changing either later means businesses
+# re-enter their SMTP password.
+DATA_ENCRYPTION_KEY=
+
+# Optional - daily database backups (default: <DB_DIR>/backups, keep 7)
+BACKUP_DIR=
+BACKUP_KEEP_DAYS=7
+
 # Optional - AI cap and activity log retention
 AI_DAILY_LIMIT=50               # Smart Fill / import requests per account per day (override per account in the admin Activity tab)
 ACTIVITY_RETENTION_DAYS=90      # how long the admin activity log is kept (minimum 7)
@@ -301,6 +319,15 @@ VITE_SENTRY_DSN=https://your_key@sentry.io/your_project_id
 ```
 
 > The app runs fully without any API keys - Smart Fill uses built-in templates, document import falls back to local OCR, email features require at minimum a Resend key, and Turnstile bot protection is skipped if keys are not configured.
+
+### Run the Tests
+
+```bash
+cd server
+npm test        # builds, then runs the test suite against throwaway databases
+```
+
+The suite covers the email-code gate, sessions and roles, admin access, encrypted secrets, rate limits, the Content-Security-Policy, backups and the abandoned-signup purge, and checks that hostile document content can't make the PDF renderer run script or fetch anything (needs a local Chrome/Chromium; skipped otherwise). GitHub Actions runs type checks, both production builds and this suite on every push (`.github/workflows/ci.yml`).
 
 ### Run in Development
 
@@ -414,14 +441,19 @@ KraaFo/
 │   │   │   ├── pdfService.ts        # Puppeteer PDF rendering
 │   │   │   ├── imageService.ts      # Logo processing + colour extraction
 │   │   │   ├── riskScoring.ts       # Weighted signup risk score → allow / friction / hold
-│   │   │   └── activityLog.ts       # logEvent() + 90-day pruning + the per-account daily AI cap
+│   │   │   ├── activityLog.ts       # logEvent() + 90-day pruning + the per-account daily AI cap
+│   │   │   ├── emailCode.ts         # 6-digit email codes: issue, check, limits
+│   │   │   └── housekeeping.ts      # Daily backups + abandoned-signup purge
 │   │   ├── utils/
 │   │   │   ├── turnstile.ts         # Cloudflare Turnstile server-side verification helper
 │   │   │   ├── emailValidation.ts   # Syntax + MX check + Gmail dot/plus-alias normalisation
 │   │   │   ├── disposableEmail.ts   # Static blocklist + live real-time disposable-domain check
 │   │   │   ├── phoneValidation.ts   # Phone format + country-match check (libphonenumber-js)
 │   │   │   ├── currencySymbol.ts    # Currency code → correct symbol (server-side twin of the client logic)
-│   │   │   └── geo.ts               # IP geolocation + proxy/hosting reputation (ip-api.com)
+│   │   │   ├── geo.ts               # IP geolocation + proxy/hosting reputation (ip-api.com)
+│   │   │   ├── clientIp.ts          # Real client IP (Cloudflare) + rate-limit keys
+│   │   │   ├── html.ts              # HTML escaping / colour + image validation for PDFs and emails
+│   │   │   └── secretBox.ts         # AES-256-GCM encryption for stored secrets
 │   │   └── templates/
 │   │       ├── invoiceTemplate.ts     # HTML invoice / receipt / quote template
 │   │       └── maintenanceTemplate.ts # Self-contained "under maintenance" page - see Maintenance Mode
@@ -500,6 +532,7 @@ KraaFo/
 | POST | `/api/auth/join/:token` | Accept a team invite - set name/password |
 | POST | `/api/auth/send-code` | Email a 6-digit verification code to the signed-in owner (cooldown + daily cap) |
 | POST | `/api/auth/verify-code` | Check the code and unlock the account |
+| POST | `/api/auth/logout-all` | Sign this login out on every device |
 | POST | `/api/auth/resend-verification` | Older name for `send-code`, kept for compatibility |
 | GET | `/api/auth/verify-email` | Legacy one-click link from before email codes (only links already sent) |
 | GET | `/api/team` | List team members (owner/admin only) |
@@ -549,6 +582,7 @@ KraaFo/
 | GET | `/api/admin/events` | Activity log, newest first. Filters: `days` (1-90), `type` (exact, or a family ending in a dot like `auth.`), `org_id`, `ok=0` (failures only), `q` (email / IP / account / metadata), `limit`, `offset` |
 | GET | `/api/admin/events/summary` | Totals, failed sign-ins by IP and by email, events per day, busiest accounts, counts by type |
 | GET | `/api/admin/ai-usage` | AI requests per account (today / 7d / 30d / blocked) and their daily limits |
+| GET | `/api/admin/backup` | Download a fresh copy of the database (for off-site backups) |
 | PUT | `/api/admin/orgs/:id/ai-limit` | Set one account's daily AI limit (`{"limit": 100}`; `0` switches AI off for it; `null` returns to the default) |
 
 ### Community
@@ -657,6 +691,11 @@ The `{ enabled, message }` config is persisted to a JSON file next to the SQLite
 - [x] Signup risk scoring (device fingerprint, email/phone signals, IP reputation, velocity)
 - [x] Email code verification for every account (new signups, one-time re-verification of existing accounts, email changes)
 - [x] Rate limits keyed on the real client IP (Cloudflare), IPv6-aware
+- [x] Escaped, sandboxed PDF and email rendering; Content-Security-Policy on every page
+- [x] Revocable sessions (sign out of all devices), server-enforced role permissions
+- [x] Encrypted stored secrets, daily backups + admin download, abandoned-signup purge
+- [x] Automated test suite + GitHub Actions CI
+- [ ] Two-factor sign-in (authenticator app / passkeys)
 - [x] Disposable email + phone/country validation on signup
 - [x] Team accounts with roles (Owner, Admin, Staff, Accountant)
 - [x] Trash / recycle bin with restore

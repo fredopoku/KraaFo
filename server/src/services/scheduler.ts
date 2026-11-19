@@ -1,5 +1,6 @@
 import db from '../db/schema';
 import { logEvent, pruneActivityEvents } from './activityLog';
+import { runHousekeeping } from './housekeeping';
 import { v4 as uuidv4 } from 'uuid';
 import { sendDay2Email, sendDay4Email, sendDay7Email, sendDay14Email, sendPaymentReminder, sendInvoiceEmail } from './emailService';
 
@@ -272,10 +273,12 @@ async function runRecurringInvoices(): Promise<void> {
 }
 
 export function startScheduler(): void {
+  runHousekeeping();
   runOnboardingSequence().catch(console.error);
   runOverdueAndReminders().catch(console.error);
   runRecurringInvoices().catch(console.error);
   setInterval(() => {
+    runHousekeeping();
     runOnboardingSequence().catch(console.error);
     runOverdueAndReminders().catch(console.error);
     runRecurringInvoices().catch(console.error);

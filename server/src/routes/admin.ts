@@ -4,6 +4,10 @@ import { logEvent, requestIp, defaultAiLimit } from '../services/activityLog';
 import { adminAuth } from '../middleware/adminAuth';
 import { getRiskConfig, saveRiskConfig, reloadRiskConfig } from '../config/riskConfig';
 import { getMaintenanceConfig, setMaintenanceConfig } from '../config/maintenanceConfig';
+import { publicOrg } from '../services/emailCode';
+import { writeDatabaseCopy, BACKUP_DIR } from '../services/housekeeping';
+import path from 'path';
+import fs from 'fs';
 
 const router = Router();
 
@@ -235,7 +239,7 @@ router.get('/orgs/:id', adminAuth, (req: Request, res: Response) => {
   `).all(req.params.id) as any[];
 
   // strip sensitive fields before sending
-  const { password_hash, smtp_pass, dkim_private_key, ...safeOrg } = org;
+  const safeOrg = publicOrg(org);
 
   res.json({ org: safeOrg, recentDocs, recentQuotes, clients, team, monthly });
 });
@@ -795,6 +799,23 @@ router.put('/orgs/:id/ai-limit', adminAuth, (req: Request, res: Response) => {
   db.prepare('UPDATE organizations SET ai_daily_limit = ? WHERE id = ?').run(limit, req.params.id);
   adminLog(req, 'admin.ai_limit', req.params.id, { limit });
   res.json({ id: req.params.id, limit: limit ?? defaultAiLimit(), customLimit: limit !== null });
+});
+
+// Download a fresh, consistent copy of the whole database - for keeping
+// off-site backups (the automatic daily ones live on the same disk). It
+// contains password hashes and encrypted secrets, so it's admin-only and
+// every download is logged.
+router.get('/backup', adminAuth, (req: Request, res: Response) => {
+  const name = `krafo-${new Date().toISOString().replace(/[:.]/g, '-')}.db`;
+  const tmp = path.join(BACKUP_DIR, `download-${name}`);
+  try {
+    writeDatabaseCopy(tmp);
+  } catch (err) {
+    console.error('[backup] download copy failed:', err);
+    return res.status(500).json({ error: 'Could not create a backup copy' });
+  }
+  adminLog(req, 'admin.backup_download', null, { bytes: fs.statSync(tmp).size });
+  res.download(tmp, name, () => { fs.unlink(tmp, () => {}); });
 });
 
 export default router;

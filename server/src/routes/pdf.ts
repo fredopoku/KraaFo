@@ -8,6 +8,7 @@ import { verifyTurnstile } from '../utils/turnstile';
 import path from 'path';
 import QRCode from 'qrcode';
 import { getClientIp, clientLimiterOptions } from '../utils/clientIp';
+import { escapeHtml, safeCssColor, safeImageDataUrl } from '../utils/html';
 
 // Rate limit for the unauthenticated guest PDF endpoint.
 // Puppeteer rendering is expensive - cap per IP to prevent DoS.
@@ -223,8 +224,8 @@ router.get('/statement/:clientId', async (req: Request, res: Response) => {
     ORDER BY issue_date ASC
   `).all(org_id, req.params.clientId, client.name) as any[];
 
-  const sym = org?.currency_symbol || '$';
-  const primary = org?.primary_color || '#6366f1';
+  const sym = escapeHtml(org?.currency_symbol || '$');
+  const primary = safeCssColor(org?.primary_color, '#6366f1');
 
   const totalInvoiced = invoices.filter(i => i.type === 'invoice').reduce((s, i) => s + (i.total || 0), 0);
   const totalCollected = invoices.filter(i => i.type === 'invoice').reduce((s, i) => s + (i.amount_paid || 0), 0);
@@ -234,19 +235,20 @@ router.get('/statement/:clientId', async (req: Request, res: Response) => {
   const fmt = (n: number) => `${sym}${Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const statusBadge = (s: string) => {
     const map: Record<string, string> = { paid: '#10b981', overdue: '#ef4444', sent: '#3b82f6', draft: '#94a3b8', accepted: '#10b981', declined: '#ef4444' };
-    return `<span style="background:${map[s] || '#94a3b8'}22;color:${map[s] || '#94a3b8'};padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700;text-transform:capitalize">${s}</span>`;
+    return `<span style="background:${map[s] || '#94a3b8'}22;color:${map[s] || '#94a3b8'};padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700;text-transform:capitalize">${escapeHtml(s)}</span>`;
   };
 
-  const logoHtml = logoBase64
-    ? `<img src="${logoBase64}" style="height:48px;object-fit:contain;border-radius:6px" />`
-    : `<div style="width:40px;height:40px;background:${primary};border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;font-weight:900;font-size:18px">${(org?.name || 'K')[0]}</div>`;
+  const safeLogo = safeImageDataUrl(logoBase64);
+  const logoHtml = safeLogo
+    ? `<img src="${safeLogo}" style="height:48px;object-fit:contain;border-radius:6px" />`
+    : `<div style="width:40px;height:40px;background:${primary};border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;font-weight:900;font-size:18px">${escapeHtml((org?.name || 'K')[0])}</div>`;
 
   const invoiceRows = invoices.map(inv => `
     <tr style="border-bottom:1px solid #f1f5f9">
-      <td style="padding:10px 12px;font-weight:700;color:#1e293b">${inv.number}</td>
-      <td style="padding:10px 12px;color:#64748b;text-transform:capitalize">${inv.type}</td>
-      <td style="padding:10px 12px;color:#64748b">${inv.issue_date}</td>
-      <td style="padding:10px 12px;color:#64748b">${inv.due_date || '—'}</td>
+      <td style="padding:10px 12px;font-weight:700;color:#1e293b">${escapeHtml(inv.number)}</td>
+      <td style="padding:10px 12px;color:#64748b;text-transform:capitalize">${escapeHtml(inv.type)}</td>
+      <td style="padding:10px 12px;color:#64748b">${escapeHtml(inv.issue_date)}</td>
+      <td style="padding:10px 12px;color:#64748b">${escapeHtml(inv.due_date) || '—'}</td>
       <td style="padding:10px 12px;text-align:right;font-weight:700;color:#1e293b">${fmt(inv.total)}</td>
       <td style="padding:10px 12px;text-align:right;color:#10b981;font-weight:700">${fmt(inv.amount_paid || 0)}</td>
       <td style="padding:10px 12px;text-align:right;color:${(inv.total - (inv.amount_paid || 0)) > 0 ? '#ef4444' : '#10b981'};font-weight:700">${fmt(inv.total - (inv.amount_paid || 0))}</td>
@@ -268,8 +270,8 @@ router.get('/statement/:clientId', async (req: Request, res: Response) => {
       <tbody>
         ${quotes.map(q => `
           <tr style="border-bottom:1px solid #f1f5f9">
-            <td style="padding:10px 12px;font-weight:700;color:#1e293b">${q.number}</td>
-            <td style="padding:10px 12px;color:#64748b">${q.issue_date}</td>
+            <td style="padding:10px 12px;font-weight:700;color:#1e293b">${escapeHtml(q.number)}</td>
+            <td style="padding:10px 12px;color:#64748b">${escapeHtml(q.issue_date)}</td>
             <td style="padding:10px 12px;text-align:right;font-weight:700;color:#1e293b">${fmt(q.total)}</td>
             <td style="padding:10px 12px;text-align:center">${statusBadge(q.status)}</td>
           </tr>
@@ -292,15 +294,15 @@ router.get('/statement/:clientId', async (req: Request, res: Response) => {
     <div style="display:flex;justify-content:space-between;margin-bottom:28px">
       <div>
         <div style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Prepared by</div>
-        <div style="font-weight:800;color:#1e293b">${org?.name || ''}</div>
-        ${org?.email ? `<div style="color:#64748b;font-size:12px">${org.email}</div>` : ''}
-        ${org?.phone ? `<div style="color:#64748b;font-size:12px">${org.phone}</div>` : ''}
+        <div style="font-weight:800;color:#1e293b">${escapeHtml(org?.name)}</div>
+        ${org?.email ? `<div style="color:#64748b;font-size:12px">${escapeHtml(org.email)}</div>` : ''}
+        ${org?.phone ? `<div style="color:#64748b;font-size:12px">${escapeHtml(org.phone)}</div>` : ''}
       </div>
       <div style="text-align:right">
         <div style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Prepared for</div>
-        <div style="font-weight:800;color:#1e293b">${client.name}</div>
-        ${client.company ? `<div style="color:#64748b;font-size:12px">${client.company}</div>` : ''}
-        ${client.email ? `<div style="color:#64748b;font-size:12px">${client.email}</div>` : ''}
+        <div style="font-weight:800;color:#1e293b">${escapeHtml(client.name)}</div>
+        ${client.company ? `<div style="color:#64748b;font-size:12px">${escapeHtml(client.company)}</div>` : ''}
+        ${client.email ? `<div style="color:#64748b;font-size:12px">${escapeHtml(client.email)}</div>` : ''}
       </div>
     </div>
 
@@ -350,7 +352,7 @@ router.get('/statement/:clientId', async (req: Request, res: Response) => {
     const pdfBuffer = await generatePDFFromHTML(html);
     const inline = req.query.inline === 'true';
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `${inline ? 'inline' : 'attachment'}; filename="statement-${client.name.replace(/\s+/g, '-')}.pdf"`);
+    res.setHeader('Content-Disposition', `${inline ? 'inline' : 'attachment'}; filename="statement-${String(client.name).replace(/[^a-zA-Z0-9-]+/g, '-')}.pdf"`);
     res.send(pdfBuffer);
   } catch (err) {
     console.error('Statement PDF error:', err);
@@ -444,20 +446,6 @@ router.post('/guest', guestPdfLimiter, async (req: Request, res: Response) => {
   } catch (err) {
     console.error('Guest PDF error:', err);
     res.status(500).json({ error: 'Failed to generate PDF - please try again.' });
-  }
-});
-
-router.post('/preview', async (req: Request, res: Response) => {
-  const { invoiceData } = req.body;
-  if (!invoiceData) return res.status(400).json({ error: 'invoiceData required' });
-
-  try {
-    const pdfBuffer = await generatePDF(invoiceData as InvoiceTemplateData);
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'inline; filename="preview.pdf"');
-    res.send(pdfBuffer);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to generate preview PDF' });
   }
 });
 

@@ -12,6 +12,7 @@ import { symbolForCurrency } from '../utils/currencySymbol';
 import { logEvent } from '../services/activityLog';
 import { calculateRiskScore, RiskSignals } from '../services/riskScoring';
 import { getClientIp, clientNetworkKey, clientLimiterOptions } from '../utils/clientIp';
+import { sealSecret, SEALED_ORG_FIELDS } from '../utils/secretBox';
 
 const router = Router();
 
@@ -181,7 +182,7 @@ router.post('/', signupIpLimiter, signupSubnetLimiter, async (req: Request, res:
     invoice_prefix || 'INV', receipt_prefix || 'REC', quote_prefix || 'QUO',
     payment_terms || 'Net 30', notes,
     bank_name, bank_account, bank_routing, signature_url || null,
-    smtp_host || null, smtp_port || 587, smtp_user || null, smtp_pass || null, smtp_from || null,
+    smtp_host || null, smtp_port || 587, smtp_user || null, sealSecret(smtp_pass), smtp_from || null,
     whatsapp_number || null, mpesa_number || null, mtn_number || null, airtel_number || null, telecel_number || null, paypal_email || null,
     signupIp || null, geo.asn || null, geo.country || null, geo.isProxy ? 1 : 0, geo.isHosting ? 1 : 0,
     fingerprint_hash || null, normalizedEmail, verificationStatus, risk.score, risk.action);
@@ -241,6 +242,15 @@ router.put('/:id', (req: Request, res: Response) => {
       emailChanged = true;
     }
     req.body.email = nextEmail;
+  }
+
+  // Stored secrets are never sent to the browser, so the settings form sends
+  // them back empty - an empty value means "keep what's saved", not "erase it"
+  // (it used to wipe the SMTP password on every settings save). Anything new
+  // is encrypted before it's stored.
+  for (const f of SEALED_ORG_FIELDS) {
+    if (req.body[f] === '' || req.body[f] === null) delete req.body[f];
+    else if (req.body[f] !== undefined) req.body[f] = sealSecret(String(req.body[f]));
   }
 
   const updates = fields.filter(f => req.body[f] !== undefined);

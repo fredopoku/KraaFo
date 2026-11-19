@@ -1,3 +1,5 @@
+import { escapeHtml, escapeMultiline, safeCssColor, safeImageDataUrl, safeNumber } from '../utils/html';
+
 export interface InvoiceTemplateData {
   type: 'invoice' | 'receipt' | 'quote';
   number: string;
@@ -90,7 +92,67 @@ function getStatusBadge(status: string, primary: string): string {
   return `<span style="background:${color}20;color:${color};padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">${status}</span>`;
 }
 
-export function generateInvoiceHTML(data: InvoiceTemplateData): string {
+// Every value a user can influence is escaped (or validated) here, once,
+// before any of it is placed into the HTML below. That HTML is rendered by
+// headless Chromium on the server, so unescaped input would be live markup
+// running inside our infrastructure - not just a cosmetic bug. Multi-line
+// fields keep their line breaks. payment_qr_svg is built by the server from
+// a QR library and is passed through as-is.
+function sanitizeTemplateData(raw: InvoiceTemplateData): InvoiceTemplateData {
+  const e = escapeHtml;
+  const o = raw.org || ({} as InvoiceTemplateData['org']);
+  const c = raw.client || ({} as InvoiceTemplateData['client']);
+  const type = (['invoice', 'receipt', 'quote'] as const).includes(raw.type) ? raw.type : 'invoice';
+  return {
+    ...raw,
+    type,
+    number: e(raw.number),
+    issue_date: e(raw.issue_date),
+    due_date: raw.due_date ? e(raw.due_date) : undefined,
+    paid_date: raw.paid_date ? e(raw.paid_date) : undefined,
+    status: e(raw.status),
+    org: {
+      name: e(o.name), email: e(o.email), phone: e(o.phone), address: e(o.address),
+      city: e(o.city), state: e(o.state), zip: e(o.zip), country: e(o.country), website: e(o.website),
+      logo_base64: safeImageDataUrl(o.logo_base64),
+      primary_color: safeCssColor(o.primary_color, '#2563EB'),
+      secondary_color: safeCssColor(o.secondary_color, '#1E40AF'),
+      accent_color: safeCssColor(o.accent_color, '#DBEAFE'),
+      tax_name: e(o.tax_name || 'Tax'),
+      currency_symbol: e(o.currency_symbol || '$'),
+      bank_name: e(o.bank_name), bank_account: e(o.bank_account), bank_routing: e(o.bank_routing),
+      signature_url: safeImageDataUrl(o.signature_url),
+      paypal_email: e(o.paypal_email), mpesa_number: e(o.mpesa_number), mtn_number: e(o.mtn_number),
+      airtel_number: e(o.airtel_number), telecel_number: e(o.telecel_number), whatsapp_number: e(o.whatsapp_number),
+    },
+    client: {
+      name: e(c.name), email: e(c.email), phone: e(c.phone), address: e(c.address),
+      city: e(c.city), state: e(c.state), zip: e(c.zip), company: e(c.company),
+    },
+    items: (Array.isArray(raw.items) ? raw.items : []).map(item => ({
+      description: escapeMultiline(item?.description),
+      quantity: safeNumber(item?.quantity),
+      unit: e(item?.unit),
+      unit_price: safeNumber(item?.unit_price),
+      amount: safeNumber(item?.amount),
+    })),
+    subtotal: safeNumber(raw.subtotal),
+    discount_type: e(raw.discount_type),
+    discount_value: safeNumber(raw.discount_value),
+    discount_amount: safeNumber(raw.discount_amount),
+    tax_rate: safeNumber(raw.tax_rate),
+    tax_amount: safeNumber(raw.tax_amount),
+    total: safeNumber(raw.total),
+    amount_paid: safeNumber(raw.amount_paid),
+    balance_due: safeNumber(raw.balance_due),
+    notes: raw.notes ? escapeMultiline(raw.notes) : undefined,
+    terms: raw.terms ? escapeMultiline(raw.terms) : undefined,
+    footer_text: raw.footer_text ? escapeMultiline(raw.footer_text) : undefined,
+  };
+}
+
+export function generateInvoiceHTML(rawData: InvoiceTemplateData): string {
+  const data = sanitizeTemplateData(rawData);
   const { org, client, items } = data;
   const sym = org.currency_symbol;
   const isReceipt = data.type === 'receipt';

@@ -258,6 +258,8 @@ export const api = {
       request<{ sent: boolean; alreadyVerified?: boolean }>('/auth/resend-verification', { method: 'POST' }),
     sendCode: () =>
       request<{ sent: boolean; alreadyVerified?: boolean; cooldownSeconds?: number; email?: string }>('/auth/send-code', { method: 'POST' }),
+    logoutAll: () =>
+      request<{ success: boolean }>('/auth/logout-all', { method: 'POST' }),
     verifyCode: (code: string) =>
       request<{ success: boolean; held: boolean; org?: any }>('/auth/verify-code', { method: 'POST', body: JSON.stringify({ code }) }),
   },

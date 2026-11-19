@@ -31,6 +31,7 @@ import { requireAuth } from './middleware/auth';
 import { maintenanceGate } from './middleware/maintenance';
 import { startScheduler } from './services/scheduler';
 import { clientLimiterOptions } from './utils/clientIp';
+import { sealLegacySecrets } from './utils/secretBox';
 
 if (process.env.SENTRY_DSN) {
   Sentry.init({
@@ -73,8 +74,39 @@ app.use(cors({
 
 app.use(helmet({
   crossOriginEmbedderPolicy: false, // allow PDF/image embeds
-  contentSecurityPolicy: false,     // handled by Cloudflare; inline styles in React would break with strict CSP
+  contentSecurityPolicy: false,     // set below, for pages only
 }));
+
+// Content-Security-Policy for the web pages (the React app, SEO pages and
+// the maintenance page). No inline or third-party script runs except the
+// three origins the site actually uses (Cloudflare Turnstile, Google
+// Analytics/Tag Manager), so injected markup can't execute script even if
+// it got onto a page. Inline *styles* stay allowed: React style attributes
+// need them, and they can't run code. Not applied to /api responses - JSON
+// doesn't need it, and a CSP on a PDF response can stop Chrome's built-in
+// viewer from showing it.
+const pageCsp = helmet.contentSecurityPolicy({
+  useDefaults: false,
+  directives: {
+    defaultSrc: ["'self'"],
+    scriptSrc: ["'self'", 'https://challenges.cloudflare.com', 'https://www.googletagmanager.com'],
+    styleSrc: ["'self'", "'unsafe-inline'"],
+    imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
+    fontSrc: ["'self'", 'data:'],
+    connectSrc: ["'self'", 'https://challenges.cloudflare.com', 'https://*.sentry.io',
+      'https://*.google-analytics.com', 'https://*.analytics.google.com', 'https://www.googletagmanager.com',
+      'https://stats.g.doubleclick.net'],
+    frameSrc: ["'self'", 'blob:', 'https://challenges.cloudflare.com'],
+    workerSrc: ["'self'", 'blob:'],
+    manifestSrc: ["'self'"],
+    objectSrc: ["'none'"],
+    baseUri: ["'self'"],
+    formAction: ["'self'"],
+    frameAncestors: ["'self'"],
+    upgradeInsecureRequests: isProd ? [] : null,
+  },
+});
+app.use((req, res, next) => (req.path.startsWith('/api/') ? next() : pageCsp(req, res, next)));
 
 // Rate limiting - protect auth endpoints from brute force
 const authLimiter = rateLimit({
@@ -126,6 +158,18 @@ const subscribeLimiter = rateLimit({
   message: { error: 'Too many sign-ups from this network. Please try again later.' },
   skip: (req) => !isProd || req.method !== 'POST',
 });
+// Wrong admin secrets: 20 per 15 min per IP. Only failed attempts count, so
+// the admin panel's normal polling never trips it.
+const adminLimiter = rateLimit({
+  ...clientLimiterOptions,
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  skipSuccessfulRequests: true,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many failed admin sign-in attempts. Please try again in 15 minutes.' },
+  skip: () => !isProd,
+});
 // Smart Fill / Smart Import - both require a verified account (see
 // middleware/auth.ts's CORE_FEATURE_PREFIXES), but each call is still a
 // paid Anthropic API request, so this is a baseline per-IP safety net
@@ -161,8 +205,8 @@ app.use('/api/deliver', deliverRouter);
 app.use('/api/analytics', analyticsRouter);
 app.use('/api/feedback', feedbackRouter);
 app.use('/api/subscribers', subscribeLimiter, subscribersRouter);
-app.use('/api/broadcasts', broadcastsRouter);
-app.use('/api/admin', adminRouter);
+app.use('/api/broadcasts', adminLimiter, broadcastsRouter);
+app.use('/api/admin', adminLimiter, adminRouter);
 app.use('/api/changelog', changelogRouter);
 app.use('/api/track', trackRouter);
 app.use('/api/stats', statsRouter);
@@ -384,6 +428,12 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
 app.listen(PORT, () => {
   console.log(`\nKraaFo server running on port ${PORT} [${isProd ? 'production' : 'development'}]`);
   if (isProd) console.log(`  Serving frontend from ${clientDist}`);
+  try {
+    const n = sealLegacySecrets();
+    if (n) console.log(`[secrets] encrypted stored SMTP/DKIM secrets for ${n} account(s)`);
+  } catch (err) {
+    console.error('[secrets] could not encrypt stored secrets:', err);
+  }
   startScheduler();
 });
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock, AlertCircle, FileText, Receipt, Users, Quote, Plus, Settings, ArrowRight, ArrowLeft, CheckCircle, Zap, X, DollarSign, BarChart2, Trash2, Circle, Mail, TrendingUp, TrendingDown } from 'lucide-react';
+import { Clock, AlertCircle, FileText, Receipt, Users, Quote, Plus, Settings, ArrowRight, ArrowLeft, CheckCircle, Zap, X, DollarSign, BarChart2, Trash2, Circle, Mail, TrendingUp, TrendingDown, LogOut } from 'lucide-react';
 import { useOrg } from '../hooks/useOrg';
 import { api, formatCurrency } from '../utils/api';
 import { LogoMark, Logo } from '../components/Logo';
@@ -8,7 +8,18 @@ import { cn } from '../utils/cn';
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { org, loading } = useOrg();
+  const { org, loading, clearOrg } = useOrg();
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [signingOutAll, setSigningOutAll] = useState(false);
+
+  const signOut = () => { clearOrg(); navigate('/login'); };
+  // Ends this login on every device (server bumps the session version), then
+  // signs out here too.
+  const signOutEverywhere = async () => {
+    setSigningOutAll(true);
+    try { await api.auth.logoutAll(); } catch { /* signed out locally regardless */ }
+    signOut();
+  };
   const [data, setData] = useState<any>(null);
   const [fetching, setFetching] = useState(true);
   const [changelog, setChangelog] = useState<any[]>([]);
@@ -179,9 +190,33 @@ export default function Dashboard() {
             <button onClick={() => navigate('/trash')} className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all" title="Trash">
               <Trash2 className="w-4 h-4" />
             </button>
-            <button onClick={() => navigate('/setup')} className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all">
+            <button onClick={() => navigate('/setup')} className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all" title="Settings">
               <Settings className="w-4 h-4" />
             </button>
+            <div className="relative">
+              <button
+                onClick={() => setAccountMenuOpen(o => !o)}
+                aria-haspopup="menu"
+                aria-expanded={accountMenuOpen}
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"
+                title="Sign out"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+              {accountMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setAccountMenuOpen(false)} />
+                  <div role="menu" className="absolute right-0 mt-2 w-56 z-50 bg-white rounded-xl shadow-lg ring-1 ring-slate-100 py-1 text-sm">
+                    <button role="menuitem" onClick={signOut} className="w-full text-left px-4 py-2.5 text-slate-700 hover:bg-slate-50">
+                      Sign out
+                    </button>
+                    <button role="menuitem" onClick={signOutEverywhere} disabled={signingOutAll} className="w-full text-left px-4 py-2.5 text-slate-700 hover:bg-slate-50 disabled:opacity-50">
+                      {signingOutAll ? 'Signing out...' : 'Sign out of all devices'}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </header>

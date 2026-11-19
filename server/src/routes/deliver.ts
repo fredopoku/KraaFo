@@ -6,6 +6,7 @@ import { logEvent } from '../services/activityLog';
 import { sendInvoiceEmail } from '../services/emailService';
 import { formatMoney } from '../utils/formatMoney';
 import { clientRateLimitKey } from '../utils/clientIp';
+import { openSecret } from '../utils/secretBox';
 
 const router = Router();
 
@@ -164,7 +165,7 @@ router.post('/test-email', async (req: Request, res: Response) => {
       host: org.smtp_host,
       port: org.smtp_port || 587,
       secure: org.smtp_port === 465,
-      auth: { user: org.smtp_user, pass: org.smtp_pass },
+      auth: { user: org.smtp_user, pass: openSecret(org.smtp_pass) || undefined },
     });
 
     const mailOptions: any = {
@@ -179,7 +180,7 @@ router.post('/test-email', async (req: Request, res: Response) => {
       mailOptions.dkim = {
         domainName: org.dkim_domain,
         keySelector: org.dkim_selector,
-        privateKey: org.dkim_private_key,
+        privateKey: openSecret(org.dkim_private_key) || '',
       };
     }
 

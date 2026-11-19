@@ -6,6 +6,14 @@ import { generatePDF } from './pdfService';
 import { getLogoBase64 } from './imageService';
 import QRCode from 'qrcode';
 import { formatMoney } from '../utils/formatMoney';
+import { escapeHtml } from '../utils/html';
+
+// A business name used as an email sender name. It's a header, not HTML, so
+// it isn't escaped - but quotes, angle brackets and line breaks are removed so
+// the name can't change the address part of the From header.
+function displayName(value: unknown): string {
+  return String(value ?? '').replace(/["<>\r\n]/g, '').trim().slice(0, 80) || 'KraaFo';
+}
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
 const FROM_ADDRESS = process.env.RESEND_FROM || 'invoices@kraafo.com';
@@ -144,7 +152,7 @@ export async function sendInvoiceEmail(
 
   const resend = new Resend(apiKey);
   const { error } = await resend.emails.send({
-    from: `${org.name} <${FROM_ADDRESS}>`,
+    from: `${displayName(org.name)} <${FROM_ADDRESS}>`,
     replyTo: org.email || FROM_ADDRESS,
     to: [recipientEmail],
     subject: `${docType} ${invoice.number} from ${org.name}`,
@@ -163,7 +171,7 @@ export async function sendSubscriberWelcome(email: string, name?: string, token?
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return;
   const resend = new Resend(apiKey);
-  const greeting = name ? `, ${name}` : '';
+  const greeting = name ? `, ${escapeHtml(name)}` : '';
   await resend.emails.send({
     from: `KraaFo <${MARKETING_FROM}>`,
     to: [email],
@@ -268,7 +276,7 @@ export async function sendOrgWelcome(org: any): Promise<void> {
   const name = org.name || 'there';
   const body = `
     <p style="margin:0 0 6px;font-size:22px">🚀</p>
-    <h2 style="margin:0 0 12px;color:#111827;font-size:19px;font-weight:800">Your KraaFo account is live, ${name}!</h2>
+    <h2 style="margin:0 0 12px;color:#111827;font-size:19px;font-weight:800">Your KraaFo account is live, ${escapeHtml(name)}!</h2>
     <p style="margin:0 0 24px;color:#6b7280;font-size:15px;line-height:1.7">You're set up and ready to go. Here's how to send your first invoice in the next 2 minutes:</p>
     ${step('1', 'Open the Generator', 'Click the button below - you\'re already logged in.')}
     ${step('2', 'Build your invoice your way', 'Type in your own services and prices, or hit Smart Fill to auto-fill line items for your industry. Either way works.')}
@@ -280,8 +288,8 @@ export async function sendOrgWelcome(org: any): Promise<void> {
     from: `KraaFo <${FROM_ADDRESS}>`,
     to: [org.email],
     subject: `Welcome to KraaFo, ${name} - your first invoice awaits`,
-    html: emailShell('#4f46e5', `You\'re all set, ${name} 🎉`, 'KraaFo · Professional Invoicing', body,
-      `This email was sent to ${org.email} because you created a KraaFo account. &nbsp;·&nbsp; <a href="${FRONTEND_URL}" style="color:#6b7280">kraafo.com</a>`),
+    html: emailShell('#4f46e5', `You\'re all set, ${escapeHtml(name)} 🎉`, 'KraaFo · Professional Invoicing', body,
+      `This email was sent to ${escapeHtml(org.email)} because you created a KraaFo account. &nbsp;·&nbsp; <a href="${FRONTEND_URL}" style="color:#6b7280">kraafo.com</a>`),
   });
   db.prepare('UPDATE organizations SET welcome_email_sent = 1 WHERE id = ?').run(org.id);
 }
@@ -292,7 +300,7 @@ export async function sendDay2Email(org: any): Promise<void> {
   const resend = new Resend(apiKey);
   const name = org.name || 'there';
   const body = `
-    <p style="margin:0 0 12px;color:#6b7280;font-size:15px;line-height:1.7">Hey ${name},</p>
+    <p style="margin:0 0 12px;color:#6b7280;font-size:15px;line-height:1.7">Hey ${escapeHtml(name)},</p>
     <p style="margin:0 0 20px;color:#374151;font-size:15px;line-height:1.7">You signed up for KraaFo but haven't sent your first invoice yet - no worries, it happens. Here's the fastest way to get started:</p>
     ${step('1', 'Go to the Generator', 'One click and you\'re on the invoice screen.')}
     ${step('2', 'Click Smart Fill', 'Pick your industry - cleaning, plumbing, consulting, whatever you do - and your invoice fills itself.')}
@@ -306,7 +314,7 @@ export async function sendDay2Email(org: any): Promise<void> {
     to: [org.email],
     subject: 'Your first invoice is 2 minutes away',
     html: emailShell('#1e1b4b', 'Still with us? 👀', 'Let\'s get your first invoice out', body,
-      `Sent to ${org.email} · <a href="${FRONTEND_URL}" style="color:#6b7280">kraafo.com</a>`),
+      `Sent to ${escapeHtml(org.email)} · <a href="${FRONTEND_URL}" style="color:#6b7280">kraafo.com</a>`),
   });
   db.prepare('UPDATE organizations SET day2_email_sent = 1 WHERE id = ?').run(org.id);
 }
@@ -317,7 +325,7 @@ export async function sendDay4Email(org: any): Promise<void> {
   const resend = new Resend(apiKey);
   const name = org.name || 'there';
   const body = `
-    <p style="margin:0 0 12px;color:#6b7280;font-size:15px;line-height:1.7">Hey ${name},</p>
+    <p style="margin:0 0 12px;color:#6b7280;font-size:15px;line-height:1.7">Hey ${escapeHtml(name)},</p>
     <p style="margin:0 0 8px;color:#374151;font-size:17px;font-weight:800;line-height:1.4">We know what you might be thinking - what's the catch with KraaFo being free?</p>
     <p style="margin:0 0 24px;color:#6b7280;font-size:15px;line-height:1.7">There isn't one.</p>
     <p style="margin:0 0 12px;color:#374151;font-size:14px;font-weight:700">Here's what's free to use:</p>
@@ -338,7 +346,7 @@ export async function sendDay4Email(org: any): Promise<void> {
     to: [org.email],
     subject: "The catch? There isn't one.",
     html: emailShell('#059669', 'No catch - here\'s what you get 💚', 'KraaFo · Free to use', body,
-      `Sent to ${org.email} · <a href="${FRONTEND_URL}" style="color:#6b7280">kraafo.com</a>`),
+      `Sent to ${escapeHtml(org.email)} · <a href="${FRONTEND_URL}" style="color:#6b7280">kraafo.com</a>`),
   });
   db.prepare('UPDATE organizations SET day4_email_sent = 1 WHERE id = ?').run(org.id);
 }
@@ -349,7 +357,7 @@ export async function sendDay7Email(org: any): Promise<void> {
   const resend = new Resend(apiKey);
   const name = org.name || 'there';
   const body = `
-    <p style="margin:0 0 12px;color:#6b7280;font-size:15px;line-height:1.7">Hey ${name},</p>
+    <p style="margin:0 0 12px;color:#6b7280;font-size:15px;line-height:1.7">Hey ${escapeHtml(name)},</p>
     <p style="margin:0 0 20px;color:#374151;font-size:15px;line-height:1.7">It's been a week since you joined KraaFo. Life gets busy - we get it. That's exactly why KraaFo exists.</p>
     <p style="margin:0 0 12px;color:#374151;font-size:14px;font-weight:700">Businesses using KraaFo are:</p>
     <ul style="margin:0 0 24px;padding-left:20px;color:#6b7280;font-size:14px;line-height:2.2">
@@ -367,7 +375,7 @@ export async function sendDay7Email(org: any): Promise<void> {
     to: [org.email],
     subject: 'Quick question about your invoicing',
     html: emailShell('#7c3aed', 'One week in 👋', 'A quick note from KraaFo', body,
-      `Sent to ${org.email} · <a href="${FRONTEND_URL}" style="color:#6b7280">kraafo.com</a>`),
+      `Sent to ${escapeHtml(org.email)} · <a href="${FRONTEND_URL}" style="color:#6b7280">kraafo.com</a>`),
   });
   db.prepare('UPDATE organizations SET day7_email_sent = 1 WHERE id = ?').run(org.id);
 }
@@ -385,45 +393,45 @@ export async function sendPaymentReminder(invoice: any, org: any, daysOverdue: n
     ? { subject: `Friendly reminder: Invoice ${invoice.number} is due`, tone: 'gentle' }
     : daysOverdue <= 7
     ? { subject: `Invoice ${invoice.number} is overdue - ${outstanding} outstanding`, tone: 'firm' }
-    : { subject: `Final reminder: Invoice ${invoice.number} - ${outstanding} unpaid`, tone: 'urgent' };
+    : { subject: `Final reminder: Invoice ${escapeHtml(invoice.number)} - ${outstanding} unpaid`, tone: 'urgent' };
 
   const body = daysOverdue <= 1 ? `
-    <p style="margin:0 0 16px;color:#374151;font-size:15px">Hi ${invoice.client_name || 'there'},</p>
+    <p style="margin:0 0 16px;color:#374151;font-size:15px">Hi ${escapeHtml(invoice.client_name || 'there')},</p>
     <p style="margin:0 0 16px;color:#374151;font-size:15px">
-      This is a friendly reminder that invoice <strong>${invoice.number}</strong> from <strong>${org.name}</strong>
+      This is a friendly reminder that invoice <strong>${escapeHtml(invoice.number)}</strong> from <strong>${escapeHtml(org.name)}</strong>
       for <strong>${outstanding}</strong> was due today.
     </p>
     <p style="margin:0 0 24px;color:#6b7280;font-size:14px">If you've already sent payment, please ignore this message. Otherwise, you can view your invoice below.</p>
     ${cta(viewUrl, 'View Invoice')}
   ` : daysOverdue <= 7 ? `
-    <p style="margin:0 0 16px;color:#374151;font-size:15px">Hi ${invoice.client_name || 'there'},</p>
+    <p style="margin:0 0 16px;color:#374151;font-size:15px">Hi ${escapeHtml(invoice.client_name || 'there')},</p>
     <p style="margin:0 0 16px;color:#374151;font-size:15px">
-      Invoice <strong>${invoice.number}</strong> from <strong>${org.name}</strong> is now <strong>${daysOverdue} days overdue</strong>.
+      Invoice <strong>${escapeHtml(invoice.number)}</strong> from <strong>${escapeHtml(org.name)}</strong> is now <strong>${daysOverdue} days overdue</strong>.
       The outstanding balance is <strong>${outstanding}</strong>.
     </p>
     <p style="margin:0 0 24px;color:#6b7280;font-size:14px">Please arrange payment at your earliest convenience.</p>
     ${cta(viewUrl, 'View & Pay Invoice')}
   ` : `
-    <p style="margin:0 0 16px;color:#374151;font-size:15px">Hi ${invoice.client_name || 'there'},</p>
+    <p style="margin:0 0 16px;color:#374151;font-size:15px">Hi ${escapeHtml(invoice.client_name || 'there')},</p>
     <p style="margin:0 0 16px;color:#374151;font-size:15px">
-      This is a final reminder for invoice <strong>${invoice.number}</strong> from <strong>${org.name}</strong>.
+      This is a final reminder for invoice <strong>${escapeHtml(invoice.number)}</strong> from <strong>${escapeHtml(org.name)}</strong>.
       This invoice is <strong>${daysOverdue} days overdue</strong> with <strong>${outstanding}</strong> unpaid.
     </p>
-    <p style="margin:0 0 24px;color:#6b7280;font-size:14px">Please contact ${org.name} immediately to resolve this.</p>
+    <p style="margin:0 0 24px;color:#6b7280;font-size:14px">Please contact ${escapeHtml(org.name)} immediately to resolve this.</p>
     ${cta(viewUrl, 'View Invoice')}
   `;
 
   await resend.emails.send({
-    from: org.email ? `${org.name} via KraaFo <${FROM_ADDRESS}>` : `${org.name} <${FROM_ADDRESS}>`,
+    from: `${displayName(org.name)}${org.email ? ' via KraaFo' : ''} <${FROM_ADDRESS}>`,
     to: [invoice.client_email],
     replyTo: org.email || undefined,
     subject: urgency.subject,
     html: emailShell(
       daysOverdue > 7 ? '#dc2626' : daysOverdue > 1 ? '#d97706' : '#4f46e5',
       urgency.subject,
-      `From ${org.name}`,
+      `From ${escapeHtml(org.name)}`,
       body,
-      `Sent on behalf of ${org.name} via KraaFo &mdash; Professional Invoicing`
+      `Sent on behalf of ${escapeHtml(org.name)} via KraaFo &mdash; Professional Invoicing`
     ),
   });
 }
@@ -470,7 +478,7 @@ function buildEmailHtml(invoice: any, org: any, message: string, docType: string
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="x-apple-disable-message-reformatting">
-  <title>${docType} ${invoice.number}</title>
+  <title>${docType} ${escapeHtml(invoice.number)}</title>
 </head>
 <body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">
   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f1f5f9;padding:32px 16px">
@@ -490,15 +498,15 @@ function buildEmailHtml(invoice: any, org: any, message: string, docType: string
         <!-- Header -->
         <tr>
           <td style="background:${color};padding:32px 40px">
-            <p style="margin:0;color:#ffffff;font-size:24px;font-weight:800;letter-spacing:-0.5px">${org.name}</p>
-            <p style="margin:6px 0 0;color:rgba(255,255,255,0.75);font-size:14px">${docType} · ${invoice.number}</p>
+            <p style="margin:0;color:#ffffff;font-size:24px;font-weight:800;letter-spacing:-0.5px">${escapeHtml(org.name)}</p>
+            <p style="margin:6px 0 0;color:rgba(255,255,255,0.75);font-size:14px">${docType} · ${escapeHtml(invoice.number)}</p>
           </td>
         </tr>
 
         <!-- Body -->
         <tr>
           <td style="padding:36px 40px">
-            <p style="margin:0 0 28px;color:#374151;font-size:15px;line-height:1.7;white-space:pre-line">${message}</p>
+            <p style="margin:0 0 28px;color:#374151;font-size:15px;line-height:1.7;white-space:pre-line">${escapeHtml(message)}</p>
 
             <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f8fafc;border-radius:12px;border:1px solid #e5e7eb;overflow:hidden">
               <tr>
@@ -506,7 +514,7 @@ function buildEmailHtml(invoice: any, org: any, message: string, docType: string
                   <table width="100%" cellpadding="0" cellspacing="0" border="0">
                     <tr>
                       <td style="color:#6b7280;font-size:13px">${docType} Number:</td>
-                      <td align="right" style="color:#111827;font-size:13px;font-weight:700">${invoice.number}</td>
+                      <td align="right" style="color:#111827;font-size:13px;font-weight:700">${escapeHtml(invoice.number)}</td>
                     </tr>
                   </table>
                 </td>
@@ -586,7 +594,7 @@ export async function sendPasswordReset(org: any, code: string): Promise<void> {
   if (!apiKey) return;
   const resend = new Resend(apiKey);
   const body = `
-    <p style="margin:0 0 16px;color:#374151;font-size:15px">Hi ${org.name || 'there'},</p>
+    <p style="margin:0 0 16px;color:#374151;font-size:15px">Hi ${escapeHtml(org.name || 'there')},</p>
     <p style="margin:0 0 20px;color:#374151;font-size:15px;line-height:1.7">
       We received a request to reset your KraaFo password. Use the code below - it expires in <strong>1 hour</strong>.
     </p>
@@ -604,7 +612,7 @@ export async function sendPasswordReset(org: any, code: string): Promise<void> {
     to: [org.email],
     subject: `Your KraaFo reset code: ${code}`,
     html: emailShell('#111827', 'Password reset requested', 'KraaFo · Account Security', body,
-      `This email was sent to ${org.email} because a password reset was requested.`),
+      `This email was sent to ${escapeHtml(org.email)} because a password reset was requested.`),
   });
 }
 
@@ -624,7 +632,7 @@ export async function sendVerificationCodeEmail(org: any, code: string, reason: 
   }[reason];
 
   const body = `
-    <p style="margin:0 0 16px;color:#374151;font-size:15px">Hi ${org.name || 'there'},</p>
+    <p style="margin:0 0 16px;color:#374151;font-size:15px">Hi ${escapeHtml(org.name || 'there')},</p>
     <p style="margin:0 0 20px;color:#374151;font-size:15px;line-height:1.7">${intro}</p>
     <div style="text-align:center;margin:28px 0">
       <div style="display:inline-block;background:#f3f4f6;border:2px dashed #d1d5db;border-radius:12px;padding:20px 36px">
@@ -640,7 +648,7 @@ export async function sendVerificationCodeEmail(org: any, code: string, reason: 
     to: [org.email],
     subject: `${code} is your KraaFo verification code`,
     html: emailShell('#4f46e5', 'Confirm your email', 'KraaFo · Account Security', body,
-      `This email was sent to ${org.email} because it is the email on a KraaFo account.`),
+      `This email was sent to ${escapeHtml(org.email)} because it is the email on a KraaFo account.`),
   });
 }
 
@@ -655,12 +663,12 @@ export async function sendTeamInvite(member: any, org: any, inviteToken: string)
 
   const html = emailShell(
     '#4f46e5',
-    `You've been invited to join ${org.name} on KraaFo`,
+    `You've been invited to join ${escapeHtml(org.name)} on KraaFo`,
     `You've been added as a ${roleLabel}`,
     `
-    <p style="margin:0 0 16px;color:#374151;font-size:15px">Hi${member.name ? ` ${member.name}` : ''},</p>
+    <p style="margin:0 0 16px;color:#374151;font-size:15px">Hi${member.name ? ` ${escapeHtml(member.name)}` : ''},</p>
     <p style="margin:0 0 16px;color:#374151;font-size:15px">
-      <strong>${org.name}</strong> has invited you to collaborate on their KraaFo account as a <strong>${roleLabel}</strong>.
+      <strong>${escapeHtml(org.name)}</strong> has invited you to collaborate on their KraaFo account as a <strong>${roleLabel}</strong>.
     </p>
     <p style="margin:0 0 24px;color:#374151;font-size:15px">
       Click below to set up your password and get started. This invite link expires after you use it.
@@ -670,7 +678,7 @@ export async function sendTeamInvite(member: any, org: any, inviteToken: string)
       If you weren't expecting this invite, you can safely ignore this email.
     </p>
     `,
-    `This invite was sent by ${org.name} via KraaFo &mdash; Professional Invoicing for businesses worldwide.`
+    `This invite was sent by ${escapeHtml(org.name)} via KraaFo &mdash; Professional Invoicing for businesses worldwide.`
   );
 
   await resend.emails.send({
@@ -690,7 +698,7 @@ export async function sendActivationEmail(org: any): Promise<void> {
   const name = org.name || 'there';
   const body = `
     <p style="margin:0 0 6px;font-size:22px">🎉</p>
-    <h2 style="margin:0 0 12px;color:#111827;font-size:19px;font-weight:800">You just created your first invoice, ${name}!</h2>
+    <h2 style="margin:0 0 12px;color:#111827;font-size:19px;font-weight:800">You just created your first invoice, ${escapeHtml(name)}!</h2>
     <p style="margin:0 0 20px;color:#6b7280;font-size:15px;line-height:1.7">That's the hardest part done. Here's how to make the most of it:</p>
     ${step('1', 'Send it now', 'Hit the WhatsApp or email button - your client gets a professional PDF in seconds.')}
     ${step('2', 'Save your client', 'Tap "Save client" so next time their details fill in automatically.')}
@@ -703,7 +711,7 @@ export async function sendActivationEmail(org: any): Promise<void> {
     to: [org.email],
     subject: `First invoice done, ${name} 🎉 - here's what's next`,
     html: emailShell('#059669', `First invoice, done! 🎉`, 'KraaFo · You\'re on a roll', body,
-      `Sent to ${org.email} · <a href="${FRONTEND_URL}" style="color:#6b7280">kraafo.com</a>`),
+      `Sent to ${escapeHtml(org.email)} · <a href="${FRONTEND_URL}" style="color:#6b7280">kraafo.com</a>`),
   });
   db.prepare('UPDATE organizations SET activation_email_sent = 1 WHERE id = ?').run(org.id);
 }
@@ -716,7 +724,7 @@ export async function sendDay14Email(org: any): Promise<void> {
   const resend = new Resend(apiKey);
   const name = org.name || 'there';
   const body = `
-    <p style="margin:0 0 12px;color:#6b7280;font-size:15px;line-height:1.7">Hey ${name},</p>
+    <p style="margin:0 0 12px;color:#6b7280;font-size:15px;line-height:1.7">Hey ${escapeHtml(name)},</p>
     <p style="margin:0 0 20px;color:#374151;font-size:15px;line-height:1.7">It's been two weeks since you signed up for KraaFo and we haven't seen you send anything yet.</p>
     <p style="margin:0 0 20px;color:#374151;font-size:15px;font-weight:700">That's money sitting on the table.</p>
     <p style="margin:0 0 20px;color:#6b7280;font-size:15px;line-height:1.7">If you've been putting it off because it feels complicated - it really isn't. Here's the fastest path:</p>
@@ -731,7 +739,7 @@ export async function sendDay14Email(org: any): Promise<void> {
     to: [org.email],
     subject: `${name}, there's money sitting on the table`,
     html: emailShell('#1e1b4b', 'Still here 👀', 'Two weeks in - let\'s get your first invoice out', body,
-      `Sent to ${org.email} · <a href="${FRONTEND_URL}" style="color:#6b7280">kraafo.com</a>`),
+      `Sent to ${escapeHtml(org.email)} · <a href="${FRONTEND_URL}" style="color:#6b7280">kraafo.com</a>`),
   });
   db.prepare('UPDATE organizations SET day14_email_sent = 1 WHERE id = ?').run(org.id);
 }
@@ -752,10 +760,10 @@ export async function sendAdminEventAlert(org: any, event: string): Promise<void
     html: `
       <div style="font-family:system-ui,sans-serif;max-width:480px;margin:0 auto;padding:24px;background:#f9fafb;border-radius:12px">
         <p style="margin:0 0 4px;font-size:13px;color:#6b7280;text-transform:uppercase;letter-spacing:.06em">KraaFo · ${event}</p>
-        <h2 style="margin:0 0 20px;font-size:22px;color:#111827">${org.name || '(no name)'}</h2>
+        <h2 style="margin:0 0 20px;font-size:22px;color:#111827">${escapeHtml(org.name || '(no name)')}</h2>
         <table style="width:100%;border-collapse:collapse;font-size:14px;color:#374151">
-          <tr><td style="padding:6px 0;color:#6b7280;width:90px">Email</td><td style="padding:6px 0">${org.email || '—'}</td></tr>
-          <tr><td style="padding:6px 0;color:#6b7280">Country</td><td style="padding:6px 0">${org.country || '—'}</td></tr>
+          <tr><td style="padding:6px 0;color:#6b7280;width:90px">Email</td><td style="padding:6px 0">${escapeHtml(org.email || '—')}</td></tr>
+          <tr><td style="padding:6px 0;color:#6b7280">Country</td><td style="padding:6px 0">${escapeHtml(org.country || '—')}</td></tr>
           <tr><td style="padding:6px 0;color:#6b7280">Time</td><td style="padding:6px 0">${now} UTC</td></tr>
         </table>
         <a href="${FRONTEND_URL}/admin" style="display:inline-block;margin-top:20px;padding:10px 20px;background:#4f46e5;color:#fff;border-radius:6px;font-size:14px;font-weight:600;text-decoration:none">View in Admin →</a>
@@ -776,12 +784,12 @@ export async function sendAdminSignupAlert(org: any): Promise<void> {
     html: `
       <div style="font-family:system-ui,sans-serif;max-width:480px;margin:0 auto;padding:24px;background:#f9fafb;border-radius:12px">
         <p style="margin:0 0 4px;font-size:13px;color:#6b7280;text-transform:uppercase;letter-spacing:.06em">KraaFo · New Signup</p>
-        <h2 style="margin:0 0 20px;font-size:22px;color:#111827">${org.name || '(no name)'}</h2>
+        <h2 style="margin:0 0 20px;font-size:22px;color:#111827">${escapeHtml(org.name || '(no name)')}</h2>
         <table style="width:100%;border-collapse:collapse;font-size:14px;color:#374151">
-          <tr><td style="padding:6px 0;color:#6b7280;width:90px">Email</td><td style="padding:6px 0">${org.email || '—'}</td></tr>
-          <tr><td style="padding:6px 0;color:#6b7280">Phone</td><td style="padding:6px 0">${org.phone || '—'}</td></tr>
-          <tr><td style="padding:6px 0;color:#6b7280">Country</td><td style="padding:6px 0">${org.country || '—'}</td></tr>
-          <tr><td style="padding:6px 0;color:#6b7280">Currency</td><td style="padding:6px 0">${org.currency || '—'}</td></tr>
+          <tr><td style="padding:6px 0;color:#6b7280;width:90px">Email</td><td style="padding:6px 0">${escapeHtml(org.email || '—')}</td></tr>
+          <tr><td style="padding:6px 0;color:#6b7280">Phone</td><td style="padding:6px 0">${escapeHtml(org.phone || '—')}</td></tr>
+          <tr><td style="padding:6px 0;color:#6b7280">Country</td><td style="padding:6px 0">${escapeHtml(org.country || '—')}</td></tr>
+          <tr><td style="padding:6px 0;color:#6b7280">Currency</td><td style="padding:6px 0">${escapeHtml(org.currency || '—')}</td></tr>
           <tr><td style="padding:6px 0;color:#6b7280">Time</td><td style="padding:6px 0">${now} UTC</td></tr>
         </table>
         <a href="${FRONTEND_URL}/admin" style="display:inline-block;margin-top:20px;padding:10px 20px;background:#4f46e5;color:#fff;border-radius:6px;font-size:14px;font-weight:600;text-decoration:none">View in Admin →</a>
