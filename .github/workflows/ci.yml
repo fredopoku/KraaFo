@@ -2,7 +2,7 @@ name: CI
 
 # Type checks, production builds and the server test suite on every push
 # and pull request. The tests start the compiled server against throwaway
-# databases; the PDF test uses the runner's preinstalled Google Chrome.
+# databases; the PDF test renders with the bundled @sparticuz/chromium build.
 on:
   push:
     branches: [main]
@@ -38,6 +38,4 @@ jobs:
           npx vite build
 
       - name: Build and test the server
-        env:
-          PUPPETEER_EXECUTABLE_PATH: /usr/bin/google-chrome
         run: npm test --prefix server

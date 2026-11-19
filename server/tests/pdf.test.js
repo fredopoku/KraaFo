@@ -7,12 +7,14 @@ const http = require('http');
 const path = require('path');
 const { SERVER_DIR } = require('./helpers');
 
-const CHROME = [
-  process.env.PUPPETEER_EXECUTABLE_PATH,
-  '/usr/bin/google-chrome', '/usr/bin/google-chrome-stable', '/usr/bin/chromium', '/usr/bin/chromium-browser',
-  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-].find(p => p && fs.existsSync(p));
-if (CHROME) process.env.PUPPETEER_EXECUTABLE_PATH = CHROME;
+// Which browser renders: an explicit PUPPETEER_EXECUTABLE_PATH, else on CI
+// the bundled @sparticuz/chromium build the service's launch flags are made
+// for (stock Chrome on GitHub's Ubuntu image exits on those flags), else a
+// local Chrome install.
+const LOCAL = ['/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/usr/bin/google-chrome-stable', '/usr/bin/google-chrome']
+  .find(p => fs.existsSync(p));
+const CHROME = process.env.PUPPETEER_EXECUTABLE_PATH || (process.env.CI ? 'bundled' : LOCAL);
+if (CHROME && CHROME !== 'bundled') process.env.PUPPETEER_EXECUTABLE_PATH = CHROME;
 
 const PNG_1PX = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
 const PORT = 4545;
